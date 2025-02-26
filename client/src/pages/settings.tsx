@@ -90,7 +90,7 @@ export default function Settings() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold mb-8">Distribution Settings</h1>
-      
+
       <div className="grid gap-6">
         {distributionSites.map((site) => (
           <Card key={site}>
@@ -110,7 +110,72 @@ export default function Settings() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {site !== "WordPress Site" && (
+                {site === "WordPress Site" ? (
+                  <>
+                    <div className="grid w-full items-center gap-1.5">
+                      <Label htmlFor={`${site}-username`}>Username</Label>
+                      <Input
+                        id={`${site}-username`}
+                        value={settings[site]?.additionalConfig?.username ?? ""}
+                        onChange={(e) => {
+                          setSettings(prev => ({
+                            ...prev,
+                            [site]: {
+                              ...prev[site],
+                              additionalConfig: {
+                                ...prev[site]?.additionalConfig,
+                                username: e.target.value
+                              }
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                    <div className="grid w-full items-center gap-1.5">
+                      <Label htmlFor={`${site}-password`}>Application Password</Label>
+                      <Input
+                        id={`${site}-password`}
+                        type="password"
+                        value={settings[site]?.additionalConfig?.password ?? ""}
+                        onChange={(e) => {
+                          setSettings(prev => ({
+                            ...prev,
+                            [site]: {
+                              ...prev[site],
+                              additionalConfig: {
+                                ...prev[site]?.additionalConfig,
+                                password: e.target.value
+                              }
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                    <div className="grid w-full items-center gap-1.5">
+                      <Label htmlFor={`${site}-url`}>API URL</Label>
+                      <Input
+                        id={`${site}-url`}
+                        placeholder="https://your-wordpress-site.com"
+                        value={settings[site]?.additionalConfig?.apiUrl ?? ""}
+                        onChange={(e) => {
+                          setSettings(prev => ({
+                            ...prev,
+                            [site]: {
+                              ...prev[site],
+                              additionalConfig: {
+                                ...prev[site]?.additionalConfig,
+                                apiUrl: e.target.value
+                              }
+                            }
+                          }));
+                        }}
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Enter your WordPress site URL including http:// or https://
+                      </p>
+                    </div>
+                  </>
+                ) : (
                   <>
                     <div className="grid w-full items-center gap-1.5">
                       <Label htmlFor={`${site}-apiKey`}>API Key</Label>
@@ -147,7 +212,7 @@ export default function Settings() {
                   <div className="grid w-full items-center gap-1.5">
                     <Label>API Endpoint</Label>
                     <Input
-                      value={siteConfigs[site as keyof typeof siteConfigs].baseUrl + 
+                      value={siteConfigs[site as keyof typeof siteConfigs].baseUrl +
                              siteConfigs[site as keyof typeof siteConfigs].apiEndpoint}
                       disabled
                     />

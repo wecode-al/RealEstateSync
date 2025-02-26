@@ -1,6 +1,23 @@
-import { pgTable, text, serial, integer, numeric, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, numeric, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Users table
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  email: text("email").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({ 
+  id: true,
+  createdAt: true 
+});
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export const properties = pgTable("properties", {
   id: serial("id").primaryKey(),
@@ -21,9 +38,9 @@ export const properties = pgTable("properties", {
   distributions: jsonb("distributions").notNull(),
 });
 
-export const insertPropertySchema = createInsertSchema(properties).omit({ 
+export const insertPropertySchema = createInsertSchema(properties).omit({
   id: true,
-  distributions: true 
+  distributions: true
 }).extend({
   features: z.array(z.string()),
   images: z.array(z.string()),
@@ -49,7 +66,7 @@ export const distributionSites = [
   "njoftime.al",
   "merrjep.al",
   "mirlir",
-  "indomino",
+  "indomio.al",
   "instagram",
   "facebook",
   "okazion.al"
@@ -75,12 +92,12 @@ export const siteConfigs = {
     requiresAuth: true
   },
   "mirlir": {
-    baseUrl: "https://mirlir.al",
+    baseUrl: "https://mirlir.com",
     apiEndpoint: "/api/listings",
     requiresAuth: true
   },
-  "indomino": {
-    baseUrl: "https://indomino.al",
+  "indomio.al": {
+    baseUrl: "https://indomio.al",
     apiEndpoint: "/api/properties",
     requiresAuth: true
   },

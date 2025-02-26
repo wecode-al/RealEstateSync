@@ -4,11 +4,15 @@ import { storage } from "./storage";
 import { insertPropertySchema, type Property, distributionSites } from "@shared/schema";
 import { wordPressService } from "./services/wordpress";
 import { albanianListingService } from "./services/albanian-listings";
+import { setupAuth } from "./auth";
 
 // In-memory storage for settings (replace with database in production)
 let siteSettings: Record<string, any> = {};
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication routes
+  setupAuth(app);
+
   app.get("/api/properties", async (_req, res) => {
     const properties = await storage.getProperties();
     res.json(properties);
