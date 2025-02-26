@@ -45,63 +45,63 @@ function register_property_meta() {
         'single' => true,
         'show_in_rest' => true,
     ));
-    
+
     register_post_meta('property', 'property_bedrooms', array(
         'type' => 'integer',
         'description' => 'Number of bedrooms',
         'single' => true,
         'show_in_rest' => true,
     ));
-    
+
     register_post_meta('property', 'property_bathrooms', array(
         'type' => 'number',
         'description' => 'Number of bathrooms',
         'single' => true,
         'show_in_rest' => true,
     ));
-    
-    register_post_meta('property', 'property_sqft', array(
+
+    register_post_meta('property', 'property_square_meters', array(
         'type' => 'number',
-        'description' => 'Square footage',
+        'description' => 'Square meters',
         'single' => true,
         'show_in_rest' => true,
     ));
-    
+
     register_post_meta('property', 'property_address', array(
         'type' => 'string',
         'description' => 'Property address',
         'single' => true,
         'show_in_rest' => true,
     ));
-    
+
     register_post_meta('property', 'property_city', array(
         'type' => 'string',
         'description' => 'Property city',
         'single' => true,
         'show_in_rest' => true,
     ));
-    
+
     register_post_meta('property', 'property_state', array(
         'type' => 'string',
         'description' => 'Property state',
         'single' => true,
         'show_in_rest' => true,
     ));
-    
+
     register_post_meta('property', 'property_zip', array(
         'type' => 'string',
         'description' => 'Property ZIP code',
         'single' => true,
         'show_in_rest' => true,
     ));
-    
+
     register_post_meta('property', 'property_type', array(
         'type' => 'string',
         'description' => 'Property type',
         'single' => true,
         'show_in_rest' => true,
     ));
-    
+
     register_post_meta('property', 'property_features', array(
         'type' => 'array',
         'description' => 'Property features',
@@ -115,7 +115,7 @@ function register_property_meta() {
             ),
         ),
     ));
-    
+
     register_post_meta('property', 'property_images', array(
         'type' => 'array',
         'description' => 'Property images',
@@ -131,3 +131,5 @@ function register_property_meta() {
     ));
 }
 add_action('init', 'register_property_meta');
+
+?>

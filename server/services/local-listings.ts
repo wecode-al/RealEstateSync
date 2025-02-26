@@ -1,16 +1,16 @@
 import { type Property } from "@shared/schema";
-import { localListingSites } from "@shared/schema";
+import { siteConfigs } from "@shared/schema";
 
 interface LocalListingResponse {
   success: boolean;
   error?: string;
-  listingUrl?: string;
+  postUrl?: string;
 }
 
 export class LocalListingService {
   async publishProperty(property: Property, siteId: string): Promise<LocalListingResponse> {
     // Find the site configuration
-    const site = localListingSites.find(s => s.id === siteId);
+    const site = siteConfigs[siteId as keyof typeof siteConfigs];
     if (!site) {
       return {
         success: false,
@@ -19,7 +19,7 @@ export class LocalListingService {
     }
 
     try {
-      console.log(`Publishing to local site ${site.name}: ${site.url}${site.apiEndpoint}`);
+      console.log(`Publishing to local site ${siteId}: ${site.baseUrl}${site.apiEndpoint}`);
 
       const listingData = {
         title: property.title,
@@ -27,7 +27,7 @@ export class LocalListingService {
         price: property.price,
         bedrooms: property.bedrooms,
         bathrooms: property.bathrooms,
-        squareFeet: property.sqft,
+        squareMeters: property.squareMeters,
         location: {
           address: property.address,
           city: property.city,
@@ -47,14 +47,14 @@ export class LocalListingService {
       if (success) {
         return {
           success: true,
-          listingUrl: `${site.url}/listings/${Date.now()}`
+          postUrl: `${site.baseUrl}/listings/${Date.now()}`
         };
       } else {
         throw new Error("API connection failed");
       }
 
     } catch (error) {
-      console.error(`Local Listing Publishing Error (${site.name}):`, error);
+      console.error(`Local Listing Publishing Error (${siteId}):`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to publish to local listing site'

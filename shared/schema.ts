@@ -19,25 +19,6 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
-// Add settings table after users table
-export const settings = pgTable("settings", {
-  id: serial("id").primaryKey(),
-  site: text("site").notNull(),
-  enabled: boolean("enabled").notNull().default(false),
-  apiKey: text("api_key"),
-  apiSecret: text("api_secret"),
-  additionalConfig: jsonb("additional_config"),
-  updatedAt: timestamp("updated_at").defaultNow().notNull()
-});
-
-export const insertSettingSchema = createInsertSchema(settings).omit({ 
-  id: true,
-  updatedAt: true 
-});
-
-export type Setting = typeof settings.$inferSelect;
-export type InsertSetting = z.infer<typeof insertSettingSchema>;
-
 export const properties = pgTable("properties", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
@@ -59,10 +40,14 @@ export const properties = pgTable("properties", {
 
 export const insertPropertySchema = createInsertSchema(properties).omit({
   id: true,
+  published: true,
   distributions: true
 }).extend({
   features: z.array(z.string()),
   images: z.array(z.string()),
+  price: z.string().or(z.number()),
+  bathrooms: z.string().or(z.number()),
+  squareMeters: z.string().or(z.number())
 });
 
 export type Property = typeof properties.$inferSelect;
@@ -78,7 +63,6 @@ export const propertyTypes = [
   "Other"
 ] as const;
 
-// Albanian and regional listing sites
 export const distributionSites = [
   "WordPress Site",
   "njoftime.com",
@@ -93,7 +77,6 @@ export const distributionSites = [
 
 export type DistributionSite = typeof distributionSites[number];
 
-// Site configuration for handling API endpoints and authentication
 export const siteConfigs = {
   "njoftime.com": {
     baseUrl: "https://njoftime.com",

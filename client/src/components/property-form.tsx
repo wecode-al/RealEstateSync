@@ -36,7 +36,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
       zipCode: property.zipCode,
       propertyType: property.propertyType,
       images: property.images,
-      features: property.features
+      features: property.features as string[]
     } : {
       title: "",
       description: "",
@@ -61,9 +61,9 @@ export function PropertyForm({ property }: PropertyFormProps) {
         property ? `/api/properties/${property.id}` : "/api/properties",
         {
           ...data,
-          price: String(data.price),
-          bathrooms: String(data.bathrooms),
-          squareMeters: String(data.squareMeters)
+          price: Number(data.price),
+          bathrooms: Number(data.bathrooms),
+          squareMeters: Number(data.squareMeters)
         }
       );
       return res.json();
@@ -75,6 +75,10 @@ export function PropertyForm({ property }: PropertyFormProps) {
       });
       // Invalidate and refetch properties query
       queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+      // Also invalidate the specific property if we're editing
+      if (property) {
+        queryClient.invalidateQueries({ queryKey: ["/api/properties", property.id] });
+      }
       navigate("/");
     },
     onError: (error) => {
