@@ -8,6 +8,7 @@ interface WordPressResponse {
 interface WordPressError {
   code: string;
   message: string;
+  data?: { status: number };
 }
 
 export class WordPressService {
@@ -39,14 +40,13 @@ export class WordPressService {
 
   async publishProperty(property: Property): Promise<{ success: boolean; error?: string; postUrl?: string }> {
     try {
-      console.log(`Publishing to WordPress: ${this.apiUrl}/wp-json/wp/v2/properties`);
+      console.log(`Publishing to WordPress: ${this.apiUrl}/wp-json/wp/v2/property`);
 
       // First, create the property post
       const postData = {
         title: property.title,
         content: property.description,
         status: 'publish',
-        type: 'property', // Custom post type
         meta: {
           property_price: property.price,
           property_bedrooms: property.bedrooms,
@@ -65,7 +65,7 @@ export class WordPressService {
       console.log('Sending data to WordPress:', postData);
 
       // Create the property post
-      const response = await fetch(`${this.apiUrl}/wp-json/wp/v2/properties`, {
+      const response = await fetch(`${this.apiUrl}/wp-json/wp/v2/property`, {
         method: 'POST',
         headers: {
           'Authorization': `Basic ${this.auth}`,
