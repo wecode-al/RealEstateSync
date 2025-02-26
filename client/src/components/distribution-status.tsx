@@ -11,8 +11,8 @@ import type { Property } from "@shared/schema";
 declare global {
   interface Window {
     chrome?: {
-      runtime: {
-        sendMessage: (message: any, callback: (response: any) => void) => void;
+      runtime?: {
+        sendMessage?: (message: any, callback: (response: any) => void) => void;
         lastError?: { message: string };
       };
     };
@@ -46,8 +46,17 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
         }
 
         // Check if extension API is available
-        if (typeof window.chrome === 'undefined' || !window.chrome.runtime) {
-          console.log('Chrome extension API not found');
+        const runtime = window?.chrome?.runtime;
+        const hasExtensionApi = !!runtime && typeof runtime.sendMessage === 'function';
+        console.log('Extension API check:', { 
+          hasChrome: !!window.chrome,
+          hasRuntime: !!runtime,
+          hasMessage: typeof runtime?.sendMessage === 'function',
+          hasExtensionApi 
+        });
+
+        if (!hasExtensionApi) {
+          console.log('Extension API not found or not properly initialized');
           setExtensionReady(false);
           setShowInstructions(true);
           return;
@@ -59,18 +68,19 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
             reject(new Error('Extension not responding'));
           }, 2000);
 
-          window.chrome.runtime.sendMessage(
+          runtime.sendMessage(
             { 
               type: 'CHECK_CONNECTION',
+              source: 'replit-app',
               timestamp: Date.now()
             },
             response => {
               clearTimeout(timeout);
               console.log('Extension test response:', response);
 
-              if (window.chrome?.runtime.lastError) {
-                console.error('Extension test error:', window.chrome.runtime.lastError);
-                reject(window.chrome.runtime.lastError);
+              if (runtime.lastError) {
+                console.error('Extension test error:', runtime.lastError);
+                reject(runtime.lastError);
                 return;
               }
 
@@ -154,21 +164,21 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
                 </ul>
                 <li>Install in Chrome:</li>
                 <ul className="ml-6 mt-1 space-y-1 list-disc">
-                  <li>Open a new tab in Chrome</li>
-                  <li>Type <code>chrome://extensions</code> in the address bar</li>
+                  <li>Open Chrome and type <code>chrome://extensions</code> in the URL bar</li>
                   <li>Enable "Developer mode" (toggle in top right)</li>
                   <li>Click "Load unpacked"</li>
                   <li>Select the extracted "extension" folder</li>
-                  <li>After installing, refresh THIS page</li>
+                  <li>The extension icon should appear in Chrome's toolbar</li>
+                  <li>After installing, refresh this page</li>
                 </ul>
               </ol>
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
                 <p className="text-yellow-800 font-medium">Important:</p>
                 <ul className="mt-2 space-y-1 text-yellow-700">
                   <li>• Make sure Chrome shows "Developer mode" is enabled</li>
-                  <li>• The extension icon should appear in Chrome's toolbar</li>
+                  <li>• Check that the extension icon is visible in Chrome's toolbar</li>
+                  <li>• If the icon is grayed out, click it and grant any required permissions</li>
                   <li>• After installing, you MUST refresh this page</li>
-                  <li>• Log in to your Merrjep.al account before publishing</li>
                 </ul>
               </div>
               <Button
@@ -211,7 +221,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
           <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
             <p className="text-blue-800">
-              Currently testing with Merrjep.al. Make sure you are logged in before publishing.
+              Currently supporting Merrjep.al. Make sure you are logged in before publishing.
               The extension will automatically fill in your property details.
             </p>
           </div>
