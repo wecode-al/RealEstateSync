@@ -23,6 +23,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (sender.tab?.id) {
       contentScriptStates.set(sender.tab.id, {
         url: request.url,
+        frameId: request.frameId,
         ready: true,
         timestamp: request.timestamp
       });
@@ -33,11 +34,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.type === 'POST_PROPERTY') {
     log('Starting property posting process');
-
-    // Send immediate response to acknowledge receipt
-    sendResponse({ success: true, message: 'Starting property posting...' });
-
-    // Handle the property posting
     handlePropertyPosting(request.data)
       .then(() => {
         log('Property posting initiated successfully');
@@ -55,13 +51,39 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
       });
 
-    // Return true to indicate we'll respond asynchronously
+    // Send immediate acknowledgment
+    sendResponse({ success: true, message: 'Starting property posting...' });
     return true;
   }
 
-  // Return true to indicate we'll respond asynchronously
   return true;
 });
+
+async function pingContentScript(tabId, retries = 3, delay = 1000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await new Promise((resolve, reject) => {
+        chrome.tabs.sendMessage(tabId, { type: 'PING' }, response => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(response);
+          }
+        });
+      });
+
+      if (response?.success) {
+        return true;
+      }
+    } catch (error) {
+      log(`Ping attempt ${i + 1} failed:`, error);
+      if (i < retries - 1) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  return false;
+}
 
 async function handlePropertyPosting(propertyData) {
   let currentTab = null;
@@ -99,61 +121,46 @@ async function handlePropertyPosting(propertyData) {
       }
     });
 
-    // Wait for the page to load completely
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Wait and verify content script is ready
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const isReady = await pingContentScript(currentTab.id);
 
-    // Function to retry sending message to content script
-    const sendMessageWithRetry = async (tab, message, maxRetries = 3) => {
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          log(`Attempt ${attempt}: Sending message to content script`);
-          const response = await new Promise((resolve, reject) => {
-            chrome.tabs.sendMessage(tab.id, message, response => {
-              if (chrome.runtime.lastError) {
-                log(`Attempt ${attempt} failed:`, chrome.runtime.lastError);
-                reject(chrome.runtime.lastError);
-              } else {
-                resolve(response);
-              }
-            });
-          });
-          return response;
-        } catch (error) {
-          if (attempt === maxRetries) {
-            throw error;
-          }
-          // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-        }
-      }
-    };
-
-    // Check if content script is ready
-    const contentState = contentScriptStates.get(currentTab.id);
-    if (!contentState?.ready) {
-      log('Waiting for content script to be ready...');
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+    if (!isReady) {
+      throw new Error('Failed to initialize content script. Please refresh the page and try again.');
     }
 
-    // Send property data to content script with retry
+    // Send property data to content script
     log('Sending data to content script:', propertyData);
-    const response = await sendMessageWithRetry(currentTab, {
-      type: 'FILL_FORM',
-      data: propertyData,
-      mapping: site.mapping
+    const response = await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Content script took too long to respond'));
+      }, 5000);
+
+      chrome.tabs.sendMessage(
+        currentTab.id,
+        {
+          type: 'FILL_FORM',
+          data: propertyData,
+          mapping: site.mapping
+        },
+        response => {
+          clearTimeout(timeout);
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else if (!response?.success) {
+            reject(new Error(response?.error || 'Failed to fill form'));
+          } else {
+            resolve(response);
+          }
+        }
+      );
     });
 
-    if (!response?.success) {
-      throw new Error(response?.error || 'Failed to fill form');
-    }
-
-    // Success!
-    log('Property posting completed:', response);
+    log('Property posting completed successfully');
     return response;
 
   } catch (error) {
     log('Property posting error:', error);
-    // If tab is still open, try to close it
     if (currentTab?.id) {
       try {
         chrome.tabs.remove(currentTab.id);

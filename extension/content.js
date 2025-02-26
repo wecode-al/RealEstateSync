@@ -5,27 +5,50 @@ function initialize() {
   if (isInitialized) return;
   console.log('[Content] Initializing content script on:', window.location.href);
 
-  // Send ready message to background script
-  chrome.runtime.sendMessage({ 
-    type: 'CONTENT_SCRIPT_READY',
-    url: window.location.href,
-    timestamp: Date.now()
-  }, response => {
-    console.log('[Content] Background script acknowledged ready state:', response);
-  });
+  // Notify background script that frame is ready
+  function notifyReady() {
+    chrome.runtime.sendMessage({ 
+      type: 'CONTENT_SCRIPT_READY',
+      url: window.location.href,
+      frameId: window?.frameElement?.id || 'main',
+      timestamp: Date.now()
+    }).catch(err => {
+      console.warn('[Content] Failed to notify ready state:', err);
+    });
+  }
+
+  // Try to notify immediately and also after a short delay
+  notifyReady();
+  setTimeout(notifyReady, 500);
+  setTimeout(notifyReady, 1500); // Extra retry
 
   isInitialized = true;
 }
 
-// Initialize when DOM is ready
+// Initialize both on DOMContentLoaded and immediately if already loaded
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initialize);
 } else {
   initialize();
 }
 
+// Handle extension messages
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('[Content] Received message:', request);
+
+  // Always respond immediately to keep the port open
+  const respond = (response) => {
+    try {
+      sendResponse(response);
+    } catch (err) {
+      console.error('[Content] Failed to send response:', err);
+    }
+  };
+
+  if (request.type === 'PING') {
+    respond({ success: true, frameReady: true });
+    return true;
+  }
 
   if (request.type === 'FILL_FORM') {
     checkLoginStatus()
@@ -37,14 +60,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       })
       .then(() => {
         console.log('[Content] Form filled successfully');
-        sendResponse({ success: true });
+        respond({ success: true });
       })
       .catch(error => {
         console.error('[Content] Form filling failed:', error);
-        sendResponse({ success: false, error: error.message });
+        respond({ success: false, error: error.message });
       });
     return true;
   }
+
+  // Return true to keep message channel open
+  return true;
 });
 
 async function checkLoginStatus() {
