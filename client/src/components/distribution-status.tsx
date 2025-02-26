@@ -32,60 +32,85 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
   // Check extension availability
   useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 3;
+    const retryDelay = 1000; // 1 second
+
     const checkExtension = async () => {
       try {
         // First check if we're in Chrome
         const isChrome = /Chrome/.test(navigator.userAgent);
-        console.log('Browser check:', { isChrome, userAgent: navigator.userAgent });
-
-        if (!isChrome) {
-          console.log('Not using Chrome browser');
-          setExtensionReady(false);
-          setShowInstructions(true);
-          return;
-        }
-
-        // Check if extension API is available
-        const runtime = window?.chrome?.runtime;
-        const hasExtensionApi = !!runtime && typeof runtime.sendMessage === 'function';
-        console.log('Extension API check:', { 
-          hasChrome: !!window.chrome,
-          hasRuntime: !!runtime,
-          hasMessage: typeof runtime?.sendMessage === 'function',
-          hasExtensionApi 
+        console.log('Browser check:', { 
+          isChrome, 
+          userAgent: navigator.userAgent,
+          location: window.location.href
         });
 
-        if (!hasExtensionApi) {
-          console.log('Extension API not found or not properly initialized');
+        if (!isChrome) {
+          const error = 'Not using Chrome browser';
+          console.log(error);
           setExtensionReady(false);
           setShowInstructions(true);
           return;
         }
 
-        // Test actual communication with extension
+        // Debug Chrome object
+        console.log('Chrome API check:', {
+          hasWindow: typeof window !== 'undefined',
+          hasChrome: typeof window.chrome !== 'undefined',
+          chromeKeys: window.chrome ? Object.keys(window.chrome) : [],
+          hasRuntime: window.chrome?.runtime ? true : false,
+          runtimeKeys: window.chrome?.runtime ? Object.keys(window.chrome.runtime) : [],
+          hasSendMessage: typeof window.chrome?.runtime?.sendMessage === 'function'
+        });
+
+        // Check for Chrome extension API
+        if (!window.chrome) {
+          const error = 'Chrome object not found - please make sure you are using Chrome browser';
+          console.log(error);
+          throw new Error(error);
+        }
+
+        if (!window.chrome.runtime) {
+          const error = 'Chrome runtime not found - extension may not be installed';
+          console.log(error);
+          throw new Error(error);
+        }
+
+        if (typeof window.chrome.runtime.sendMessage !== 'function') {
+          const error = 'Chrome sendMessage not available - extension may be disabled';
+          console.log(error);
+          throw new Error(error);
+        }
+
+        // Try to communicate with extension
         await new Promise((resolve, reject) => {
           const timeout = setTimeout(() => {
-            reject(new Error('Extension not responding'));
+            reject(new Error('Extension not responding - please try reinstalling'));
           }, 2000);
 
-          runtime.sendMessage(
-            { 
+          console.log('Attempting to connect to extension...');
+          window.chrome.runtime.sendMessage(
+            {
               type: 'CHECK_CONNECTION',
               source: 'replit-app',
               timestamp: Date.now()
             },
             response => {
               clearTimeout(timeout);
-              console.log('Extension test response:', response);
+              console.log('Extension response:', response);
 
-              if (runtime.lastError) {
-                console.error('Extension test error:', runtime.lastError);
-                reject(runtime.lastError);
+              if (window.chrome?.runtime?.lastError) {
+                const error = `Extension error: ${window.chrome.runtime.lastError.message}`;
+                console.error(error);
+                reject(new Error(error));
                 return;
               }
 
               if (!response?.success) {
-                reject(new Error('Extension not ready'));
+                const error = 'Extension not ready - try refreshing the page';
+                console.error(error);
+                reject(new Error(error));
                 return;
               }
 
@@ -95,12 +120,22 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
         });
 
         // If we get here, the extension is working
-        console.log('Extension is ready');
+        console.log('Extension check successful - ready to use');
         setExtensionReady(true);
         setShowInstructions(false);
 
       } catch (error) {
-        console.error('Extension check failed:', error);
+        console.error('Extension check error:', error);
+
+        // Retry logic
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(`Retrying extension check (${retryCount}/${maxRetries}) in ${retryDelay}ms...`);
+          setTimeout(checkExtension, retryDelay);
+          return;
+        }
+
+        console.log('All retries failed - showing installation instructions');
         setExtensionReady(false);
         setShowInstructions(true);
       }
@@ -164,7 +199,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
                 </ul>
                 <li>Install in Chrome:</li>
                 <ul className="ml-6 mt-1 space-y-1 list-disc">
-                  <li>Open Chrome and type <code>chrome://extensions</code> in the URL bar</li>
+                  <li>Open Chrome and go to <code>chrome://extensions</code></li>
                   <li>Enable "Developer mode" (toggle in top right)</li>
                   <li>Click "Load unpacked"</li>
                   <li>Select the extracted "extension" folder</li>
@@ -173,21 +208,35 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
                 </ul>
               </ol>
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                <p className="text-yellow-800 font-medium">Important:</p>
-                <ul className="mt-2 space-y-1 text-yellow-700">
-                  <li>• Make sure Chrome shows "Developer mode" is enabled</li>
-                  <li>• Check that the extension icon is visible in Chrome's toolbar</li>
-                  <li>• If the icon is grayed out, click it and grant any required permissions</li>
-                  <li>• After installing, you MUST refresh this page</li>
-                </ul>
+                <p className="text-yellow-800 font-medium">If Extension Not Ready:</p>
+                <ol className="mt-2 space-y-1 text-yellow-700 list-decimal list-inside">
+                  <li>First, check Chrome extensions page:
+                    <ul className="ml-6 mt-1 space-y-1 list-disc">
+                      <li>Open new tab, go to: <code>chrome://extensions</code></li>
+                      <li>Look for "Albanian Property Poster"</li>
+                      <li>If not found, you need to install it</li>
+                      <li>If found but disabled, enable it</li>
+                    </ul>
+                  </li>
+                  <li>If extension not showing:
+                    <ul className="ml-6 mt-1 space-y-1 list-disc">
+                      <li>Download extension folder from file explorer</li>
+                      <li>Enable "Developer mode" in Chrome extensions</li>
+                      <li>Click "Load unpacked" and select folder</li>
+                    </ul>
+                  </li>
+                  <li>After any changes:
+                    <ul className="ml-6 mt-1 space-y-1 list-disc">
+                      <li>Look for extension icon in Chrome toolbar</li>
+                      <li>If icon is grayed out, click it</li>
+                      <li>Refresh this page completely</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p className="mt-3 text-sm text-yellow-800">
+                  Still not working? Try removing the extension completely and reinstalling it from the extension folder.
+                </p>
               </div>
-              <Button
-                variant="link"
-                className="p-0 text-blue-500"
-                onClick={() => setShowInstructions(false)}
-              >
-                Hide Instructions
-              </Button>
             </div>
           </AlertDescription>
         </Alert>
