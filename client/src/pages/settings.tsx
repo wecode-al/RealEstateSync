@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { distributionSites, siteConfigs } from "@shared/schema";
+import { distributionSites } from "@shared/schema";
 
 interface SiteConfig {
   enabled: boolean;
@@ -22,35 +22,57 @@ export default function Settings() {
   const { toast } = useToast();
   const [settings, setSettings] = useState<SiteSettings>({});
 
+  // Initialize settings for all sites
+  useEffect(() => {
+    const initialSettings: SiteSettings = {};
+    distributionSites.forEach(site => {
+      initialSettings[site] = {
+        enabled: false,
+        apiKey: '',
+        apiSecret: '',
+        additionalConfig: site === "WordPress Site" ? {
+          username: '',
+          password: '',
+          apiUrl: ''
+        } : undefined
+      };
+    });
+    setSettings(initialSettings);
+  }, []);
+
   // Fetch current settings
   const { data: currentSettings, isLoading } = useQuery<SiteSettings>({
-    queryKey: ["/api/settings"]
+    queryKey: ["/api/settings"],
+    onSuccess: (data) => {
+      if (data) {
+        setSettings(prev => ({
+          ...prev,
+          ...data
+        }));
+      }
+    }
   });
 
   // Update settings mutation
   const updateMutation = useMutation({
     mutationFn: async (newSettings: SiteSettings) => {
-      // Format WordPress settings before sending
-      const formattedSettings = { ...newSettings };
-      if (formattedSettings["WordPress Site"]?.enabled) {
-        // Ensure apiUrl is properly formatted
-        let apiUrl = formattedSettings["WordPress Site"].additionalConfig?.apiUrl || '';
-        if (!apiUrl.startsWith('http')) {
-          apiUrl = `https://${apiUrl}`;
-        }
-        apiUrl = apiUrl.replace(/\/+$/, ''); // Remove trailing slashes
-
-        formattedSettings["WordPress Site"].additionalConfig = {
-          ...formattedSettings["WordPress Site"].additionalConfig,
-          apiUrl
-        };
-      }
+      console.log('Sending settings update:', {
+        ...newSettings,
+        "WordPress Site": newSettings["WordPress Site"] ? {
+          ...newSettings["WordPress Site"],
+          additionalConfig: {
+            ...newSettings["WordPress Site"].additionalConfig,
+            password: '[REDACTED]'
+          }
+        } : undefined
+      });
 
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formattedSettings)
+        body: JSON.stringify(newSettings)
       });
+
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to save settings");
@@ -75,12 +97,24 @@ export default function Settings() {
   // Test connection mutation
   const testMutation = useMutation({
     mutationFn: async (site: string) => {
+      const siteSettings = settings[site];
+      console.log(`Testing connection for ${site}:`, {
+        enabled: siteSettings.enabled,
+        hasApiKey: !!siteSettings.apiKey,
+        hasApiSecret: !!siteSettings.apiSecret,
+        hasAdditionalConfig: !!siteSettings.additionalConfig
+      });
+
       const res = await fetch(`/api/settings/test/${site}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings[site])
       });
-      if (!res.ok) throw new Error("Connection test failed");
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Connection test failed");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -225,17 +259,6 @@ export default function Settings() {
                       />
                     </div>
                   </>
-                )}
-
-                {siteConfigs[site as keyof typeof siteConfigs] && (
-                  <div className="grid w-full items-center gap-1.5">
-                    <Label>API Endpoint</Label>
-                    <Input
-                      value={siteConfigs[site as keyof typeof siteConfigs].baseUrl +
-                             siteConfigs[site as keyof typeof siteConfigs].apiEndpoint}
-                      disabled
-                    />
-                  </div>
                 )}
 
                 <div className="flex justify-end gap-4">
