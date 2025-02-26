@@ -30,12 +30,31 @@ export default function Settings() {
   // Update settings mutation
   const updateMutation = useMutation({
     mutationFn: async (newSettings: SiteSettings) => {
+      // Format WordPress settings before sending
+      const formattedSettings = { ...newSettings };
+      if (formattedSettings["WordPress Site"]?.enabled) {
+        // Ensure apiUrl is properly formatted
+        let apiUrl = formattedSettings["WordPress Site"].additionalConfig?.apiUrl || '';
+        if (!apiUrl.startsWith('http')) {
+          apiUrl = `https://${apiUrl}`;
+        }
+        apiUrl = apiUrl.replace(/\/+$/, ''); // Remove trailing slashes
+
+        formattedSettings["WordPress Site"].additionalConfig = {
+          ...formattedSettings["WordPress Site"].additionalConfig,
+          apiUrl
+        };
+      }
+
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newSettings)
+        body: JSON.stringify(formattedSettings)
       });
-      if (!res.ok) throw new Error("Failed to save settings");
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to save settings");
+      }
       return res.json();
     },
     onSuccess: () => {

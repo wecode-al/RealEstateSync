@@ -99,13 +99,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/settings", async (req, res) => {
-    await storage.updateSettings(req.body);
-    res.json({ success: true });
+    try {
+      console.log('Received settings update:', req.body);
+      await storage.updateSettings(req.body);
+
+      // Verify settings were saved
+      const updatedSettings = await storage.getSettings();
+      console.log('Updated settings:', updatedSettings);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Settings update error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to update settings'
+      });
+    }
   });
 
   app.post("/api/settings/test/:site", async (req, res) => {
     const site = req.params.site;
     const config = req.body;
+
+    console.log(`Testing connection for ${site}:`, {
+      ...config,
+      password: '[REDACTED]' // Don't log sensitive data
+    });
 
     try {
       if (site === "WordPress Site") {
@@ -115,6 +134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ success: true });
     } catch (error) {
+      console.error(`Connection test error for ${site}:`, error);
       res.status(400).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Connection test failed" 
