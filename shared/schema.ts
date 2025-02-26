@@ -84,7 +84,15 @@ export const propertyTypes = [
 ] as const;
 
 export const distributionSites = [
-  "WordPress Site"
+  "WordPress Site",
+  "njoftime.com",
+  "njoftime.al",
+  "merrjep.al",
+  "mirlir",
+  "indomio.al",
+  "instagram",
+  "facebook",
+  "okazion.al"
 ] as const;
 
 export type DistributionSite = typeof distributionSites[number];
