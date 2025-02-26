@@ -5,10 +5,14 @@ import { insertPropertySchema, type Property, distributionSites } from "@shared/
 import { wordPressService } from "./services/wordpress";
 import { localListingService } from "./services/local-listings";
 import { setupAuth } from "./auth";
+import scraperRoutes from "./routes/scraper"; // Import scraper routes
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
+
+  // Register scraper routes
+  app.use(scraperRoutes);
 
   app.get("/api/properties", async (_req, res) => {
     const properties = await storage.getProperties();
