@@ -23,15 +23,17 @@ class WordPressService {
     const wpSettings = settings["WordPress Site"];
 
     console.log('WordPress Settings:', {
-      ...wpSettings,
-      additionalConfig: wpSettings?.additionalConfig ? {
-        ...wpSettings.additionalConfig,
-        password: '[REDACTED]'
-      } : null
+      enabled: wpSettings?.enabled,
+      hasConfig: !!wpSettings?.additionalConfig,
+      configKeys: wpSettings?.additionalConfig ? Object.keys(wpSettings.additionalConfig) : []
     });
 
-    if (!wpSettings?.enabled) {
-      throw new Error("WordPress is not enabled in settings");
+    if (!wpSettings) {
+      throw new Error("WordPress settings not found. Please save settings first.");
+    }
+
+    if (!wpSettings.enabled) {
+      throw new Error("WordPress is not enabled in settings. Please enable WordPress in settings.");
     }
 
     const config = wpSettings.additionalConfig as WordPressConfig;

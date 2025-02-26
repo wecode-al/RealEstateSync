@@ -10,11 +10,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { insertUserSchema, type InsertUser } from "@shared/schema";
 import { Home } from "lucide-react";
+import {Checkbox} from "@/components/ui/checkbox"
 
 export default function AuthPage() {
   const [, navigate] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const [rememberMe, setRememberMe] = useState(false);
 
   const loginForm = useForm({
     defaultValues: {
@@ -59,7 +61,7 @@ export default function AuthPage() {
               <TabsContent value="login">
                 <Form {...loginForm}>
                   <form
-                    onSubmit={loginForm.handleSubmit((data) => loginMutation.mutate(data))}
+                    onSubmit={loginForm.handleSubmit((data) => loginMutation.mutate({ ...data, remember: rememberMe }))}
                     className="space-y-4"
                   >
                     <div className="space-y-2">
@@ -72,6 +74,19 @@ export default function AuthPage() {
                         type="password"
                         placeholder="Password"
                       />
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="remember" 
+                          checked={rememberMe}
+                          onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                        />
+                        <label
+                          htmlFor="remember"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Remember me
+                        </label>
+                      </div>
                     </div>
                     <Button
                       type="submit"
