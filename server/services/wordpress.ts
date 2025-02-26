@@ -1,4 +1,3 @@
-
 import { type Property } from "@shared/schema";
 import { storage } from "../storage";
 
@@ -12,30 +11,36 @@ interface WordPressError {
   message: string;
 }
 
+interface WordPressConfig {
+  username: string;
+  password: string;
+  apiUrl: string;
+}
+
 class WordPressService {
+  private async getConfig(): Promise<WordPressConfig> {
+    const settings = await storage.getSettings();
+    const wpSettings = settings["WordPress Site"];
+
+    if (!wpSettings?.enabled) {
+      throw new Error("WordPress is not enabled in settings");
+    }
+
+    const config = wpSettings.additionalConfig as WordPressConfig;
+
+    if (!config?.username || !config?.password || !config?.apiUrl) {
+      throw new Error("WordPress credentials not fully configured. Please check username, password and API URL in settings.");
+    }
+
+    return config;
+  }
+
   async publishProperty(property: Property): Promise<{ success: boolean; error?: string; postUrl?: string }> {
     try {
-      const settings = await storage.getSettings();
-      const wpSettings = settings["WordPress Site"];
+      const config = await this.getConfig();
 
-      if (!wpSettings?.enabled || !wpSettings.additionalConfig) {
-        return {
-          success: false,
-          error: "WordPress is not configured in settings"
-        };
-      }
-
-      const { username, password, apiUrl } = wpSettings.additionalConfig;
-
-      if (!username || !password || !apiUrl) {
-        return {
-          success: false,
-          error: "WordPress credentials not configured"
-        };
-      }
-
-      const auth = Buffer.from(`${username}:${password}`).toString('base64');
-      const baseUrl = new URL(apiUrl).origin;
+      const auth = Buffer.from(`${config.username}:${config.password}`).toString('base64');
+      const baseUrl = new URL(config.apiUrl).origin;
 
       console.log(`Publishing to WordPress: ${baseUrl}/wp-json/wp/v2/property`);
 
@@ -103,30 +108,28 @@ class WordPressService {
   }
 
   async testConnection(): Promise<void> {
-    const settings = await storage.getSettings();
-    const wpSettings = settings["WordPress Site"];
+    try {
+      const config = await this.getConfig();
+      const auth = Buffer.from(`${config.username}:${config.password}`).toString('base64');
+      const baseUrl = new URL(config.apiUrl).origin;
 
-    if (!wpSettings?.enabled || !wpSettings.additionalConfig) {
-      throw new Error("WordPress is not configured in settings");
-    }
+      const response = await fetch(`${baseUrl}/wp-json/wp/v2/types/property`, {
+        headers: {
+          'Authorization': `Basic ${auth}`
+        }
+      });
 
-    const { username, password, apiUrl } = wpSettings.additionalConfig;
-
-    if (!username || !password || !apiUrl) {
-      throw new Error("WordPress credentials not configured");
-    }
-
-    const auth = Buffer.from(`${username}:${password}`).toString('base64');
-    const baseUrl = new URL(apiUrl).origin;
-
-    const response = await fetch(`${baseUrl}/wp-json/wp/v2/types/property`, {
-      headers: {
-        'Authorization': `Basic ${auth}`
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed to connect to WordPress: ${text}`);
       }
-    });
 
-    if (!response.ok) {
-      throw new Error(`Failed to connect to WordPress: ${response.statusText}`);
+      const data = await response.json();
+      if (!data) {
+        throw new Error('No response from WordPress API');
+      }
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to connect to WordPress');
     }
   }
 }
