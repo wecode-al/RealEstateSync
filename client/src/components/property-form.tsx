@@ -29,7 +29,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
       price: property.price.toString(),
       bedrooms: property.bedrooms,
       bathrooms: property.bathrooms.toString(),
-      squareMeters: property.squareMeters?.toString() || "0", // Handle potential undefined
+      squareMeters: property.squareMeters.toString(),
       address: property.address,
       city: property.city,
       state: property.state,

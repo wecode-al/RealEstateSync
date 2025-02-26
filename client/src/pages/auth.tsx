@@ -10,7 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { insertUserSchema, type InsertUser } from "@shared/schema";
 import { Home } from "lucide-react";
-import {Checkbox} from "@/components/ui/checkbox"
+import { Checkbox } from "@/components/ui/checkbox";
+import { Logo } from "@/components/logo";
 
 export default function AuthPage() {
   const [, navigate] = useLocation();
@@ -34,7 +35,6 @@ export default function AuthPage() {
     },
   });
 
-  // Move useEffect logic into a regular if statement after all hooks are called
   if (user) {
     navigate("/");
     return null;
@@ -42,10 +42,10 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Left column with forms */}
       <div className="flex-1 flex items-center justify-center p-8">
         <Card className="w-full max-w-md">
-          <CardHeader>
+          <CardHeader className="text-center">
+            <Logo className="w-32 h-32 mx-auto mb-4" />
             <CardTitle>Welcome to Property Manager</CardTitle>
             <CardDescription>
               Manage and distribute your property listings across multiple platforms
@@ -75,8 +75,8 @@ export default function AuthPage() {
                         placeholder="Password"
                       />
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="remember" 
+                        <Checkbox
+                          id="remember"
                           checked={rememberMe}
                           onCheckedChange={(checked) => setRememberMe(checked as boolean)}
                         />
@@ -136,7 +136,6 @@ export default function AuthPage() {
         </Card>
       </div>
 
-      {/* Right column with hero section */}
       <div className="hidden lg:flex flex-1 bg-muted items-center justify-center p-8">
         <div className="max-w-lg text-center">
           <Home className="mx-auto h-16 w-16 mb-6" />

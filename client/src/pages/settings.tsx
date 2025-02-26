@@ -35,9 +35,9 @@ export default function Settings() {
         apiKey: '',
         apiSecret: '',
         additionalConfig: site === "WordPress Site" ? {
-          username: '',
-          password: '',
-          apiUrl: ''
+          username: import.meta.env.VITE_WORDPRESS_USERNAME || '',
+          password: import.meta.env.VITE_WORDPRESS_APP_PASSWORD || '',
+          apiUrl: import.meta.env.VITE_WORDPRESS_API_URL || ''
         } : undefined
       };
     });
@@ -48,10 +48,23 @@ export default function Settings() {
     queryKey: ["/api/settings"],
     onSuccess: (data) => {
       if (data) {
-        setSettings(prev => ({
-          ...prev,
-          ...data
-        }));
+        const mergedSettings = { ...settings };
+        Object.entries(data).forEach(([site, config]) => {
+          if (site === "WordPress Site" && !config.additionalConfig?.username) {
+            // Keep the environment variable values if no saved values exist
+            mergedSettings[site] = {
+              ...config,
+              additionalConfig: {
+                username: import.meta.env.VITE_WORDPRESS_USERNAME || '',
+                password: import.meta.env.VITE_WORDPRESS_APP_PASSWORD || '',
+                apiUrl: import.meta.env.VITE_WORDPRESS_API_URL || ''
+              }
+            };
+          } else {
+            mergedSettings[site] = config;
+          }
+        });
+        setSettings(mergedSettings);
       }
     }
   });
@@ -309,8 +322,8 @@ export default function Settings() {
                     variant="outline"
                     onClick={() => testMutation.mutate(site)}
                     disabled={
-                      !settings[site]?.enabled || 
-                      testMutation.isPending || 
+                      !settings[site]?.enabled ||
+                      testMutation.isPending ||
                       (site === "WordPress Site" && !areWordPressFieldsFilled(settings[site]))
                     }
                   >

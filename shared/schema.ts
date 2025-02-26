@@ -45,7 +45,7 @@ export const properties = pgTable("properties", {
   price: numeric("price").notNull(),
   bedrooms: integer("bedrooms").notNull(),
   bathrooms: numeric("bathrooms").notNull(),
-  sqft: numeric("sqft").notNull(),
+  squareMeters: numeric("square_meters").notNull(),
   address: text("address").notNull(),
   city: text("city").notNull(),
   state: text("state").notNull(),

@@ -7,9 +7,10 @@ import type { Property } from "@shared/schema";
 
 export default function EditProperty({ params }: { params: { id: string } }) {
   const [, navigate] = useLocation();
-  
-  const { data: property, isLoading } = useQuery<Property>({
-    queryKey: [`/api/properties/${params.id}`],
+
+  const { data: property, isLoading, error } = useQuery<Property>({
+    queryKey: ["/api/properties", Number(params.id)],
+    retry: false // Don't retry on 404
   });
 
   if (isLoading) {
@@ -20,11 +21,14 @@ export default function EditProperty({ params }: { params: { id: string } }) {
     );
   }
 
-  if (!property) {
+  if (error || !property) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Property Not Found</h1>
+          <p className="text-muted-foreground mb-4">
+            The property you're looking for could not be found.
+          </p>
           <Button onClick={() => navigate("/")}>Back to Listings</Button>
         </div>
       </div>
@@ -40,7 +44,7 @@ export default function EditProperty({ params }: { params: { id: string } }) {
             Back to Listings
           </Button>
         </div>
-        
+
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-bold text-primary mb-8">Edit Property</h1>
           <PropertyForm property={property} />
