@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Clock, ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useEffect } from "react";
-import { postToLocalSites, checkExtension } from "@/lib/extension";
+import { postToLocalSites } from "@/lib/extension";
 import { useToast } from "@/hooks/use-toast";
 import type { Property } from "@shared/schema";
 
@@ -13,34 +13,12 @@ interface DistributionStatusProps {
 
 export function DistributionStatus({ property }: DistributionStatusProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [hasExtension, setHasExtension] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  const [checking, setChecking] = useState(true);
   const { toast } = useToast();
 
-  // Check if extension is installed and working
-  useEffect(() => {
-    const checkExtensionStatus = async () => {
-      setChecking(true);
-      try {
-        const isExtensionWorking = await checkExtension();
-        console.log('Extension status:', isExtensionWorking);
-        setHasExtension(isExtensionWorking);
-      } catch (error) {
-        console.error('Error checking extension:', error);
-        setHasExtension(false);
-      } finally {
-        setChecking(false);
-      }
-    };
-
-    // Check immediately and then every 2 seconds
-    checkExtensionStatus();
-    const interval = setInterval(checkExtensionStatus, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
+  // Simplified extension check
+  const hasExtension = !!window.chrome?.runtime;
 
   const handlePublishToLocalSites = async () => {
     if (!hasExtension || publishing) {
@@ -49,7 +27,6 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
     try {
       setPublishing(true);
-      // Log property data before sending
       console.log('Publishing property:', property);
       await postToLocalSites(property);
       toast({
@@ -70,7 +47,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
   return (
     <>
-      {!hasExtension && !checking && (
+      {!hasExtension && (
         <Alert className="mb-4">
           <AlertTitle className="text-red-500">Chrome Extension Required</AlertTitle>
           <AlertDescription className="mt-2">
@@ -140,7 +117,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
           >
             <div className="flex items-center gap-2">
               <span className="font-semibold">Publish to Local Sites</span>
-              {checking && <Clock className="h-4 w-4 animate-spin" />}
+              {publishing && <Clock className="h-4 w-4 animate-spin" />}
             </div>
             {isOpen ? (
               <ChevronUp className="h-4 w-4" />
@@ -167,7 +144,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
           <Button
             onClick={handlePublishToLocalSites}
-            disabled={!hasExtension || checking}
+            disabled={!hasExtension || publishing}
             className="w-full"
           >
             {publishing ? (

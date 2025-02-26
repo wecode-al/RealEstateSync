@@ -1,8 +1,16 @@
 // Handle form filling on listing sites
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Content script received message:', request.type);
+
   if (request.type === 'FILL_FORM') {
     console.log('Received FILL_FORM message:', request);
     fillForm(request.data, request.mapping);
+    return true;
+  }
+
+  if (request.type === 'CHECK_EXTENSION') {
+    console.log('Received CHECK_EXTENSION message');
+    sendResponse({ success: true });
     return true;
   }
 });

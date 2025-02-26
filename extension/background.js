@@ -1,13 +1,17 @@
 // Handle communication between our app and content scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Background received message:', request.type);
+
   if (request.type === 'POST_PROPERTY') {
     handlePropertyPosting(request.data);
     // Send immediate response to acknowledge receipt
+    console.log('Sending POST_PROPERTY response');
     sendResponse({ success: true });
     return true;
   }
 
   if (request.type === 'CHECK_EXTENSION') {
+    console.log('Received CHECK_EXTENSION request');
     // Immediately respond to extension check
     sendResponse({ success: true });
     return true;
@@ -32,7 +36,7 @@ async function handlePropertyPosting(propertyData) {
   };
 
   try {
-    console.log('Starting property posting to Merrjep.al');
+    console.log('Starting property posting to Merrjep.al', propertyData);
 
     // Create new tab for posting
     const tab = await chrome.tabs.create({ 
