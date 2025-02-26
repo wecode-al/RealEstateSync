@@ -14,12 +14,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
     return true;
   }
-
-  if (request.type === 'CHECK_EXTENSION') {
-    console.log('Extension check received');
-    sendResponse({ success: true });
-    return true;
-  }
 });
 
 async function fillForm(propertyData, mapping) {

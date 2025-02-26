@@ -2,10 +2,16 @@
 chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
   console.log('Background script received external message:', request);
 
+  if (request.type === 'TEST_CONNECTION') {
+    console.log('Received test connection request');
+    sendResponse({ success: true });
+    return true;
+  }
+
   if (request.type === 'POST_PROPERTY') {
     console.log('Starting property posting process');
     handlePropertyPosting(request.data)
-      .then(() => {
+      .then(result => {
         console.log('Property posting initiated successfully');
         sendResponse({ success: true });
       })
@@ -14,6 +20,18 @@ chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => 
         sendResponse({ success: false, error: error.message });
       });
     return true; // Keep the message channel open for async response
+  }
+});
+
+// Also handle internal messages (e.g., from content scripts)
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Background received internal message:', request);
+
+  if (request.type === 'UPDATE_STATUS') {
+    // Forward status updates to popup
+    chrome.runtime.sendMessage(request);
+    sendResponse({ success: true });
+    return true;
   }
 });
 
@@ -34,9 +52,7 @@ async function handlePropertyPosting(propertyData) {
   };
 
   try {
-    console.log('Starting property posting to Merrjep.al');
-
-    // Create new tab for posting
+    console.log('Creating new tab for posting');
     const tab = await chrome.tabs.create({ 
       url: site.url,
       active: true
@@ -57,7 +73,7 @@ async function handlePropertyPosting(propertyData) {
 
     // Send property data to content script
     console.log('Sending data to content script:', propertyData);
-    await chrome.tabs.sendMessage(tab.id, {
+    return await chrome.tabs.sendMessage(tab.id, {
       type: 'FILL_FORM',
       data: propertyData,
       mapping: site.mapping
