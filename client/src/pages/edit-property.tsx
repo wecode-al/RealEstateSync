@@ -4,6 +4,7 @@ import { PropertyForm } from "@/components/property-form";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import type { Property } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 
 interface EditPropertyProps {
   params: {
@@ -16,6 +17,13 @@ export default function EditProperty({ params }: EditPropertyProps) {
 
   const { data: property, isLoading, error } = useQuery<Property>({
     queryKey: ["/api/properties", params.id],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/properties/${params.id}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch property");
+      }
+      return res.json();
+    },
     enabled: !!params.id
   });
 

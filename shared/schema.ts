@@ -35,9 +35,10 @@ export const properties = pgTable("properties", {
   images: text("images").array().notNull(),
   features: jsonb("features").notNull(),
   published: boolean("published").default(false).notNull(),
-  distributions: jsonb("distributions").notNull(),
+  distributions: jsonb("distributions").default({}).notNull(),
 });
 
+// Schema for creating/updating properties
 export const insertPropertySchema = createInsertSchema(properties).omit({
   id: true,
   published: true,
@@ -45,9 +46,10 @@ export const insertPropertySchema = createInsertSchema(properties).omit({
 }).extend({
   features: z.array(z.string()),
   images: z.array(z.string()),
-  price: z.string().or(z.number()),
-  bathrooms: z.string().or(z.number()),
-  squareMeters: z.string().or(z.number())
+  // Allow both string and number for numeric fields
+  price: z.coerce.number(),
+  bathrooms: z.coerce.number(),
+  squareMeters: z.coerce.number()
 });
 
 export type Property = typeof properties.$inferSelect;
@@ -76,6 +78,14 @@ export const distributionSites = [
 ] as const;
 
 export type DistributionSite = typeof distributionSites[number];
+
+export type DistributionStatus = {
+  status: 'success' | 'error';
+  error: string | null;
+  postUrl: string | null;
+};
+
+export type PropertyDistributions = Record<DistributionSite, DistributionStatus>;
 
 export const siteConfigs = {
   "njoftime.com": {

@@ -27,24 +27,24 @@ export function PropertyForm({ property }: PropertyFormProps) {
     defaultValues: property ? {
       title: property.title,
       description: property.description,
-      price: property.price.toString(),
+      price: Number(property.price),
       bedrooms: property.bedrooms,
-      bathrooms: property.bathrooms.toString(),
-      squareMeters: property.squareMeters.toString(),
+      bathrooms: Number(property.bathrooms),
+      squareMeters: Number(property.squareMeters),
       address: property.address,
       city: property.city,
       state: property.state,
       zipCode: property.zipCode,
       propertyType: property.propertyType,
       images: property.images,
-      features: property.features as string[]
+      features: property.features
     } : {
       title: "",
       description: "",
-      price: "0",
+      price: 0,
       bedrooms: 0,
-      bathrooms: "0",
-      squareMeters: "0",
+      bathrooms: 0,
+      squareMeters: 0,
       address: "",
       city: "",
       state: "",
@@ -57,17 +57,10 @@ export function PropertyForm({ property }: PropertyFormProps) {
 
   const mutation = useMutation({
     mutationFn: async (data: InsertProperty) => {
-      const formattedData = {
-        ...data,
-        price: Number(data.price),
-        bathrooms: Number(data.bathrooms),
-        squareMeters: Number(data.squareMeters)
-      };
-
       const res = await apiRequest(
         property ? "PATCH" : "POST",
         property ? `/api/properties/${property.id}` : "/api/properties",
-        formattedData
+        data
       );
 
       if (!res.ok) {
@@ -82,9 +75,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
         title: "Success",
         description: `Property has been ${property ? 'updated' : 'created'}`,
       });
-      // Invalidate and refetch properties query
       queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
-      // Also invalidate the specific property if we're editing
       if (property) {
         queryClient.invalidateQueries({ queryKey: ["/api/properties", property.id] });
       }
@@ -117,14 +108,14 @@ export function PropertyForm({ property }: PropertyFormProps) {
 
             <div className="grid grid-cols-2 gap-4">
               <Input 
-                {...form.register("price")}
+                {...form.register("price", { valueAsNumber: true })}
                 type="number"
                 min="0"
                 step="0.01"
                 placeholder="Price"
               />
               <Input 
-                {...form.register("squareMeters")}
+                {...form.register("squareMeters", { valueAsNumber: true })}
                 type="number"
                 min="0"
                 placeholder="Square Meters"
@@ -139,7 +130,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 placeholder="Bedrooms"
               />
               <Input 
-                {...form.register("bathrooms")}
+                {...form.register("bathrooms", { valueAsNumber: true })}
                 type="number"
                 min="0"
                 step="0.5"

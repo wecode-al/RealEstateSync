@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +25,7 @@ type SiteSettings = Record<string, SiteConfig>;
 
 export default function Settings() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [settings, setSettings] = useState<SiteSettings>({});
 
   // Initialize settings for all sites
@@ -36,44 +37,56 @@ export default function Settings() {
         apiKey: '',
         apiSecret: '',
         additionalConfig: site === "WordPress Site" ? {
-          username: import.meta.env.VITE_WORDPRESS_USERNAME || '',
-          password: import.meta.env.VITE_WORDPRESS_APP_PASSWORD || '',
-          apiUrl: import.meta.env.VITE_WORDPRESS_API_URL || ''
+          username: '',
+          password: '',
+          apiUrl: ''
         } : undefined
       };
     });
     setSettings(initialSettings);
   }, []);
 
-  const { data: currentSettings, isLoading } = useQuery<SiteSettings>({
+  const { data: currentSettings, isLoading } = useQuery({
     queryKey: ["/api/settings"],
-    onSuccess: (data) => {
-      if (data) {
-        const mergedSettings = { ...settings };
-        Object.entries(data).forEach(([site, config]) => {
-          if (site === "WordPress Site") {
-            // Keep the environment variable values if no saved values exist
-            mergedSettings[site] = {
-              ...config,
-              additionalConfig: {
-                username: config.additionalConfig?.username || import.meta.env.VITE_WORDPRESS_USERNAME || '',
-                password: config.additionalConfig?.password || import.meta.env.VITE_WORDPRESS_APP_PASSWORD || '',
-                apiUrl: config.additionalConfig?.apiUrl || import.meta.env.VITE_WORDPRESS_API_URL || ''
-              }
-            };
-          } else {
-            mergedSettings[site] = config;
-          }
-        });
-        setSettings(mergedSettings);
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/settings");
+      if (!res.ok) {
+        throw new Error("Failed to fetch settings");
       }
+      return res.json();
     }
   });
 
-  // Update settings mutation
+  // Update local settings when server data is fetched
+  useEffect(() => {
+    if (currentSettings) {
+      const mergedSettings = { ...settings };
+      Object.entries(currentSettings).forEach(([site, config]) => {
+        if (site === "WordPress Site") {
+          const storedConfig = config as SiteConfig;
+          mergedSettings[site] = {
+            ...storedConfig,
+            additionalConfig: {
+              username: storedConfig.additionalConfig?.username || import.meta.env.VITE_WORDPRESS_USERNAME || '',
+              password: storedConfig.additionalConfig?.password || import.meta.env.VITE_WORDPRESS_APP_PASSWORD || '',
+              apiUrl: storedConfig.additionalConfig?.apiUrl || import.meta.env.VITE_WORDPRESS_API_URL || ''
+            }
+          };
+        } else {
+          mergedSettings[site] = config as SiteConfig;
+        }
+      });
+      setSettings(mergedSettings);
+    }
+  }, [currentSettings]);
+
   const updateMutation = useMutation({
     mutationFn: async (newSettings: SiteSettings) => {
       const res = await apiRequest("POST", "/api/settings", newSettings);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to save settings");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -81,6 +94,7 @@ export default function Settings() {
         title: "Success",
         description: "Settings have been saved successfully",
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
     },
     onError: (error) => {
       toast({
@@ -91,10 +105,13 @@ export default function Settings() {
     }
   });
 
-  // Test connection mutation
   const testMutation = useMutation({
     mutationFn: async (site: string) => {
       const res = await apiRequest("POST", `/api/settings/test/${site}`, settings[site]);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Connection test failed");
+      }
       return res.json();
     },
     onSuccess: (_, site) => {
@@ -126,7 +143,6 @@ export default function Settings() {
     }
   });
 
-  // Helper to check if WordPress fields are filled
   const areWordPressFieldsFilled = (config: SiteConfig) => {
     return config.additionalConfig?.username &&
            config.additionalConfig?.password &&
@@ -156,7 +172,7 @@ export default function Settings() {
                     settings[site].lastTestResult.success ? (
                       <CheckCircle2 className="h-5 w-5 text-green-500" />
                     ) : (
-                      <AlertCircle className="h-5 w-5 text-red-500" />
+                      <AlertCircle className="h-5 w-5 text-red-500" title={settings[site].lastTestResult.message} />
                     )
                   )}
                 </div>
@@ -180,6 +196,7 @@ export default function Settings() {
                       <Input
                         id={`${site}-username`}
                         value={settings[site]?.additionalConfig?.username ?? ""}
+                        className={settings[site]?.enabled && !settings[site]?.additionalConfig?.username ? "border-red-500" : ""}
                         onChange={(e) => {
                           setSettings(prev => ({
                             ...prev,
@@ -192,7 +209,6 @@ export default function Settings() {
                             }
                           }));
                         }}
-                        className={settings[site]?.enabled && !settings[site]?.additionalConfig?.username ? "border-red-500" : ""}
                       />
                     </div>
                     <div className="grid w-full items-center gap-1.5">
@@ -201,6 +217,7 @@ export default function Settings() {
                         id={`${site}-password`}
                         type="password"
                         value={settings[site]?.additionalConfig?.password ?? ""}
+                        className={settings[site]?.enabled && !settings[site]?.additionalConfig?.password ? "border-red-500" : ""}
                         onChange={(e) => {
                           setSettings(prev => ({
                             ...prev,
@@ -213,7 +230,6 @@ export default function Settings() {
                             }
                           }));
                         }}
-                        className={settings[site]?.enabled && !settings[site]?.additionalConfig?.password ? "border-red-500" : ""}
                       />
                     </div>
                     <div className="grid w-full items-center gap-1.5">
@@ -222,6 +238,7 @@ export default function Settings() {
                         id={`${site}-url`}
                         placeholder="https://your-wordpress-site.com"
                         value={settings[site]?.additionalConfig?.apiUrl ?? ""}
+                        className={settings[site]?.enabled && !settings[site]?.additionalConfig?.apiUrl ? "border-red-500" : ""}
                         onChange={(e) => {
                           setSettings(prev => ({
                             ...prev,
@@ -234,7 +251,6 @@ export default function Settings() {
                             }
                           }));
                         }}
-                        className={settings[site]?.enabled && !settings[site]?.additionalConfig?.apiUrl ? "border-red-500" : ""}
                       />
                       <p className="text-sm text-muted-foreground">
                         Enter your WordPress site URL including http:// or https://
