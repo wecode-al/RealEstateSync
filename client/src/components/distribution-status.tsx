@@ -7,16 +7,16 @@ import { distributionSites } from "@shared/schema";
 
 interface DistributionStatusProps {
   distributions: Record<string, { 
-    status: string; 
+    status: 'success' | 'error'; 
     error: string | null;
-    postUrl?: string;
+    postUrl: string | null;
   }>;
 }
 
 export function DistributionStatus({ distributions }: DistributionStatusProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: 'success' | 'error') => {
     switch (status) {
       case "success":
         return <CheckCircle2 className="h-4 w-4 text-green-500" />;
@@ -54,22 +54,26 @@ export function DistributionStatus({ distributions }: DistributionStatusProps) {
         </Button>
       </CollapsibleTrigger>
 
-      <CollapsibleContent className="space-y-2">
+      <CollapsibleContent className="space-y-2 pt-2">
         {distributionSites.map((site) => {
           const status = distributions[site];
+          if (!status) return null;
+
           return (
             <div key={site} className="flex items-center justify-between p-2 bg-muted rounded">
-              <span>{site}</span>
               <div className="flex items-center gap-2">
+                <span className="font-medium">{site}</span>
                 {status.error && (
                   <span className="text-sm text-red-500">{status.error}</span>
                 )}
+              </div>
+              <div className="flex items-center gap-2">
                 {status.status === "success" && status.postUrl && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="text-blue-500 hover:text-blue-700"
-                    onClick={() => window.open(status.postUrl, '_blank')}
+                    onClick={() => window.open(status.postUrl!, '_blank')}
                   >
                     <ExternalLink className="h-4 w-4 mr-1" />
                     View Post

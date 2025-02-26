@@ -92,7 +92,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     // Initialize distribution statuses
-    const updatedDistributions: Property['distributions'] = {};
+    const updatedDistributions: Record<string, {
+      status: 'success' | 'error';
+      error: string | null;
+      postUrl: string | null;
+    }> = {};
 
     // Only publish to enabled sites
     for (const site of distributionSites) {
@@ -119,7 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedDistributions[site] = {
           status: result.success ? "success" : "error",
           error: result.error || null,
-          postUrl: result.postUrl
+          postUrl: result.postUrl || null
         };
       } catch (error) {
         updatedDistributions[site] = {

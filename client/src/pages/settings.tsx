@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { distributionSites } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 
 interface SiteConfig {
   enabled: boolean;
@@ -50,14 +51,14 @@ export default function Settings() {
       if (data) {
         const mergedSettings = { ...settings };
         Object.entries(data).forEach(([site, config]) => {
-          if (site === "WordPress Site" && !config.additionalConfig?.username) {
+          if (site === "WordPress Site") {
             // Keep the environment variable values if no saved values exist
             mergedSettings[site] = {
               ...config,
               additionalConfig: {
-                username: import.meta.env.VITE_WORDPRESS_USERNAME || '',
-                password: import.meta.env.VITE_WORDPRESS_APP_PASSWORD || '',
-                apiUrl: import.meta.env.VITE_WORDPRESS_API_URL || ''
+                username: config.additionalConfig?.username || import.meta.env.VITE_WORDPRESS_USERNAME || '',
+                password: config.additionalConfig?.password || import.meta.env.VITE_WORDPRESS_APP_PASSWORD || '',
+                apiUrl: config.additionalConfig?.apiUrl || import.meta.env.VITE_WORDPRESS_API_URL || ''
               }
             };
           } else {
@@ -72,27 +73,7 @@ export default function Settings() {
   // Update settings mutation
   const updateMutation = useMutation({
     mutationFn: async (newSettings: SiteSettings) => {
-      const settingsToSave = Object.fromEntries(
-        Object.entries(newSettings).map(([site, config]) => [
-          site,
-          {
-            ...config,
-            enabled: config.enabled ?? false
-          }
-        ])
-      );
-
-      const res = await fetch("/api/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settingsToSave)
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to save settings");
-      }
-
+      const res = await apiRequest("POST", "/api/settings", newSettings);
       return res.json();
     },
     onSuccess: () => {
@@ -113,17 +94,7 @@ export default function Settings() {
   // Test connection mutation
   const testMutation = useMutation({
     mutationFn: async (site: string) => {
-      const siteSettings = settings[site];
-      const res = await fetch(`/api/settings/test/${site}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings[site])
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Connection test failed");
-      }
+      const res = await apiRequest("POST", `/api/settings/test/${site}`, settings[site]);
       return res.json();
     },
     onSuccess: (_, site) => {
@@ -162,14 +133,6 @@ export default function Settings() {
            config.additionalConfig?.apiUrl;
   };
 
-  // Auto-test WordPress connection when enabled and all fields are filled
-  useEffect(() => {
-    const wpSettings = settings["WordPress Site"];
-    if (wpSettings?.enabled && areWordPressFieldsFilled(wpSettings) && !testMutation.isPending) {
-      testMutation.mutate("WordPress Site");
-    }
-  }, [settings["WordPress Site"]?.enabled, settings["WordPress Site"]?.additionalConfig]);
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -193,7 +156,7 @@ export default function Settings() {
                     settings[site].lastTestResult.success ? (
                       <CheckCircle2 className="h-5 w-5 text-green-500" />
                     ) : (
-                      <AlertCircle className="h-5 w-5 text-red-500" title={settings[site].lastTestResult.message} />
+                      <AlertCircle className="h-5 w-5 text-red-500" />
                     )
                   )}
                 </div>

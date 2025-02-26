@@ -12,6 +12,7 @@ import { ImageUpload } from "@/components/image-upload";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
+import { Loader2 } from "lucide-react";
 
 interface PropertyFormProps {
   property?: Property;
@@ -56,16 +57,24 @@ export function PropertyForm({ property }: PropertyFormProps) {
 
   const mutation = useMutation({
     mutationFn: async (data: InsertProperty) => {
+      const formattedData = {
+        ...data,
+        price: Number(data.price),
+        bathrooms: Number(data.bathrooms),
+        squareMeters: Number(data.squareMeters)
+      };
+
       const res = await apiRequest(
         property ? "PATCH" : "POST",
         property ? `/api/properties/${property.id}` : "/api/properties",
-        {
-          ...data,
-          price: Number(data.price),
-          bathrooms: Number(data.bathrooms),
-          squareMeters: Number(data.squareMeters)
-        }
+        formattedData
       );
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to save property");
+      }
+
       return res.json();
     },
     onSuccess: () => {
@@ -190,9 +199,15 @@ export function PropertyForm({ property }: PropertyFormProps) {
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={mutation.isPending}>
+          <Button 
+            type="submit" 
+            disabled={mutation.isPending}
+          >
             {mutation.isPending ? (
-              `${property ? 'Updating' : 'Creating'}...`
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {property ? 'Updating...' : 'Creating...'}
+              </>
             ) : (
               property ? 'Update Property' : 'Create Property'
             )}
