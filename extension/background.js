@@ -1,12 +1,6 @@
 // Listen for messages from the web app
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('Background received message:', request);
-
-  if (request.type === 'CHECK_EXTENSION') {
-    console.log('Sending CHECK_EXTENSION response');
-    sendResponse({ success: true });
-    return true;
-  }
+chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
+  console.log('Background script received external message:', request);
 
   if (request.type === 'POST_PROPERTY') {
     console.log('Starting property posting process');
@@ -19,7 +13,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.error('Property posting failed:', error);
         sendResponse({ success: false, error: error.message });
       });
-    return true;
+    return true; // Keep the message channel open for async response
   }
 });
 
@@ -40,6 +34,8 @@ async function handlePropertyPosting(propertyData) {
   };
 
   try {
+    console.log('Starting property posting to Merrjep.al');
+
     // Create new tab for posting
     const tab = await chrome.tabs.create({ 
       url: site.url,

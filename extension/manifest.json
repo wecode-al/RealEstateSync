@@ -7,7 +7,6 @@
     "activeTab",
     "storage",
     "cookies",
-    "webNavigation",
     "tabs"
   ],
   "host_permissions": [
@@ -20,11 +19,15 @@
   "content_scripts": [
     {
       "matches": [
-        "https://*.merrjep.al/*"
+        "https://*.merrjep.al/*",
+        "http://localhost:*/*"
       ],
       "js": ["content.js"]
     }
   ],
+  "externally_connectable": {
+    "matches": ["http://localhost:*/*"]
+  },
   "action": {
     "default_popup": "popup.html"
   }
