@@ -82,12 +82,18 @@ export function DistributionStatus({ distributions, property }: DistributionStat
               <div className="space-y-2 mt-2 text-sm">
                 <p className="font-semibold">Installation Steps:</p>
                 <ol className="list-decimal list-inside space-y-1">
-                  <li>Open Chrome and go to Extensions (copy and paste: chrome://extensions)</li>
+                  <li>In your project files (left sidebar), locate and right-click the "extension" folder</li>
+                  <li>Click "Download" to save the extension folder to your computer</li>
+                  <li>Open Chrome and go to Extensions (copy and paste: chrome://extensions in a new tab)</li>
                   <li>Enable "Developer mode" in the top right corner</li>
                   <li>Click "Load unpacked" button</li>
-                  <li>Select the "extension" folder from this project</li>
+                  <li>Navigate to where you downloaded the extension folder and select it</li>
                   <li>The extension icon should appear in your Chrome toolbar</li>
                 </ol>
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                  <p className="text-yellow-800 font-medium">Important:</p>
+                  <p className="text-yellow-700">Make sure to keep the extension folder on your computer. Don't delete it after installation as Chrome needs it to run the extension.</p>
+                </div>
                 <Button 
                   variant="link" 
                   className="p-0 text-blue-500"
