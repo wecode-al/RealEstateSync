@@ -1,6 +1,31 @@
 // Handle messages from background script
+let isInitialized = false;
+
+function initialize() {
+  if (isInitialized) return;
+  console.log('[Content] Initializing content script on:', window.location.href);
+
+  // Send ready message to background script
+  chrome.runtime.sendMessage({ 
+    type: 'CONTENT_SCRIPT_READY',
+    url: window.location.href,
+    timestamp: Date.now()
+  }, response => {
+    console.log('[Content] Background script acknowledged ready state:', response);
+  });
+
+  isInitialized = true;
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initialize);
+} else {
+  initialize();
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('Content script received message:', request);
+  console.log('[Content] Received message:', request);
 
   if (request.type === 'FILL_FORM') {
     checkLoginStatus()
@@ -11,11 +36,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return fillForm(request.data, request.mapping);
       })
       .then(() => {
-        console.log('Form filled successfully');
+        console.log('[Content] Form filled successfully');
         sendResponse({ success: true });
       })
       .catch(error => {
-        console.error('Form filling failed:', error);
+        console.error('[Content] Form filling failed:', error);
         sendResponse({ success: false, error: error.message });
       });
     return true;
@@ -29,13 +54,13 @@ async function checkLoginStatus() {
     const hasProfileElements = profileElements.length > 0;
 
     if (hasProfileElements) {
-      console.log('Found profile elements, user appears to be logged in');
+      console.log('[Content] Found profile elements, user appears to be logged in');
       return true;
     }
 
     // Check if we're on a login/auth page
     if (window.location.href.includes('login') || window.location.href.includes('auth')) {
-      console.log('On login page, user is not logged in');
+      console.log('[Content] On login page, user is not logged in');
       throw new Error('Please log in first at www.merrjep.al/login before trying to publish');
     }
 
@@ -46,34 +71,34 @@ async function checkLoginStatus() {
     );
 
     if (!authRelatedCookies) {
-      console.log('No auth cookies found, user appears to be logged out');
+      console.log('[Content] No auth cookies found, user appears to be logged out');
       throw new Error('You need to be logged in to Merrjep.al to publish properties. Please log in first at www.merrjep.al/login');
     }
 
     return true;
   } catch (error) {
-    console.error('Error checking login status:', error);
+    console.error('[Content] Error checking login status:', error);
     throw error;
   }
 }
 
 async function fillForm(propertyData, mapping) {
   try {
-    console.log('Starting to fill form with:', propertyData);
+    console.log('[Content] Starting to fill form with:', propertyData);
 
     // Wait for form to load
-    const firstField = await waitForElement(Object.values(mapping)[0]);
-    console.log('Form loaded, starting to fill fields');
+    const firstField = await waitForElement(Object.values(mapping)[0], 'First form field');
+    console.log('[Content] Form loaded, starting to fill fields');
 
     // Fill each field
     for (const [field, selector] of Object.entries(mapping)) {
-      const element = document.querySelector(selector);
+      const element = await waitForElement(selector, `Form field ${field}`);
       if (!element) {
-        console.warn(`Element not found: ${selector}`);
+        console.warn(`[Content] Element not found: ${selector}`);
         continue;
       }
 
-      console.log(`Filling ${field} using ${selector}`);
+      console.log(`[Content] Filling ${field} using ${selector}`);
 
       if (element.tagName === 'SELECT') {
         const value = propertyData[field]?.toString();
@@ -82,7 +107,7 @@ async function fillForm(propertyData, mapping) {
 
         if (option) {
           element.value = option.value;
-          console.log(`Selected option: ${option.text}`);
+          console.log(`[Content] Selected option: ${option.text}`);
         }
       } else if (element.tagName === 'TEXTAREA') {
         element.value = propertyData[field];
@@ -90,7 +115,7 @@ async function fillForm(propertyData, mapping) {
         element.style.height = element.scrollHeight + 'px';
       } else if (element.type === 'file') {
         // Skip file inputs for now
-        console.log('Skipping file input:', selector);
+        console.log('[Content] Skipping file input:', selector);
       } else {
         element.value = propertyData[field];
       }
@@ -111,7 +136,7 @@ async function fillForm(propertyData, mapping) {
     });
 
   } catch (error) {
-    console.error('Error filling form:', error);
+    console.error('[Content] Error filling form:', error);
     chrome.runtime.sendMessage({
       type: 'UPDATE_STATUS',
       data: {
@@ -124,16 +149,19 @@ async function fillForm(propertyData, mapping) {
   }
 }
 
-function waitForElement(selector) {
+function waitForElement(selector: string, elementName: string) {
+  console.log(`[Content] Waiting for ${elementName} (${selector})`);
   return new Promise((resolve, reject) => {
     const element = document.querySelector(selector);
     if (element) {
+      console.log(`[Content] Found ${elementName} immediately`);
       return resolve(element);
     }
 
     const observer = new MutationObserver((mutations, obs) => {
       const element = document.querySelector(selector);
       if (element) {
+        console.log(`[Content] Found ${elementName} after waiting`);
         obs.disconnect();
         resolve(element);
       }
@@ -147,6 +175,7 @@ function waitForElement(selector) {
     // Add timeout
     setTimeout(() => {
       observer.disconnect();
+      console.error(`[Content] Timeout waiting for ${elementName}`);
       reject(new Error(`Timeout waiting for ${selector}`));
     }, 30000);
   });
