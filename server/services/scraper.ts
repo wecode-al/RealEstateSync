@@ -21,7 +21,7 @@ export class WebScraper {
 
   private extractValue($: cheerio.CheerioAPI, selector: string): string {
     const element = $(selector);
-    return element.text().trim();
+    return element.first().text().trim();
   }
 
   private extractArray($: cheerio.CheerioAPI, selector: string): string[] {
@@ -36,29 +36,23 @@ export class WebScraper {
     const html = await this.fetchPage(url);
     const $ = cheerio.load(html);
 
-    // Type assertion to ensure selectors is treated as an object with string values
-    const selectors = this.config.selectors as Record<string, string>;
-
     const rawData: Record<string, any> = {
-      title: this.extractValue($, selectors.title),
-      description: this.extractValue($, selectors.description),
-      price: this.extractValue($, selectors.price).replace(/[^0-9.]/g, ''),
-      bedrooms: parseInt(this.extractValue($, selectors.bedrooms)),
-      bathrooms: parseFloat(this.extractValue($, selectors.bathrooms)),
-      squareMeters: parseFloat(this.extractValue($, selectors.squareMeters)),
-      address: this.extractValue($, selectors.address),
-      images: this.extractImages($, selectors.images),
-      features: this.extractArray($, selectors.features),
+      title: this.extractValue($, this.config.selectors.title),
+      description: this.extractValue($, this.config.selectors.description),
+      price: this.extractValue($, this.config.selectors.price).replace(/[^0-9.]/g, ''),
+      bedrooms: parseInt(this.extractValue($, this.config.selectors.bedrooms)),
+      bathrooms: parseFloat(this.extractValue($, this.config.selectors.bathrooms)),
+      squareMeters: parseFloat(this.extractValue($, this.config.selectors.squareMeters)),
+      address: this.extractValue($, this.config.selectors.address),
+      images: this.extractImages($, this.config.selectors.images),
+      features: this.extractArray($, this.config.selectors.features),
     };
-
-    // Type assertion for field mapping
-    const fieldMapping = this.config.fieldMapping as Record<string, keyof InsertProperty>;
 
     // Map the raw data to our property schema using the field mapping
     const mappedData: Partial<InsertProperty> = {};
-    for (const [sourceField, targetField] of Object.entries(fieldMapping)) {
+    for (const [sourceField, targetField] of Object.entries(this.config.fieldMapping)) {
       if (rawData[sourceField] !== undefined) {
-        mappedData[targetField] = rawData[sourceField];
+        mappedData[targetField as keyof InsertProperty] = rawData[sourceField];
       }
     }
 
