@@ -7,6 +7,18 @@ import { postToLocalSites } from "@/lib/extension";
 import { useToast } from "@/hooks/use-toast";
 import type { Property } from "@shared/schema";
 
+// Add Chrome runtime types
+declare global {
+  interface Window {
+    chrome?: {
+      runtime: {
+        sendMessage: (message: any, callback: (response: any) => void) => void;
+        lastError?: { message: string };
+      };
+    };
+  }
+}
+
 interface DistributionStatusProps {
   property: Property;
 }
@@ -20,11 +32,11 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
   // Check extension availability
   useEffect(() => {
-    const checkExtension = () => {
+    const checkExtension = async () => {
       try {
         // First check if we're in Chrome
         const isChrome = /Chrome/.test(navigator.userAgent);
-        console.log('Browser check:', { isChrome });
+        console.log('Browser check:', { isChrome, userAgent: navigator.userAgent });
 
         if (!isChrome) {
           console.log('Not using Chrome browser');
@@ -33,33 +45,59 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
           return;
         }
 
-        // Then check if extension API is available
-        // @ts-ignore - Chrome types not available
-        const hasExtensionAPI = typeof chrome !== 'undefined' && !!chrome.runtime && !!chrome.runtime.sendMessage;
-        console.log('Extension API check:', { hasExtensionAPI });
-
-        if (!hasExtensionAPI) {
-          console.log('Extension API not found');
+        // Check if extension API is available
+        if (typeof window.chrome === 'undefined' || !window.chrome.runtime) {
+          console.log('Chrome extension API not found');
           setExtensionReady(false);
           setShowInstructions(true);
           return;
         }
 
-        // Extension appears to be available
-        console.log('Chrome extension detected');
+        // Test actual communication with extension
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Extension not responding'));
+          }, 2000);
+
+          window.chrome.runtime.sendMessage(
+            { 
+              type: 'CHECK_CONNECTION',
+              timestamp: Date.now()
+            },
+            response => {
+              clearTimeout(timeout);
+              console.log('Extension test response:', response);
+
+              if (window.chrome?.runtime.lastError) {
+                console.error('Extension test error:', window.chrome.runtime.lastError);
+                reject(window.chrome.runtime.lastError);
+                return;
+              }
+
+              if (!response?.success) {
+                reject(new Error('Extension not ready'));
+                return;
+              }
+
+              resolve(response);
+            }
+          );
+        });
+
+        // If we get here, the extension is working
+        console.log('Extension is ready');
         setExtensionReady(true);
         setShowInstructions(false);
+
       } catch (error) {
-        console.error('Error checking extension:', error);
+        console.error('Extension check failed:', error);
         setExtensionReady(false);
         setShowInstructions(true);
       }
     };
 
-    // Check extension status immediately
+    // Check extension status immediately and when window gains focus
     checkExtension();
-
-    // Also check when window gains focus
     window.addEventListener('focus', checkExtension);
     return () => window.removeEventListener('focus', checkExtension);
   }, []);
@@ -72,7 +110,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
       console.log('Starting publication process...');
 
       if (!extensionReady) {
-        throw new Error('Chrome extension not ready. Please make sure you are using Chrome browser and have installed the extension.');
+        throw new Error('Chrome extension not ready. Please install the extension and reload the page.');
       }
 
       await postToLocalSites(property);
@@ -107,35 +145,30 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
             <div className="space-y-2 mt-2 text-sm">
               <p className="font-semibold">Installation Steps:</p>
               <ol className="list-decimal list-inside space-y-1">
-                <li>First, make sure you're using Google Chrome browser</li>
-                <li>In the file explorer (left sidebar):</li>
+                <li>Make sure you're using Google Chrome browser</li>
+                <li>Download the extension:</li>
                 <ul className="ml-6 mt-1 space-y-1 list-disc">
-                  <li>Find the "extension" folder</li>
-                  <li>Right-click on it</li>
-                  <li>Select "Download" to download it</li>
-                </ul>
-                <li>After downloading:</li>
-                <ul className="ml-6 mt-1 space-y-1 list-disc">
-                  <li>Extract the downloaded folder</li>
-                  <li>You should now have a folder named "extension"</li>
+                  <li>Find the "extension" folder in the file explorer (left sidebar)</li>
+                  <li>Right-click and select "Download"</li>
+                  <li>Unzip/extract the downloaded file</li>
                 </ul>
                 <li>Install in Chrome:</li>
                 <ul className="ml-6 mt-1 space-y-1 list-disc">
-                  <li>Open Chrome browser</li>
-                  <li>Go to chrome://extensions</li>
+                  <li>Open a new tab in Chrome</li>
+                  <li>Type <code>chrome://extensions</code> in the address bar</li>
                   <li>Enable "Developer mode" (toggle in top right)</li>
                   <li>Click "Load unpacked"</li>
                   <li>Select the extracted "extension" folder</li>
+                  <li>After installing, refresh THIS page</li>
                 </ul>
               </ol>
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
                 <p className="text-yellow-800 font-medium">Important:</p>
                 <ul className="mt-2 space-y-1 text-yellow-700">
-                  <li>• Keep the extension folder on your computer</li>
-                  <li>• Make sure you're using Google Chrome</li>
+                  <li>• Make sure Chrome shows "Developer mode" is enabled</li>
                   <li>• The extension icon should appear in Chrome's toolbar</li>
-                  <li>• After installing, refresh this page</li>
-                  <li>• Make sure you're logged into Merrjep.al before publishing</li>
+                  <li>• After installing, you MUST refresh this page</li>
+                  <li>• Log in to your Merrjep.al account before publishing</li>
                 </ul>
               </div>
               <Button
@@ -196,17 +229,17 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
             ) : extensionReady ? (
               'Publish to Merrjep.al'
             ) : (
-              'Extension Not Ready'
+              'Chrome Extension Not Ready'
             )}
           </Button>
 
           <div className="mt-2 text-sm text-muted-foreground">
             <p>Before publishing:</p>
             <ul className="list-disc list-inside mt-1">
-              <li>Install the extension from the instructions above</li>
+              <li>Make sure the extension is installed (see instructions above)</li>
               <li>Open <a href="https://www.merrjep.al/login" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Merrjep.al Login Page</a></li>
               <li>Log in to your Merrjep.al account</li>
-              <li>Return here and click the publish button</li>
+              <li>Return here and click publish</li>
             </ul>
           </div>
         </CollapsibleContent>
