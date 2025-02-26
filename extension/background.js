@@ -1,7 +1,7 @@
 // Handle communication between our app and content scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'POST_PROPERTY') {
-    handlePropertyPosting(request.data, sender.tab.id);
+    handlePropertyPosting(request.data);
     // Send immediate response to acknowledge receipt
     sendResponse({ success: true });
     return true;
@@ -14,93 +14,61 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-async function handlePropertyPosting(propertyData, tabId) {
-  const sites = {
-    'merrjep.al': {
-      url: 'https://www.merrjep.al/post-new',
-      mapping: {
-        title: 'input[name="title"]',
-        description: 'textarea[name="description"]',
-        price: 'input[name="price"]',
-        bedrooms: 'select[name="bedrooms"]',
-        bathrooms: 'select[name="bathrooms"]',
-        squareMeters: 'input[name="surface"]',
-        address: 'input[name="location"]',
-        images: 'input[type="file"]'
-      }
-    },
-    'njoftime.com': {
-      url: 'https://www.njoftime.com/shto-njoftim',
-      mapping: {
-        title: '#title',
-        description: '#description',
-        price: '#price',
-        bedrooms: 'select[name="dhoma"]',
-        bathrooms: 'select[name="tualete"]',
-        squareMeters: '#siperfaqja',
-        address: '#address',
-        images: 'input[name="photos[]"]'
-      }
-    },
-    'gazetacelesi.al': {
-      url: 'https://gazetacelesi.al/shto-pronesi',
-      mapping: {
-        title: 'input[name="property_title"]',
-        description: 'textarea[name="property_description"]',
-        price: 'input[name="property_price"]',
-        bedrooms: 'select[name="property_bedrooms"]',
-        bathrooms: 'select[name="property_bathrooms"]',
-        squareMeters: 'input[name="property_size"]',
-        address: 'input[name="property_address"]',
-        images: 'input[name="property_images[]"]'
-      }
-    },
-    'njoftime.al': {
-      url: 'https://www.njoftime.al/posto',
-      mapping: {
-        title: '#ad_title',
-        description: '#ad_description',
-        price: '#ad_price',
-        bedrooms: 'select[name="bedrooms"]',
-        bathrooms: 'select[name="bathrooms"]',
-        squareMeters: '#ad_size',
-        address: '#ad_location',
-        images: 'input[type="file"][multiple]'
-      }
+async function handlePropertyPosting(propertyData) {
+  // For testing, only handle Merrjep.al first
+  const site = {
+    name: 'merrjep.al',
+    url: 'https://www.merrjep.al/post-new',
+    mapping: {
+      title: 'input[name="title"]',
+      description: 'textarea[name="description"]',
+      price: 'input[name="price"]',
+      bedrooms: 'select[name="bedrooms"]',
+      bathrooms: 'select[name="bathrooms"]',
+      squareMeters: 'input[name="surface"]',
+      address: 'input[name="location"]',
+      images: 'input[type="file"]'
     }
   };
 
-  for (const [site, config] of Object.entries(sites)) {
-    try {
-      // Create new tab for posting
-      const tab = await chrome.tabs.create({ url: config.url, active: false });
+  try {
+    console.log('Starting property posting to Merrjep.al');
 
-      // Send property data to content script
-      await chrome.tabs.sendMessage(tab.id, {
-        type: 'FILL_FORM',
-        data: propertyData,
-        mapping: config.mapping
-      });
+    // Create new tab for posting
+    const tab = await chrome.tabs.create({ 
+      url: site.url, 
+      active: true  // Set to true for testing to see what happens
+    });
 
-      // Update popup with status
-      chrome.runtime.sendMessage({
-        type: 'UPDATE_STATUS',
-        data: {
-          site,
-          success: true,
-          message: `Successfully posted to ${site}`
-        }
-      });
-    } catch (error) {
-      console.error(`Failed to post to ${site}:`, error);
-      chrome.runtime.sendMessage({
-        type: 'UPDATE_STATUS',
-        data: {
-          site,
-          success: false,
-          message: `Failed to post to ${site}: ${error.message}`
-        }
-      });
-    }
+    // Wait a moment for the page to load
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Send property data to content script
+    console.log('Sending data to content script:', propertyData);
+    await chrome.tabs.sendMessage(tab.id, {
+      type: 'FILL_FORM',
+      data: propertyData,
+      mapping: site.mapping
+    });
+
+    // Update popup with status
+    chrome.runtime.sendMessage({
+      type: 'UPDATE_STATUS',
+      data: {
+        site: site.name,
+        success: true,
+        message: `Successfully started posting to ${site.name}`
+      }
+    });
+  } catch (error) {
+    console.error(`Failed to post to ${site.name}:`, error);
+    chrome.runtime.sendMessage({
+      type: 'UPDATE_STATUS',
+      data: {
+        site: site.name,
+        success: false,
+        message: `Failed to post to ${site.name}: ${error.message}`
+      }
+    });
   }
 }

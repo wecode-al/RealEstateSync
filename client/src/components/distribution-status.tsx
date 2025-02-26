@@ -1,13 +1,14 @@
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CheckCircle2, XCircle, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { Clock, ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useEffect } from "react";
 import { postToLocalSites, checkExtension } from "@/lib/extension";
 import { useToast } from "@/hooks/use-toast";
+import type { Property } from "@shared/schema";
 
 interface DistributionStatusProps {
-  property: any; // Replace with Property type
+  property: Property;
 }
 
 export function DistributionStatus({ property }: DistributionStatusProps) {
@@ -33,6 +34,8 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
     try {
       setPublishing(true);
+      // Log property data before sending
+      console.log('Publishing property:', property);
       await postToLocalSites(property);
       toast({
         title: "Publishing Started",
@@ -133,19 +136,16 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
         <CollapsibleContent className="space-y-4 pt-4">
           <div className="space-y-2">
-            <h3 className="font-medium">Supported Sites:</h3>
+            <h3 className="font-medium">Testing with:</h3>
             <ul className="space-y-1 text-sm">
-              <li>• Merrjep.al</li>
-              <li>• Njoftime.com</li>
-              <li>• Gazetacelesi.al</li>
-              <li>• Njoftime.al</li>
+              <li>• Merrjep.al (Make sure you're logged in)</li>
             </ul>
           </div>
 
           <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
             <p className="text-blue-800">
-              Make sure you are logged into the sites where you want to publish your property.
-              The extension will automatically fill in the property details on each site.
+              Currently testing with Merrjep.al. Make sure you are logged in before publishing.
+              The extension will automatically fill in your property details.
             </p>
           </div>
 
@@ -160,7 +160,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
                 Publishing...
               </>
             ) : (
-              'Publish to Local Sites'
+              'Publish to Merrjep.al'
             )}
           </Button>
         </CollapsibleContent>
