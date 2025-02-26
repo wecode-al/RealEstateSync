@@ -1,4 +1,4 @@
-import { properties, users, type Property, type InsertProperty, type User, type InsertUser } from "@shared/schema";
+import { properties, users, settings, type Property, type InsertProperty, type User, type InsertUser, type Setting, type InsertSetting } from "@shared/schema";
 import { distributionSites } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -14,6 +14,10 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+
+  // Settings operations
+  getSettings(): Promise<Record<string, Setting>>;
+  updateSettings(settings: Record<string, Partial<Setting>>): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -78,6 +82,35 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(eq(users.username, username));
     return user;
+  }
+
+  // Settings methods
+  async getSettings(): Promise<Record<string, Setting>> {
+    const allSettings = await db.select().from(settings);
+    return Object.fromEntries(
+      allSettings.map(setting => [setting.site, setting])
+    );
+  }
+
+  async updateSettings(newSettings: Record<string, Partial<Setting>>): Promise<void> {
+    // Start a transaction to update all settings
+    await db.transaction(async (tx) => {
+      // First delete all existing settings
+      await tx.delete(settings);
+
+      // Then insert the new settings
+      for (const [site, setting] of Object.entries(newSettings)) {
+        if (setting.enabled) {
+          await tx.insert(settings).values({
+            site,
+            enabled: setting.enabled,
+            apiKey: setting.apiKey,
+            apiSecret: setting.apiSecret,
+            additionalConfig: setting.additionalConfig
+          });
+        }
+      }
+    });
   }
 }
 

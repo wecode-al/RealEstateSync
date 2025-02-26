@@ -6,9 +6,6 @@ import { wordPressService } from "./services/wordpress";
 import { albanianListingService } from "./services/albanian-listings";
 import { setupAuth } from "./auth";
 
-// In-memory storage for settings (replace with database in production)
-let siteSettings: Record<string, any> = {};
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
@@ -41,6 +38,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/properties/:id/publish", async (req, res) => {
     const id = Number(req.params.id);
     const property = await storage.getProperty(id);
+    const settings = await storage.getSettings();
 
     if (!property) {
       res.status(404).json({ message: "Property not found" });
@@ -48,28 +46,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     // Initialize distribution statuses
-    const updatedDistributions: Property['distributions'] = {
-      ...property.distributions
-    };
+    const updatedDistributions: Property['distributions'] = {};
 
-    // Publish to WordPress
-    const wpResult = await wordPressService.publishProperty(property);
-    updatedDistributions["WordPress Site"] = {
-      status: wpResult.success ? "success" : "error",
-      error: wpResult.error || null,
-      postUrl: wpResult.postUrl
-    };
-
-    // Publish to Albanian listing sites
+    // Only publish to enabled sites
     for (const site of distributionSites) {
-      if (site === "WordPress Site") continue;
+      const siteSettings = settings[site];
 
-      const result = await albanianListingService.publishProperty(property, site);
-      updatedDistributions[site] = {
-        status: result.success ? "success" : "error",
-        error: result.error || null,
-        postUrl: result.listingUrl
-      };
+      // Skip if site is not configured
+      if (!siteSettings?.enabled) {
+        updatedDistributions[site] = {
+          status: "error",
+          error: "Site not configured",
+          postUrl: null
+        };
+        continue;
+      }
+
+      try {
+        let result;
+        if (site === "WordPress Site") {
+          result = await wordPressService.publishProperty(property);
+        } else {
+          result = await albanianListingService.publishProperty(property, site);
+        }
+
+        updatedDistributions[site] = {
+          status: result.success ? "success" : "error",
+          error: result.error || null,
+          postUrl: result.listingUrl || result.postUrl
+        };
+      } catch (error) {
+        updatedDistributions[site] = {
+          status: "error",
+          error: error instanceof Error ? error.message : "Unknown error",
+          postUrl: null
+        };
+      }
     }
 
     const updated = await storage.updateProperty(id, {
@@ -81,12 +93,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Settings endpoints
-  app.get("/api/settings", (_req, res) => {
-    res.json(siteSettings);
+  app.get("/api/settings", async (_req, res) => {
+    const settings = await storage.getSettings();
+    res.json(settings);
   });
 
-  app.post("/api/settings", (req, res) => {
-    siteSettings = req.body;
+  app.post("/api/settings", async (req, res) => {
+    await storage.updateSettings(req.body);
     res.json({ success: true });
   });
 
@@ -96,11 +109,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       if (site === "WordPress Site") {
-        // Test WordPress connection
         await wordPressService.testConnection();
       } else {
-        // Test other site connections
-        await albanianListingService.testConnection(site, config);
+        await albanianListingService.publishProperty({ ...config, id: 0 } as Property, site);
       }
       res.json({ success: true });
     } catch (error) {

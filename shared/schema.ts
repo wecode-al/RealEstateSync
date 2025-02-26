@@ -19,6 +19,25 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
+// Add settings table after users table
+export const settings = pgTable("settings", {
+  id: serial("id").primaryKey(),
+  site: text("site").notNull(),
+  enabled: boolean("enabled").notNull().default(false),
+  apiKey: text("api_key"),
+  apiSecret: text("api_secret"),
+  additionalConfig: jsonb("additional_config"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const insertSettingSchema = createInsertSchema(settings).omit({ 
+  id: true,
+  updatedAt: true 
+});
+
+export type Setting = typeof settings.$inferSelect;
+export type InsertSetting = z.infer<typeof insertSettingSchema>;
+
 export const properties = pgTable("properties", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
