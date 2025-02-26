@@ -36,6 +36,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
+// Properties table
 export const properties = pgTable("properties", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
@@ -52,7 +53,7 @@ export const properties = pgTable("properties", {
   images: text("images").array().notNull(),
   features: jsonb("features").notNull(),
   published: boolean("published").default(false).notNull(),
-  distributions: jsonb("distributions").default({}).notNull(),
+  distributions: jsonb("distributions").default({}).notNull()
 });
 
 // Schema for creating/updating properties
@@ -63,7 +64,7 @@ export const insertPropertySchema = createInsertSchema(properties).omit({
 }).extend({
   features: z.array(z.string()),
   images: z.array(z.string()),
-  // Allow both string and number for numeric fields
+  // Use coerce for numeric fields to handle both string and number inputs
   price: z.coerce.number(),
   bathrooms: z.coerce.number(),
   squareMeters: z.coerce.number()
@@ -83,23 +84,15 @@ export const propertyTypes = [
 ] as const;
 
 export const distributionSites = [
-  "WordPress Site",
-  "njoftime.com",
-  "njoftime.al",
-  "merrjep.al",
-  "mirlir",
-  "indomio.al",
-  "instagram",
-  "facebook",
-  "okazion.al"
+  "WordPress Site"
 ] as const;
 
 export type DistributionSite = typeof distributionSites[number];
 
 export type DistributionStatus = {
-  status: 'success' | 'error';
+  status: "pending" | "success" | "error";
   error: string | null;
-  postUrl: string | null;
+  postUrl?: string | null;
 };
 
 export type PropertyDistributions = Record<DistributionSite, DistributionStatus>;
