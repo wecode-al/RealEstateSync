@@ -42,6 +42,7 @@ export const propertyTypes = [
   "Other"
 ] as const;
 
+// Base distribution sites that are always available
 export const distributionSites = [
   "WordPress Site",
   "Zillow",
@@ -49,3 +50,29 @@ export const distributionSites = [
   "Trulia",
   "Local MLS"
 ] as const;
+
+// Custom local listing site configuration
+export const localListingSites = [
+  {
+    id: "local-site-1",
+    name: "Local Real Estate Portal",
+    url: "https://local-realestate.example.com",
+    apiEndpoint: "/api/listings",
+    requiresAuth: true,
+  },
+  {
+    id: "local-site-2",
+    name: "Community Housing Board",
+    url: "https://community-housing.example.com",
+    apiEndpoint: "/v1/properties",
+    requiresAuth: true,
+  }
+] as const;
+
+// Combine all distribution sites
+export const allDistributionSites = [
+  ...distributionSites,
+  ...localListingSites.map(site => site.name)
+] as const;
+
+export type DistributionSite = typeof allDistributionSites[number];

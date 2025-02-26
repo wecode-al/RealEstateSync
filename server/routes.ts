@@ -1,8 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPropertySchema, type Property } from "@shared/schema";
+import { insertPropertySchema, type Property, localListingSites } from "@shared/schema";
 import { wordPressService } from "./services/wordpress";
+import { localListingService } from "./services/local-listings";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/properties", async (_req, res) => {
@@ -52,8 +53,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       postUrl: wpResult.postUrl  // Store the WordPress post URL
     };
 
+    // Publish to local listing sites
+    for (const site of localListingSites) {
+      const result = await localListingService.publishProperty(property, site.id);
+      updatedDistributions[site.name] = {
+        status: result.success ? "success" : "error",
+        error: result.error || null,
+        postUrl: result.listingUrl
+      };
+    }
+
     // Simulate other distribution sites
-    const otherSites = Object.keys(property.distributions).filter(site => site !== "WordPress Site");
+    const otherSites = Object.keys(property.distributions).filter(site => 
+      site !== "WordPress Site" && 
+      !localListingSites.some(local => local.name === site)
+    );
+
     for (const site of otherSites) {
       updatedDistributions[site] = {
         status: Math.random() > 0.2 ? "success" : "error",
