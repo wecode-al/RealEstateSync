@@ -5,7 +5,11 @@ export async function postToLocalSites(property: any) {
 
     // First check if we're in Chrome
     const isChrome = /Chrome/.test(navigator.userAgent);
-    console.log('Browser check:', { isChrome, userAgent: navigator.userAgent });
+    console.log('Browser check:', { 
+      isChrome, 
+      userAgent: navigator.userAgent,
+      location: window.location.href
+    });
 
     if (!isChrome) {
       throw new Error('Please use Google Chrome browser to use this feature.');
