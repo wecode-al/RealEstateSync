@@ -1,4 +1,6 @@
+
 import { type Property } from "@shared/schema";
+import { storage } from "../storage";
 
 interface WordPressResponse {
   id: number;
@@ -8,41 +10,35 @@ interface WordPressResponse {
 interface WordPressError {
   code: string;
   message: string;
-  data?: { status: number };
 }
 
-export class WordPressService {
-  private apiUrl: string;
-  private auth: string;
-
-  constructor() {
-    const username = process.env.WORDPRESS_USERNAME;
-    const password = process.env.WORDPRESS_APP_PASSWORD;
-    const apiUrl = process.env.WORDPRESS_API_URL;
-
-    if (!username || !password || !apiUrl) {
-      throw new Error("WordPress credentials not configured");
-    }
-
-    // Validate and format the API URL
-    try {
-      const url = new URL(apiUrl);
-      if (!url.protocol) {
-        throw new Error("WordPress API URL must include http:// or https://");
-      }
-      this.apiUrl = url.origin;
-    } catch (error) {
-      throw new Error(`Invalid WordPress API URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-
-    this.auth = Buffer.from(`${username}:${password}`).toString('base64');
-  }
-
+class WordPressService {
   async publishProperty(property: Property): Promise<{ success: boolean; error?: string; postUrl?: string }> {
     try {
-      console.log(`Publishing to WordPress: ${this.apiUrl}/wp-json/wp/v2/property`);
+      const settings = await storage.getSettings();
+      const wpSettings = settings["WordPress Site"];
 
-      // First, create the property post
+      if (!wpSettings?.enabled || !wpSettings.additionalConfig) {
+        return {
+          success: false,
+          error: "WordPress is not configured in settings"
+        };
+      }
+
+      const { username, password, apiUrl } = wpSettings.additionalConfig;
+
+      if (!username || !password || !apiUrl) {
+        return {
+          success: false,
+          error: "WordPress credentials not configured"
+        };
+      }
+
+      const auth = Buffer.from(`${username}:${password}`).toString('base64');
+      const baseUrl = new URL(apiUrl).origin;
+
+      console.log(`Publishing to WordPress: ${baseUrl}/wp-json/wp/v2/property`);
+
       const postData = {
         title: property.title,
         content: property.description,
@@ -64,11 +60,10 @@ export class WordPressService {
 
       console.log('Sending data to WordPress:', postData);
 
-      // Create the property post
-      const response = await fetch(`${this.apiUrl}/wp-json/wp/v2/property`, {
+      const response = await fetch(`${baseUrl}/wp-json/wp/v2/property`, {
         method: 'POST',
         headers: {
-          'Authorization': `Basic ${this.auth}`,
+          'Authorization': `Basic ${auth}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(postData),
@@ -104,6 +99,34 @@ export class WordPressService {
         success: false, 
         error: error instanceof Error ? error.message : 'Failed to publish to WordPress' 
       };
+    }
+  }
+
+  async testConnection(): Promise<void> {
+    const settings = await storage.getSettings();
+    const wpSettings = settings["WordPress Site"];
+
+    if (!wpSettings?.enabled || !wpSettings.additionalConfig) {
+      throw new Error("WordPress is not configured in settings");
+    }
+
+    const { username, password, apiUrl } = wpSettings.additionalConfig;
+
+    if (!username || !password || !apiUrl) {
+      throw new Error("WordPress credentials not configured");
+    }
+
+    const auth = Buffer.from(`${username}:${password}`).toString('base64');
+    const baseUrl = new URL(apiUrl).origin;
+
+    const response = await fetch(`${baseUrl}/wp-json/wp/v2/types/property`, {
+      headers: {
+        'Authorization': `Basic ${auth}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to connect to WordPress: ${response.statusText}`);
     }
   }
 }
