@@ -5,6 +5,9 @@ import { insertPropertySchema, type Property, distributionSites } from "@shared/
 import { wordPressService } from "./services/wordpress";
 import { albanianListingService } from "./services/albanian-listings";
 
+// In-memory storage for settings (replace with database in production)
+let siteSettings: Record<string, any> = {};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/properties", async (_req, res) => {
     const properties = await storage.getProperties();
@@ -71,6 +74,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     res.json(updated);
+  });
+
+  // Settings endpoints
+  app.get("/api/settings", (_req, res) => {
+    res.json(siteSettings);
+  });
+
+  app.post("/api/settings", (req, res) => {
+    siteSettings = req.body;
+    res.json({ success: true });
+  });
+
+  app.post("/api/settings/test/:site", async (req, res) => {
+    const site = req.params.site;
+    const config = req.body;
+
+    try {
+      if (site === "WordPress Site") {
+        // Test WordPress connection
+        await wordPressService.testConnection();
+      } else {
+        // Test other site connections
+        await albanianListingService.testConnection(site, config);
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Connection test failed" 
+      });
+    }
   });
 
   const httpServer = createServer(app);
