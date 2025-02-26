@@ -138,8 +138,6 @@ export const siteConfigs = {
   }
 } as const;
 
-// Add after the existing schema definitions
-
 // Website scraper configuration schema
 export const scraperConfigs = pgTable("scraper_configs", {
   id: serial("id").primaryKey(),
@@ -160,16 +158,60 @@ export const insertScraperConfigSchema = createInsertSchema(scraperConfigs).omit
   updatedAt: true 
 }).extend({
   selectors: z.object({
-    title: z.string(),
-    description: z.string(),
-    price: z.string(),
-    bedrooms: z.string(),
-    bathrooms: z.string(),
-    squareMeters: z.string(),
-    address: z.string(),
-    images: z.string(),
-    features: z.string(),
-    // Add other selector fields as needed
+    title: z.object({
+      type: z.enum(["css", "xpath", "jet-engine", "data-attribute"]),
+      value: z.string(),
+      attribute: z.string().optional(), // For data attributes
+      jetField: z.string().optional()   // For Jet Engine fields
+    }),
+    description: z.object({
+      type: z.enum(["css", "xpath", "jet-engine", "data-attribute"]),
+      value: z.string(),
+      attribute: z.string().optional(),
+      jetField: z.string().optional()
+    }),
+    price: z.object({
+      type: z.enum(["css", "xpath", "jet-engine", "data-attribute"]),
+      value: z.string(),
+      attribute: z.string().optional(),
+      jetField: z.string().optional()
+    }),
+    bedrooms: z.object({
+      type: z.enum(["css", "xpath", "jet-engine", "data-attribute"]),
+      value: z.string(),
+      attribute: z.string().optional(),
+      jetField: z.string().optional()
+    }),
+    bathrooms: z.object({
+      type: z.enum(["css", "xpath", "jet-engine", "data-attribute"]),
+      value: z.string(),
+      attribute: z.string().optional(),
+      jetField: z.string().optional()
+    }),
+    squareMeters: z.object({
+      type: z.enum(["css", "xpath", "jet-engine", "data-attribute"]),
+      value: z.string(),
+      attribute: z.string().optional(),
+      jetField: z.string().optional()
+    }),
+    address: z.object({
+      type: z.enum(["css", "xpath", "jet-engine", "data-attribute"]),
+      value: z.string(),
+      attribute: z.string().optional(),
+      jetField: z.string().optional()
+    }),
+    images: z.object({
+      type: z.enum(["css", "xpath", "jet-engine", "data-attribute"]),
+      value: z.string(),
+      attribute: z.string().optional(),
+      jetField: z.string().optional()
+    }),
+    features: z.object({
+      type: z.enum(["css", "xpath", "jet-engine", "data-attribute"]),
+      value: z.string(),
+      attribute: z.string().optional(),
+      jetField: z.string().optional()
+    })
   }),
   fieldMapping: z.record(z.string(), z.string()),
   authConfig: z.object({
@@ -182,26 +224,32 @@ export const insertScraperConfigSchema = createInsertSchema(scraperConfigs).omit
 export type ScraperConfig = typeof scraperConfigs.$inferSelect;
 export type InsertScraperConfig = z.infer<typeof insertScraperConfigSchema>;
 
-// Example of how a configuration might look:
-export const sampleScraperConfig = {
+// Example configuration for a Jet Engine powered website
+export const jetEngineScraperConfig = {
   name: "MyHome Real Estate",
   baseUrl: "https://myhomerealestate.al",
   selectors: {
-    title: "h1.property-title",
-    description: "div.property-description",
-    price: "span.property-price",
-    bedrooms: "span.bedrooms",
-    bathrooms: "span.bathrooms",
-    squareMeters: "span.area",
-    address: "div.property-address",
-    images: "div.property-gallery img",
-    features: "ul.property-features li"
+    title: {
+      type: "jet-engine",
+      value: ".jet-listing-dynamic-field__content",
+      jetField: "property_title"
+    },
+    description: {
+      type: "jet-engine",
+      value: ".jet-listing-dynamic-field__content",
+      jetField: "property_description"
+    },
+    price: {
+      type: "jet-engine",
+      value: ".jet-listing-dynamic-field__content",
+      jetField: "property_price"
+    }
+    // Add other fields...
   },
   fieldMapping: {
-    "price": "price",
-    "bedrooms": "bedrooms",
-    "bathrooms": "bathrooms",
-    "square_meters": "squareMeters",
-    // Add other field mappings
+    "property_price": "price",
+    "property_bedrooms": "bedrooms",
+    "property_bathrooms": "bathrooms",
+    "property_square_meters": "squareMeters"
   }
 } as const;

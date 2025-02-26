@@ -40,22 +40,22 @@ export default function Settings() {
     queryKey: ["/api/scraper-configs"],
   });
 
-  // Form for scraper configuration
+  // Update the scraper configuration form
   const scraperForm = useForm({
     resolver: zodResolver(insertScraperConfigSchema),
     defaultValues: {
       name: "",
       baseUrl: "",
       selectors: {
-        title: "",
-        description: "",
-        price: "",
-        bedrooms: "",
-        bathrooms: "",
-        squareMeters: "",
-        address: "",
-        images: "",
-        features: ""
+        title: { type: "jet-engine", value: ".jet-listing-dynamic-field__content", jetField: "" },
+        description: { type: "jet-engine", value: ".jet-listing-dynamic-field__content", jetField: "" },
+        price: { type: "jet-engine", value: ".jet-listing-dynamic-field__content", jetField: "" },
+        bedrooms: { type: "jet-engine", value: ".jet-listing-dynamic-field__content", jetField: "" },
+        bathrooms: { type: "jet-engine", value: ".jet-listing-dynamic-field__content", jetField: "" },
+        squareMeters: { type: "jet-engine", value: ".jet-listing-dynamic-field__content", jetField: "" },
+        address: { type: "jet-engine", value: ".jet-listing-dynamic-field__content", jetField: "" },
+        images: { type: "jet-engine", value: ".jet-listing-dynamic-field__content", jetField: "" },
+        features: { type: "jet-engine", value: ".jet-listing-dynamic-field__content", jetField: "" }
       },
       fieldMapping: {},
     }
@@ -269,31 +269,96 @@ export default function Settings() {
                     />
 
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">CSS Selectors</h3>
+                      <h3 className="text-lg font-semibold">Field Configuration</h3>
                       <p className="text-sm text-muted-foreground">
-                        Enter the CSS selectors that match the property information on your website
+                        Configure how to extract property information from your website
                       </p>
 
-                      {Object.keys(scraperForm.getValues().selectors).map((field) => (
-                        <FormField
-                          key={field}
-                          control={scraperForm.control}
-                          name={`selectors.${field}`}
-                          render={({ field: { value, onChange, ...props } }) => (
-                            <FormItem>
-                              <FormLabel className="capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder={`CSS selector for ${field}`}
-                                  value={value}
-                                  onChange={onChange}
-                                  {...props}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
+                      {Object.entries(scraperForm.getValues().selectors).map(([field, selector]) => (
+                        <div key={field} className="space-y-4 border p-4 rounded-lg">
+                          <h4 className="font-medium capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}</h4>
+
+                          <FormField
+                            control={scraperForm.control}
+                            name={`selectors.${field}.type`}
+                            render={({ field: typeField }) => (
+                              <FormItem>
+                                <FormLabel>Selector Type</FormLabel>
+                                <FormControl>
+                                  <select
+                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1"
+                                    {...typeField}
+                                  >
+                                    <option value="jet-engine">Jet Engine Field</option>
+                                    <option value="css">CSS Selector</option>
+                                    <option value="xpath">XPath</option>
+                                    <option value="data-attribute">Data Attribute</option>
+                                  </select>
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={scraperForm.control}
+                            name={`selectors.${field}.value`}
+                            render={({ field: valueField }) => (
+                              <FormItem>
+                                <FormLabel>Selector Value</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    placeholder={
+                                      selector.type === "jet-engine" ? ".jet-listing-dynamic-field__content" :
+                                      selector.type === "css" ? ".property-price" :
+                                      selector.type === "xpath" ? "//div[@class='price']" :
+                                      "[data-field='price']"
+                                    }
+                                    {...valueField}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
+                          {selector.type === "jet-engine" && (
+                            <FormField
+                              control={scraperForm.control}
+                              name={`selectors.${field}.jetField`}
+                              render={({ field: jetField }) => (
+                                <FormItem>
+                                  <FormLabel>Jet Engine Field Name</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder={`property_${field.toLowerCase()}`}
+                                      {...jetField}
+                                    />
+                                  </FormControl>
+                                  <p className="text-sm text-muted-foreground">
+                                    Enter the Jet Engine field name for this property information
+                                  </p>
+                                </FormItem>
+                              )}
+                            />
                           )}
-                        />
+
+                          {selector.type === "data-attribute" && (
+                            <FormField
+                              control={scraperForm.control}
+                              name={`selectors.${field}.attribute`}
+                              render={({ field: attrField }) => (
+                                <FormItem>
+                                  <FormLabel>Data Attribute Name</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="data-price"
+                                      {...attrField}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          )}
+                        </div>
                       ))}
                     </div>
 
