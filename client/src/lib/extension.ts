@@ -6,7 +6,7 @@ export async function postToLocalSites(property: any) {
     // Check Chrome runtime exists
     if (typeof chrome === 'undefined' || !chrome.runtime) {
       console.error('Chrome runtime not found');
-      throw new Error('Chrome extension not installed. Please install the extension first.');
+      throw new Error('Chrome extension not installed. Please install the extension first and refresh this page.');
     }
 
     // Now send the property data
@@ -22,7 +22,7 @@ export async function postToLocalSites(property: any) {
           response => {
             if (chrome.runtime.lastError) {
               console.error('Chrome extension error:', chrome.runtime.lastError);
-              reject(new Error('Failed to communicate with extension. Please reload the page and try again.'));
+              reject(new Error('Failed to communicate with extension. Please refresh this page and try again.'));
               return;
             }
 
@@ -36,7 +36,7 @@ export async function postToLocalSites(property: any) {
         );
       } catch (err) {
         console.error('Error sending message to extension:', err);
-        reject(new Error('Failed to communicate with extension. Please try reinstalling it.'));
+        reject(new Error('Failed to communicate with extension. Please refresh this page and try again.'));
       }
     });
 
