@@ -53,12 +53,18 @@ router.post("/api/scrape", async (req, res) => {
     // Validate and create the property
     const validatedProperty = insertPropertySchema.parse({
       ...propertyData,
+      description: propertyData.description || "No description available",
+      price: propertyData.price || "0",
+      bedrooms: propertyData.bedrooms || 0,
+      bathrooms: propertyData.bathrooms || 0,
+      squareMeters: propertyData.squareMeters || 0,
       city: propertyData.city || "Unknown",
       state: propertyData.state || "Unknown",
       zipCode: propertyData.zipCode || "Unknown",
       features: propertyData.features || [],
       images: propertyData.images || [],
-      propertyType: propertyData.propertyType || "Other"
+      propertyType: propertyData.propertyType || "Other",
+      address: propertyData.address || "Unknown"
     });
 
     const savedProperty = await storage.createProperty(validatedProperty);
@@ -80,6 +86,33 @@ router.post("/api/scrape", async (req, res) => {
         error: error instanceof Error ? error.message : "Failed to import property"
       });
     }
+  }
+});
+
+// Test scraper configuration
+router.post("/api/scraper-configs/:id/test", async (req, res) => {
+  try {
+    const configId = parseInt(req.params.id);
+    const { url } = req.body;
+
+    const config = await storage.getScraperConfig(configId);
+    if (!config) {
+      return res.status(404).json({ error: "Configuration not found" });
+    }
+
+    const scraper = new WebScraper(config);
+    const propertyData = await scraper.scrapeProperty(url);
+
+    res.json({
+      success: true,
+      data: propertyData
+    });
+  } catch (error) {
+    console.error("Test scraper error:", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to test scraper"
+    });
   }
 });
 

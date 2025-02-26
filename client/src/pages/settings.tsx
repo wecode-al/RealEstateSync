@@ -34,6 +34,9 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<SiteSettings>({});
   const [isScraperConfigOpen, setIsScraperConfigOpen] = useState(false);
+  const [selectedConfig, setSelectedConfig] = useState<ScraperConfig | null>(null);
+  const [testUrl, setTestUrl] = useState("");
+  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
 
   // Get scraper configurations
   const { data: scraperConfigs, isLoading: isLoadingConfigs } = useQuery<ScraperConfig[]>({
@@ -102,6 +105,31 @@ export default function Settings() {
       });
     }
   });
+
+  const testScraperMutation = useMutation({
+    mutationFn: async ({ configId, url }: { configId: number; url: string }) => {
+      const res = await apiRequest("POST", `/api/scraper-configs/${configId}/test`, { url });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to test configuration");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: "Configuration test successful. Found property: " + data.data.title,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
 
   // Initialize settings for all sites
   useEffect(() => {
@@ -299,7 +327,7 @@ export default function Settings() {
                             <FormItem>
                               <FormLabel className="capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}</FormLabel>
                               <FormControl>
-                                <Input 
+                                <Input
                                   placeholder={`Enter CSS selector for ${field}`}
                                   {...formField}
                                 />
@@ -307,9 +335,9 @@ export default function Settings() {
                               <p className="text-xs text-muted-foreground">
                                 Example: {
                                   field === 'price' ? '.price, .property-price, [data-price]' :
-                                  field === 'images' ? '.property-gallery img, .carousel img' :
-                                  field === 'features' ? '.features li, .amenities li' :
-                                  `.${field}, .property-${field}, [data-${field}]`
+                                    field === 'images' ? '.property-gallery img, .carousel img' :
+                                      field === 'features' ? '.features li, .amenities li' :
+                                        `.${field}, .property-${field}, [data-${field}]`
                                 }
                               </p>
                               <FormMessage />
@@ -327,7 +355,7 @@ export default function Settings() {
                       >
                         Cancel
                       </Button>
-                      <Button 
+                      <Button
                         type="submit"
                         disabled={scraperConfigMutation.isPending}
                       >
@@ -367,8 +395,28 @@ export default function Settings() {
                         <p className="text-sm text-muted-foreground">{config.baseUrl}</p>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">Edit</Button>
-                        <Button variant="outline" size="sm">Test</Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedConfig(config);
+                            scraperForm.reset(config);
+                            setIsScraperConfigOpen(true);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedConfig(config);
+                            setTestUrl("");
+                            setIsTestDialogOpen(true);
+                          }}
+                        >
+                          Test
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -378,6 +426,52 @@ export default function Settings() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Test Configuration</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Test URL</Label>
+              <Input
+                value={testUrl}
+                onChange={(e) => setTestUrl(e.target.value)}
+                placeholder="Enter a property URL to test"
+              />
+            </div>
+            <div className="flex justify-end gap-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsTestDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (selectedConfig) {
+                    testScraperMutation.mutate({
+                      configId: selectedConfig.id,
+                      url: testUrl
+                    });
+                  }
+                }}
+                disabled={testScraperMutation.isPending || !testUrl}
+              >
+                {testScraperMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Testing...
+                  </>
+                ) : (
+                  'Test Configuration'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <h2 className="text-2xl font-bold mb-6">Distribution Settings</h2>
       <div className="grid gap-6">
