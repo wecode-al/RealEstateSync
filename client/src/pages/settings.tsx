@@ -6,9 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, Plus } from "lucide-react";
 import { distributionSites } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertScraperConfigSchema } from "@shared/schema";
+import type { ScraperConfig } from "@shared/schema";
 
 interface SiteConfig {
   enabled: boolean;
@@ -27,6 +33,60 @@ export default function Settings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<SiteSettings>({});
+  const [isScraperConfigOpen, setIsScraperConfigOpen] = useState(false);
+
+  // Get scraper configurations
+  const { data: scraperConfigs, isLoading: isLoadingConfigs } = useQuery<ScraperConfig[]>({
+    queryKey: ["/api/scraper-configs"],
+  });
+
+  // Form for scraper configuration
+  const scraperForm = useForm({
+    resolver: zodResolver(insertScraperConfigSchema),
+    defaultValues: {
+      name: "",
+      baseUrl: "",
+      selectors: {
+        title: "",
+        description: "",
+        price: "",
+        bedrooms: "",
+        bathrooms: "",
+        squareMeters: "",
+        address: "",
+        images: "",
+        features: ""
+      },
+      fieldMapping: {},
+    }
+  });
+
+  // Mutation for creating/updating scraper config
+  const scraperConfigMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/scraper-configs", data);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to save scraper configuration");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Scraper configuration saved successfully",
+      });
+      setIsScraperConfigOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/scraper-configs"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
 
   // Initialize settings for all sites
   useEffect(() => {
@@ -159,8 +219,145 @@ export default function Settings() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8">Distribution Settings</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold">Settings</h1>
+      </div>
 
+      {/* Scraper Configurations Section */}
+      <Card className="mb-8">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>Website Scraper Configurations</CardTitle>
+            <Dialog open={isScraperConfigOpen} onOpenChange={setIsScraperConfigOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Configuration
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Add Website Configuration</DialogTitle>
+                </DialogHeader>
+                <Form {...scraperForm}>
+                  <form onSubmit={scraperForm.handleSubmit(data => scraperConfigMutation.mutate(data))} className="space-y-4">
+                    <FormField
+                      control={scraperForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Website Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="My Real Estate Website" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={scraperForm.control}
+                      name="baseUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Base URL</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://example.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">CSS Selectors</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Enter the CSS selectors that match the property information on your website
+                      </p>
+
+                      {Object.keys(scraperForm.getValues().selectors).map((field) => (
+                        <FormField
+                          key={field}
+                          control={scraperForm.control}
+                          name={`selectors.${field}`}
+                          render={({ field: { value, onChange, ...props } }) => (
+                            <FormItem>
+                              <FormLabel className="capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder={`CSS selector for ${field}`}
+                                  value={value}
+                                  onChange={onChange}
+                                  {...props}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      ))}
+                    </div>
+
+                    <div className="pt-4 flex justify-end gap-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsScraperConfigOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        type="submit"
+                        disabled={scraperConfigMutation.isPending}
+                      >
+                        {scraperConfigMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          'Save Configuration'
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoadingConfigs ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : scraperConfigs?.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No website configurations added yet
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {scraperConfigs?.map((config) => (
+                <Card key={config.id}>
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-semibold">{config.name}</h3>
+                        <p className="text-sm text-muted-foreground">{config.baseUrl}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">Edit</Button>
+                        <Button variant="outline" size="sm">Test</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <h2 className="text-2xl font-bold mb-6">Distribution Settings</h2>
       <div className="grid gap-6">
         {distributionSites.map((site) => (
           <Card key={site} className={settings[site]?.enabled ? "border-primary" : ""}>
@@ -320,22 +517,22 @@ export default function Settings() {
             </CardContent>
           </Card>
         ))}
+      </div>
 
-        <div className="flex justify-end mt-6">
-          <Button
-            onClick={() => updateMutation.mutate(settings)}
-            disabled={updateMutation.isPending}
-          >
-            {updateMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Settings"
-            )}
-          </Button>
-        </div>
+      <div className="flex justify-end mt-6">
+        <Button
+          onClick={() => updateMutation.mutate(settings)}
+          disabled={updateMutation.isPending}
+        >
+          {updateMutation.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save Settings"
+          )}
+        </Button>
       </div>
     </div>
   );
