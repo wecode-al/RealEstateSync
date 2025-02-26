@@ -1,17 +1,21 @@
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Clock, ExternalLink } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CheckCircle2, XCircle, Clock, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
 import { distributionSites } from "@shared/schema";
 
 interface DistributionStatusProps {
   distributions: Record<string, { 
     status: string; 
     error: string | null;
-    postUrl?: string;  // Add postUrl property
+    postUrl?: string;
   }>;
 }
 
 export function DistributionStatus({ distributions }: DistributionStatusProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "success":
@@ -23,13 +27,34 @@ export function DistributionStatus({ distributions }: DistributionStatusProps) {
     }
   };
 
-  return (
-    <div className="w-full space-y-2">
-      <Alert>
-        <AlertTitle className="font-semibold">Distribution Status</AlertTitle>
-      </Alert>
+  // Count successful and failed distributions
+  const statusCount = Object.values(distributions).reduce(
+    (acc, curr) => ({
+      success: acc.success + (curr.status === "success" ? 1 : 0),
+      error: acc.error + (curr.status === "error" ? 1 : 0),
+    }),
+    { success: 0, error: 0 }
+  );
 
-      <div className="space-y-2">
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" className="w-full justify-between">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">Distribution Status</span>
+            <span className="text-sm text-muted-foreground">
+              ({statusCount.success} successful, {statusCount.error} failed)
+            </span>
+          </div>
+          {isOpen ? (
+            <ChevronUp className="h-4 w-4" />
+          ) : (
+            <ChevronDown className="h-4 w-4" />
+          )}
+        </Button>
+      </CollapsibleTrigger>
+
+      <CollapsibleContent className="space-y-2">
         {distributionSites.map((site) => {
           const status = distributions[site];
           return (
@@ -55,7 +80,7 @@ export function DistributionStatus({ distributions }: DistributionStatusProps) {
             </div>
           );
         })}
-      </div>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

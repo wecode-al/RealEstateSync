@@ -35,6 +35,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(property);
   });
 
+  app.patch("/api/properties/:id", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const property = await storage.getProperty(id);
+
+      if (!property) {
+        res.status(404).json({ message: "Property not found" });
+        return;
+      }
+
+      const result = insertPropertySchema.safeParse(req.body);
+      if (!result.success) {
+        res.status(400).json({ message: "Invalid property data", errors: result.error });
+        return;
+      }
+
+      const updated = await storage.updateProperty(id, {
+        ...result.data,
+        distributions: property.distributions,
+        published: property.published
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error('Update property error:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to update property" 
+      });
+    }
+  });
+
   app.patch("/api/properties/:id/publish", async (req, res) => {
     const id = Number(req.params.id);
     const property = await storage.getProperty(id);
