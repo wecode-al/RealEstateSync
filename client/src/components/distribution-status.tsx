@@ -18,29 +18,35 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
   const [extensionReady, setExtensionReady] = useState(false);
   const { toast } = useToast();
 
-  // Check extension availability on mount and when tab gains focus
+  // Check extension availability
   useEffect(() => {
     const checkExtension = () => {
       try {
-        // Check if we're in Chrome and extension API is available
-        const isChrome = navigator.userAgent.includes('Chrome');
-        const hasExtensionAPI = typeof chrome !== 'undefined' && !!chrome.runtime;
+        // First check if we're in Chrome
+        const isChrome = /Chrome/.test(navigator.userAgent);
+        console.log('Browser check:', { isChrome });
 
         if (!isChrome) {
-          console.error('Not using Chrome browser');
+          console.log('Not using Chrome browser');
           setExtensionReady(false);
           setShowInstructions(true);
           return;
         }
+
+        // Then check if extension API is available
+        // @ts-ignore - Chrome types not available
+        const hasExtensionAPI = typeof chrome !== 'undefined' && !!chrome.runtime && !!chrome.runtime.sendMessage;
+        console.log('Extension API check:', { hasExtensionAPI });
 
         if (!hasExtensionAPI) {
-          console.error('Extension API not available');
+          console.log('Extension API not found');
           setExtensionReady(false);
           setShowInstructions(true);
           return;
         }
 
-        console.log('Chrome extension APIs detected');
+        // Extension appears to be available
+        console.log('Chrome extension detected');
         setExtensionReady(true);
         setShowInstructions(false);
       } catch (error) {
@@ -50,10 +56,10 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
       }
     };
 
-    // Check initially
+    // Check extension status immediately
     checkExtension();
 
-    // Recheck when tab gets focus
+    // Also check when window gains focus
     window.addEventListener('focus', checkExtension);
     return () => window.removeEventListener('focus', checkExtension);
   }, []);
@@ -164,7 +170,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
         <CollapsibleContent className="space-y-4 pt-4">
           <div className="space-y-2">
-            <h3 className="font-medium">Testing with:</h3>
+            <h3 className="font-medium">Available Sites:</h3>
             <ul className="space-y-1 text-sm">
               <li>• Merrjep.al (Make sure you're logged in)</li>
             </ul>
@@ -193,6 +199,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
               'Extension Not Ready'
             )}
           </Button>
+
           <div className="mt-2 text-sm text-muted-foreground">
             <p>Before publishing:</p>
             <ul className="list-disc list-inside mt-1">
