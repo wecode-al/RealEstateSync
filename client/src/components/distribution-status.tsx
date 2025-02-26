@@ -1,9 +1,9 @@
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CheckCircle2, XCircle, Clock, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useEffect } from "react";
-import { postToLocalSites } from "@/lib/extension";
+import { postToLocalSites, checkExtension } from "@/lib/extension";
 import { useToast } from "@/hooks/use-toast";
 
 interface DistributionStatusProps {
@@ -17,9 +17,13 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
   const [publishing, setPublishing] = useState(false);
   const { toast } = useToast();
 
-  // Check if extension is installed
+  // Check if extension is installed and working
   useEffect(() => {
-    setHasExtension(!!window.chrome?.runtime);
+    const checkExtensionStatus = async () => {
+      const isExtensionWorking = await checkExtension();
+      setHasExtension(isExtensionWorking);
+    };
+    checkExtensionStatus();
   }, []);
 
   const handlePublishToLocalSites = async () => {
@@ -147,7 +151,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
           <Button
             onClick={handlePublishToLocalSites}
-            disabled={!hasExtension || publishing}
+            disabled={!hasExtension}
             className="w-full"
           >
             {publishing ? (

@@ -2,6 +2,14 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'POST_PROPERTY') {
     handlePropertyPosting(request.data, sender.tab.id);
+    // Send immediate response to acknowledge receipt
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.type === 'CHECK_EXTENSION') {
+    // Immediately respond to extension check
+    sendResponse({ success: true });
     return true;
   }
 });
