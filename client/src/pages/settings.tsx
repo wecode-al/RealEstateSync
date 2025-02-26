@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { distributionSites } from "@shared/schema";
 
 interface SiteConfig {
@@ -14,6 +14,10 @@ interface SiteConfig {
   apiKey?: string;
   apiSecret?: string;
   additionalConfig?: Record<string, string>;
+  lastTestResult?: {
+    success: boolean;
+    message?: string;
+  };
 }
 
 type SiteSettings = Record<string, SiteConfig>;
@@ -55,7 +59,6 @@ export default function Settings() {
   // Update settings mutation
   const updateMutation = useMutation({
     mutationFn: async (newSettings: SiteSettings) => {
-      // Ensure enabled state is included for each site
       const settingsToSave = Object.fromEntries(
         Object.entries(newSettings).map(([site, config]) => [
           site,
@@ -65,17 +68,6 @@ export default function Settings() {
           }
         ])
       );
-
-      console.log('Saving settings:', {
-        ...settingsToSave,
-        "WordPress Site": settingsToSave["WordPress Site"] ? {
-          ...settingsToSave["WordPress Site"],
-          additionalConfig: {
-            ...settingsToSave["WordPress Site"].additionalConfig,
-            password: '[REDACTED]'
-          }
-        } : undefined
-      });
 
       const res = await fetch("/api/settings", {
         method: "POST",
@@ -109,13 +101,6 @@ export default function Settings() {
   const testMutation = useMutation({
     mutationFn: async (site: string) => {
       const siteSettings = settings[site];
-      console.log(`Testing connection for ${site}:`, {
-        enabled: siteSettings.enabled,
-        hasApiKey: !!siteSettings.apiKey,
-        hasApiSecret: !!siteSettings.apiSecret,
-        hasAdditionalConfig: !!siteSettings.additionalConfig
-      });
-
       const res = await fetch(`/api/settings/test/${site}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -128,20 +113,49 @@ export default function Settings() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, site) => {
       toast({
         title: "Success",
         description: "Connection test successful",
       });
+      setSettings(prev => ({
+        ...prev,
+        [site]: {
+          ...prev[site],
+          lastTestResult: { success: true }
+        }
+      }));
     },
-    onError: (error) => {
+    onError: (error, site) => {
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive"
       });
+      setSettings(prev => ({
+        ...prev,
+        [site]: {
+          ...prev[site],
+          lastTestResult: { success: false, message: error.message }
+        }
+      }));
     }
   });
+
+  // Helper to check if WordPress fields are filled
+  const areWordPressFieldsFilled = (config: SiteConfig) => {
+    return config.additionalConfig?.username &&
+           config.additionalConfig?.password &&
+           config.additionalConfig?.apiUrl;
+  };
+
+  // Auto-test WordPress connection when enabled and all fields are filled
+  useEffect(() => {
+    const wpSettings = settings["WordPress Site"];
+    if (wpSettings?.enabled && areWordPressFieldsFilled(wpSettings) && !testMutation.isPending) {
+      testMutation.mutate("WordPress Site");
+    }
+  }, [settings["WordPress Site"]?.enabled, settings["WordPress Site"]?.additionalConfig]);
 
   if (isLoading) {
     return (
@@ -157,10 +171,19 @@ export default function Settings() {
 
       <div className="grid gap-6">
         {distributionSites.map((site) => (
-          <Card key={site}>
+          <Card key={site} className={settings[site]?.enabled ? "border-primary" : ""}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>{site}</span>
+                <div className="flex items-center gap-2">
+                  <span>{site}</span>
+                  {settings[site]?.lastTestResult && (
+                    settings[site].lastTestResult.success ? (
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-red-500" title={settings[site].lastTestResult.message} />
+                    )
+                  )}
+                </div>
                 <Switch
                   checked={settings[site]?.enabled ?? false}
                   onCheckedChange={(checked) => {
@@ -193,6 +216,7 @@ export default function Settings() {
                             }
                           }));
                         }}
+                        className={settings[site]?.enabled && !settings[site]?.additionalConfig?.username ? "border-red-500" : ""}
                       />
                     </div>
                     <div className="grid w-full items-center gap-1.5">
@@ -213,6 +237,7 @@ export default function Settings() {
                             }
                           }));
                         }}
+                        className={settings[site]?.enabled && !settings[site]?.additionalConfig?.password ? "border-red-500" : ""}
                       />
                     </div>
                     <div className="grid w-full items-center gap-1.5">
@@ -233,6 +258,7 @@ export default function Settings() {
                             }
                           }));
                         }}
+                        className={settings[site]?.enabled && !settings[site]?.additionalConfig?.apiUrl ? "border-red-500" : ""}
                       />
                       <p className="text-sm text-muted-foreground">
                         Enter your WordPress site URL including http:// or https://
@@ -272,11 +298,21 @@ export default function Settings() {
                   </>
                 )}
 
+                {settings[site]?.enabled && site === "WordPress Site" && !areWordPressFieldsFilled(settings[site]) && (
+                  <p className="text-sm text-red-500">
+                    Please fill in all required fields to enable WordPress integration
+                  </p>
+                )}
+
                 <div className="flex justify-end gap-4">
                   <Button
                     variant="outline"
                     onClick={() => testMutation.mutate(site)}
-                    disabled={!settings[site]?.enabled || testMutation.isPending}
+                    disabled={
+                      !settings[site]?.enabled || 
+                      testMutation.isPending || 
+                      (site === "WordPress Site" && !areWordPressFieldsFilled(settings[site]))
+                    }
                   >
                     {testMutation.isPending ? (
                       <>
