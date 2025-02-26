@@ -5,12 +5,18 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import type { Property } from "@shared/schema";
 
-export default function EditProperty({ params }: { params: { id: string } }) {
+interface EditPropertyProps {
+  params: {
+    id: string;
+  };
+}
+
+export default function EditProperty({ params }: EditPropertyProps) {
   const [, navigate] = useLocation();
 
   const { data: property, isLoading, error } = useQuery<Property>({
-    queryKey: ["/api/properties", Number(params.id)],
-    retry: false // Don't retry on 404
+    queryKey: ["/api/properties", params.id],
+    enabled: !!params.id
   });
 
   if (isLoading) {
