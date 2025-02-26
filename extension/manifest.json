@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Albanian Property Poster",
+  "version": "1.0",
+  "description": "Post properties to Albanian listing sites",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "cookies",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "https://*.merrjep.al/*",
+    "https://*.njoftime.com/*",
+    "https://*.njoftime.al/*",
+    "https://*.gazetacelesi.al/*",
+    "http://localhost:*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.merrjep.al/*",
+        "https://*.njoftime.com/*",
+        "https://*.njoftime.al/*",
+        "https://*.gazetacelesi.al/*"
+      ],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
