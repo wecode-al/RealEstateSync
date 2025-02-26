@@ -2,6 +2,23 @@ import { pgTable, text, serial, integer, numeric, boolean, jsonb, timestamp } fr
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Add settings table definition
+export const settings = pgTable("settings", {
+  id: serial("id").primaryKey(),
+  site: text("site").notNull(),
+  enabled: boolean("enabled").default(false).notNull(),
+  apiKey: text("api_key"),
+  apiSecret: text("api_secret"),
+  additionalConfig: jsonb("additional_config"),
+});
+
+export const insertSettingSchema = createInsertSchema(settings).omit({ 
+  id: true 
+});
+
+export type Setting = typeof settings.$inferSelect;
+export type InsertSetting = z.infer<typeof insertSettingSchema>;
+
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
