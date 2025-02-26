@@ -113,22 +113,47 @@ class WordPressService {
       const auth = Buffer.from(`${config.username}:${config.password}`).toString('base64');
       const baseUrl = new URL(config.apiUrl).origin;
 
-      const response = await fetch(`${baseUrl}/wp-json/wp/v2/types/property`, {
+      console.log(`Testing WordPress connection to: ${baseUrl}`);
+
+      // First try to get WordPress info to verify base connectivity
+      const infoResponse = await fetch(`${baseUrl}/wp-json`, {
         headers: {
           'Authorization': `Basic ${auth}`
         }
       });
 
+      if (!infoResponse.ok) {
+        const text = await infoResponse.text();
+        console.error('WordPress Info Response:', infoResponse.status, text);
+        throw new Error(`Could not connect to WordPress API: ${text}`);
+      }
+
+      // Then check if the property post type is available
+      const response = await fetch(`${baseUrl}/wp-json/wp/v2/types`, {
+        headers: {
+          'Authorization': `Basic ${auth}`
+        }
+      });
+
+      const responseText = await response.text();
+      console.log('WordPress Types Response:', response.status, responseText);
+
       if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`Failed to connect to WordPress: ${text}`);
+        throw new Error(`Failed to connect to WordPress: ${responseText}`);
       }
 
       const data = await response.json();
       if (!data) {
         throw new Error('No response from WordPress API');
       }
+
+      // Check if property post type exists
+      if (!data.property) {
+        throw new Error('Property post type is not configured in WordPress. Please ensure the custom post type is set up correctly.');
+      }
+
     } catch (error) {
+      console.error('WordPress Connection Test Error:', error);
       throw new Error(error instanceof Error ? error.message : 'Failed to connect to WordPress');
     }
   }
