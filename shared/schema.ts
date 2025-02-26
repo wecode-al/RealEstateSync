@@ -42,37 +42,51 @@ export const propertyTypes = [
   "Other"
 ] as const;
 
-// Base distribution sites that are always available
+// Albanian and regional listing sites
 export const distributionSites = [
   "WordPress Site",
-  "Zillow",
-  "Realtor.com",
-  "Trulia",
-  "Local MLS"
+  "njoftime.com",
+  "njoftime.al",
+  "merrjep.al",
+  "mirlir",
+  "indomino",
+  "instagram",
+  "facebook",
+  "okazion.al"
 ] as const;
 
-// Custom local listing site configuration
-export const localListingSites = [
-  {
-    id: "local-site-1",
-    name: "Local Real Estate Portal",
-    url: "https://local-realestate.example.com",
-    apiEndpoint: "/api/listings",
-    requiresAuth: true,
+export type DistributionSite = typeof distributionSites[number];
+
+// Site configuration for handling API endpoints and authentication
+export const siteConfigs = {
+  "njoftime.com": {
+    baseUrl: "https://njoftime.com",
+    apiEndpoint: "/api/properties",
+    requiresAuth: true
   },
-  {
-    id: "local-site-2",
-    name: "Community Housing Board",
-    url: "https://community-housing.example.com",
-    apiEndpoint: "/v1/properties",
-    requiresAuth: true,
+  "njoftime.al": {
+    baseUrl: "https://njoftime.al",
+    apiEndpoint: "/api/listings",
+    requiresAuth: true
+  },
+  "merrjep.al": {
+    baseUrl: "https://merrjep.al",
+    apiEndpoint: "/api/properties",
+    requiresAuth: true
+  },
+  "mirlir": {
+    baseUrl: "https://mirlir.al",
+    apiEndpoint: "/api/listings",
+    requiresAuth: true
+  },
+  "indomino": {
+    baseUrl: "https://indomino.al",
+    apiEndpoint: "/api/properties",
+    requiresAuth: true
+  },
+  "okazion.al": {
+    baseUrl: "https://okazion.al",
+    apiEndpoint: "/api/listings",
+    requiresAuth: true
   }
-] as const;
-
-// Combine all distribution sites
-export const allDistributionSites = [
-  ...distributionSites,
-  ...localListingSites.map(site => site.name)
-] as const;
-
-export type DistributionSite = typeof allDistributionSites[number];
+} as const;

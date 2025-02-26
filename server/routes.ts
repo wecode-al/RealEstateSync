@@ -1,9 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPropertySchema, type Property, localListingSites } from "@shared/schema";
+import { insertPropertySchema, type Property, distributionSites } from "@shared/schema";
 import { wordPressService } from "./services/wordpress";
-import { localListingService } from "./services/local-listings";
+import { albanianListingService } from "./services/albanian-listings";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/properties", async (_req, res) => {
@@ -50,29 +50,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     updatedDistributions["WordPress Site"] = {
       status: wpResult.success ? "success" : "error",
       error: wpResult.error || null,
-      postUrl: wpResult.postUrl  // Store the WordPress post URL
+      postUrl: wpResult.postUrl
     };
 
-    // Publish to local listing sites
-    for (const site of localListingSites) {
-      const result = await localListingService.publishProperty(property, site.id);
-      updatedDistributions[site.name] = {
+    // Publish to Albanian listing sites
+    for (const site of distributionSites) {
+      if (site === "WordPress Site") continue;
+
+      const result = await albanianListingService.publishProperty(property, site);
+      updatedDistributions[site] = {
         status: result.success ? "success" : "error",
         error: result.error || null,
         postUrl: result.listingUrl
-      };
-    }
-
-    // Simulate other distribution sites
-    const otherSites = Object.keys(property.distributions).filter(site => 
-      site !== "WordPress Site" && 
-      !localListingSites.some(local => local.name === site)
-    );
-
-    for (const site of otherSites) {
-      updatedDistributions[site] = {
-        status: Math.random() > 0.2 ? "success" : "error",
-        error: Math.random() > 0.2 ? null : "API Connection failed"
       };
     }
 
