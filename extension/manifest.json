@@ -6,13 +6,22 @@
   "permissions": [
     "activeTab",
     "storage",
-    "cookies",
     "tabs"
   ],
   "host_permissions": [
     "https://*.merrjep.al/*",
-    "http://localhost:*/*"
+    "http://localhost:*/*",
+    "https://*.replit.dev/*",
+    "https://*.replit.app/*"
   ],
+  "externally_connectable": {
+    "matches": [
+      "http://localhost:*/*",
+      "https://*.replit.dev/*",
+      "https://*.replit.app/*"
+    ],
+    "accepts_tls_channel_id": false
+  },
   "background": {
     "service_worker": "background.js"
   },
@@ -20,7 +29,9 @@
     {
       "matches": [
         "https://*.merrjep.al/*",
-        "http://localhost:*/*"
+        "http://localhost:*/*",
+        "https://*.replit.dev/*",
+        "https://*.replit.app/*"
       ],
       "js": ["content.js"]
     }
@@ -30,6 +41,7 @@
     "matches": ["<all_urls>"]
   }],
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_title": "Albanian Property Poster"
   }
 }

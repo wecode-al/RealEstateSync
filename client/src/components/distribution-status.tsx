@@ -2,7 +2,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Clock, ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { postToLocalSites } from "@/lib/extension";
 import { useToast } from "@/hooks/use-toast";
 import type { Property } from "@shared/schema";
@@ -15,7 +15,48 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [extensionReady, setExtensionReady] = useState(false);
   const { toast } = useToast();
+
+  // Check extension availability on mount and when tab gains focus
+  useEffect(() => {
+    const checkExtension = () => {
+      try {
+        // Check if we're in Chrome and extension API is available
+        const isChrome = navigator.userAgent.includes('Chrome');
+        const hasExtensionAPI = typeof chrome !== 'undefined' && !!chrome.runtime;
+
+        if (!isChrome) {
+          console.error('Not using Chrome browser');
+          setExtensionReady(false);
+          setShowInstructions(true);
+          return;
+        }
+
+        if (!hasExtensionAPI) {
+          console.error('Extension API not available');
+          setExtensionReady(false);
+          setShowInstructions(true);
+          return;
+        }
+
+        console.log('Chrome extension APIs detected');
+        setExtensionReady(true);
+        setShowInstructions(false);
+      } catch (error) {
+        console.error('Error checking extension:', error);
+        setExtensionReady(false);
+        setShowInstructions(true);
+      }
+    };
+
+    // Check initially
+    checkExtension();
+
+    // Recheck when tab gets focus
+    window.addEventListener('focus', checkExtension);
+    return () => window.removeEventListener('focus', checkExtension);
+  }, []);
 
   const handlePublishToLocalSites = async () => {
     if (publishing) return;
@@ -24,20 +65,10 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
       setPublishing(true);
       console.log('Starting publication process...');
 
-      // Check if Chrome is available
-      if (typeof chrome === 'undefined') {
-        console.error('Chrome object not available');
-        throw new Error('Please make sure you are using Google Chrome browser');
+      if (!extensionReady) {
+        throw new Error('Chrome extension not ready. Please make sure you are using Chrome browser and have installed the extension.');
       }
 
-      // Check if extension is present
-      if (!chrome.runtime) {
-        console.error('Chrome runtime not available');
-        throw new Error('Chrome extension not installed. Please install the extension first.');
-      }
-
-      // Attempt to send to extension
-      console.log('Attempting to send property data:', property);
       await postToLocalSites(property);
 
       toast({
@@ -64,40 +95,41 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
           <AlertTitle className="text-red-500">Chrome Extension Required</AlertTitle>
           <AlertDescription className="mt-2">
             <p className="mb-3">
-              To publish to local listing sites, you need to install our Chrome extension.
+              This feature requires Google Chrome browser and our extension.
               The extension allows automatic posting to sites like Merrjep while you're logged in.
             </p>
             <div className="space-y-2 mt-2 text-sm">
               <p className="font-semibold">Installation Steps:</p>
               <ol className="list-decimal list-inside space-y-1">
+                <li>First, make sure you're using Google Chrome browser</li>
                 <li>In the file explorer (left sidebar):</li>
                 <ul className="ml-6 mt-1 space-y-1 list-disc">
                   <li>Find the "extension" folder</li>
                   <li>Right-click on it</li>
-                  <li>Select "Download" from the menu</li>
-                  <li>Note where you save the downloaded file (e.g., Downloads folder)</li>
+                  <li>Select "Download" to download it</li>
                 </ul>
                 <li>After downloading:</li>
                 <ul className="ml-6 mt-1 space-y-1 list-disc">
-                  <li>Unzip/extract the downloaded file if it's a .zip file</li>
-                  <li>You should now have a folder named "extension" with files inside</li>
+                  <li>Extract the downloaded folder</li>
+                  <li>You should now have a folder named "extension"</li>
                 </ul>
                 <li>Install in Chrome:</li>
                 <ul className="ml-6 mt-1 space-y-1 list-disc">
                   <li>Open Chrome browser</li>
-                  <li>Copy and paste this in a new tab: <code className="bg-gray-100 px-2 py-0.5 rounded">chrome://extensions</code></li>
+                  <li>Go to chrome://extensions</li>
                   <li>Enable "Developer mode" (toggle in top right)</li>
-                  <li>Click "Load unpacked" button</li>
-                  <li>Browse to and select the "extension" folder you extracted</li>
+                  <li>Click "Load unpacked"</li>
+                  <li>Select the extracted "extension" folder</li>
                 </ul>
               </ol>
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                <p className="text-yellow-800 font-medium">Important Notes:</p>
+                <p className="text-yellow-800 font-medium">Important:</p>
                 <ul className="mt-2 space-y-1 text-yellow-700">
                   <li>• Keep the extension folder on your computer</li>
-                  <li>• Make sure you select the folder containing manifest.json</li>
-                  <li>• The extension icon should appear in Chrome's toolbar after installation</li>
+                  <li>• Make sure you're using Google Chrome</li>
+                  <li>• The extension icon should appear in Chrome's toolbar</li>
                   <li>• After installing, refresh this page</li>
+                  <li>• Make sure you're logged into Merrjep.al before publishing</li>
                 </ul>
               </div>
               <Button 
@@ -147,7 +179,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
           <Button
             onClick={handlePublishToLocalSites}
-            disabled={publishing}
+            disabled={!extensionReady || publishing}
             className="w-full"
           >
             {publishing ? (

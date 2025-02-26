@@ -1,11 +1,11 @@
-// Listen for messages from the web app
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('Background script received message:', request);
+// Listen for external messages from web app
+chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
+  console.log('Background script received external message:', request);
 
   if (request.type === 'POST_PROPERTY') {
     console.log('Starting property posting process');
     handlePropertyPosting(request.data)
-      .then(result => {
+      .then(() => {
         console.log('Property posting initiated successfully');
         sendResponse({ success: true });
       })
@@ -13,20 +13,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.error('Property posting failed:', error);
         sendResponse({ success: false, error: error.message });
       });
-    return true; // Keep the message channel open for async response
+    return true; // Keep message channel open for async response
   }
 });
 
-// Also handle internal messages (e.g., from content scripts)
+// Listen for internal messages
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('Background received internal message:', request);
+  console.log('Background script received internal message:', request);
 
   if (request.type === 'UPDATE_STATUS') {
     // Forward status updates to popup
-    chrome.runtime.sendMessage(request);
+    chrome.runtime.sendMessage({
+      type: 'UPDATE_STATUS',
+      data: request.data
+    });
     sendResponse({ success: true });
-    return true;
   }
+
+  return true; // Keep message channel open
 });
 
 async function handlePropertyPosting(propertyData) {
@@ -75,14 +79,6 @@ async function handlePropertyPosting(propertyData) {
 
   } catch (error) {
     console.error('Property posting error:', error);
-    chrome.runtime.sendMessage({
-      type: 'UPDATE_STATUS',
-      data: {
-        site: site.name,
-        success: false,
-        message: `Error: ${error.message}`
-      }
-    });
     throw error;
   }
 }
