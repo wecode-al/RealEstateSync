@@ -36,6 +36,7 @@ const scrapeRequestSchema = z.object({
 
 router.post("/api/scrape", async (req, res) => {
   try {
+    console.log("Received scrape request:", JSON.stringify(req.body, null, 2));
     const { url, configId } = scrapeRequestSchema.parse(req.body);
 
     const config = await storage.getScraperConfig(configId);
@@ -43,9 +44,11 @@ router.post("/api/scrape", async (req, res) => {
       return res.status(404).json({ error: "Scraper configuration not found" });
     }
 
+    console.log("Using scraper config:", JSON.stringify(config, null, 2));
     const scraper = new WebScraper(config);
     const propertyData = await scraper.scrapeProperty(url);
 
+    console.log("Successfully scraped property:", JSON.stringify(propertyData, null, 2));
     res.json(propertyData);
   } catch (error) {
     console.error("Scraping error:", error);
