@@ -1,4 +1,4 @@
-import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CheckCircle2, XCircle, Clock, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
@@ -18,6 +18,7 @@ interface DistributionStatusProps {
 export function DistributionStatus({ distributions, property }: DistributionStatusProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasExtension, setHasExtension] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
 
   // Check if extension is installed
   useEffect(() => {
@@ -64,17 +65,39 @@ export function DistributionStatus({ distributions, property }: DistributionStat
       {!hasExtension && (
         <Alert className="mb-4">
           <AlertTitle className="text-red-500">Chrome Extension Required</AlertTitle>
-          <p>
-            To publish to local listing sites, you need to install our Chrome extension.
-            The extension allows automatic posting to sites like Merrjep, Njoftime, and others while you're logged in.
-          </p>
-          <Button 
-            variant="link" 
-            className="mt-2 p-0"
-            onClick={() => window.open('chrome://extensions')} // Replace with actual extension URL
-          >
-            Install Extension
-          </Button>
+          <AlertDescription className="mt-2">
+            <p className="mb-3">
+              To publish to local listing sites, you need to install our Chrome extension.
+              The extension allows automatic posting to sites like Merrjep, Njoftime, and others while you're logged in.
+            </p>
+            {!showInstructions ? (
+              <Button 
+                variant="link" 
+                className="p-0 text-blue-500"
+                onClick={() => setShowInstructions(true)}
+              >
+                Show Installation Instructions
+              </Button>
+            ) : (
+              <div className="space-y-2 mt-2 text-sm">
+                <p className="font-semibold">Installation Steps:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Open Chrome and go to Extensions (copy and paste: chrome://extensions)</li>
+                  <li>Enable "Developer mode" in the top right corner</li>
+                  <li>Click "Load unpacked" button</li>
+                  <li>Select the "extension" folder from this project</li>
+                  <li>The extension icon should appear in your Chrome toolbar</li>
+                </ol>
+                <Button 
+                  variant="link" 
+                  className="p-0 text-blue-500"
+                  onClick={() => setShowInstructions(false)}
+                >
+                  Hide Instructions
+                </Button>
+              </div>
+            )}
+          </AlertDescription>
         </Alert>
       )}
 
