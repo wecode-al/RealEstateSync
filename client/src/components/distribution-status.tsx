@@ -1,7 +1,7 @@
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CheckCircle2, XCircle, Clock, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, ExternalLink, ChevronDown, ChevronUp, Download } from "lucide-react";
 import { useState, useEffect } from "react";
 import { distributionSites } from "@shared/schema";
 import { postToLocalSites } from "@/lib/extension";
@@ -82,17 +82,34 @@ export function DistributionStatus({ distributions, property }: DistributionStat
               <div className="space-y-2 mt-2 text-sm">
                 <p className="font-semibold">Installation Steps:</p>
                 <ol className="list-decimal list-inside space-y-1">
-                  <li>In your project files (left sidebar), locate and right-click the "extension" folder</li>
-                  <li>Click "Download" to save the extension folder to your computer</li>
-                  <li>Open Chrome and go to Extensions (copy and paste: chrome://extensions in a new tab)</li>
-                  <li>Enable "Developer mode" in the top right corner</li>
-                  <li>Click "Load unpacked" button</li>
-                  <li>Navigate to where you downloaded the extension folder and select it</li>
-                  <li>The extension icon should appear in your Chrome toolbar</li>
+                  <li>In the file explorer (left sidebar):</li>
+                  <ul className="ml-6 mt-1 space-y-1 list-disc">
+                    <li>Find the "extension" folder</li>
+                    <li>Right-click on it</li>
+                    <li>Select "Download" from the menu</li>
+                    <li>Note where you save the downloaded file (e.g., Downloads folder)</li>
+                  </ul>
+                  <li>After downloading:</li>
+                  <ul className="ml-6 mt-1 space-y-1 list-disc">
+                    <li>Unzip/extract the downloaded file if it's a .zip file</li>
+                    <li>You should now have a folder named "extension" with files inside</li>
+                  </ul>
+                  <li>Install in Chrome:</li>
+                  <ul className="ml-6 mt-1 space-y-1 list-disc">
+                    <li>Open Chrome browser</li>
+                    <li>Copy and paste this in a new tab: <code className="bg-gray-100 px-2 py-0.5 rounded">chrome://extensions</code></li>
+                    <li>Enable "Developer mode" (toggle in top right)</li>
+                    <li>Click "Load unpacked" button</li>
+                    <li>Browse to and select the "extension" folder you extracted</li>
+                  </ul>
                 </ol>
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                  <p className="text-yellow-800 font-medium">Important:</p>
-                  <p className="text-yellow-700">Make sure to keep the extension folder on your computer. Don't delete it after installation as Chrome needs it to run the extension.</p>
+                  <p className="text-yellow-800 font-medium">Important Notes:</p>
+                  <ul className="mt-2 space-y-1 text-yellow-700">
+                    <li>• Keep the extension folder on your computer</li>
+                    <li>• Make sure you select the folder containing manifest.json</li>
+                    <li>• The extension icon should appear in Chrome's toolbar after installation</li>
+                  </ul>
                 </div>
                 <Button 
                   variant="link" 
