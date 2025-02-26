@@ -87,29 +87,46 @@ export class DatabaseStorage implements IStorage {
   // Settings methods
   async getSettings(): Promise<Record<string, Setting>> {
     const allSettings = await db.select().from(settings);
+    console.log('Retrieved settings:', {
+      count: allSettings.length,
+      sites: allSettings.map(s => s.site),
+      enabled: allSettings.map(s => `${s.site}: ${s.enabled}`)
+    });
     return Object.fromEntries(
       allSettings.map(setting => [setting.site, setting])
     );
   }
 
   async updateSettings(newSettings: Record<string, Partial<Setting>>): Promise<void> {
-    // Start a transaction to update all settings
+    console.log('Updating settings with:', {
+      ...newSettings,
+      "WordPress Site": newSettings["WordPress Site"] ? {
+        ...newSettings["WordPress Site"],
+        additionalConfig: {
+          ...newSettings["WordPress Site"].additionalConfig,
+          password: '[REDACTED]'
+        }
+      } : undefined
+    });
+
     await db.transaction(async (tx) => {
-      // First delete all existing settings
       await tx.delete(settings);
 
-      // Then insert the new settings
       for (const [site, setting] of Object.entries(newSettings)) {
-        if (setting.enabled) {
-          await tx.insert(settings).values({
-            site,
-            enabled: setting.enabled,
-            apiKey: setting.apiKey,
-            apiSecret: setting.apiSecret,
-            additionalConfig: setting.additionalConfig
-          });
-        }
+        await tx.insert(settings).values({
+          site,
+          enabled: setting.enabled ?? false,
+          apiKey: setting.apiKey,
+          apiSecret: setting.apiSecret,
+          additionalConfig: setting.additionalConfig
+        });
       }
+    });
+
+    const savedSettings = await this.getSettings();
+    console.log('Verified saved settings:', {
+      sites: Object.keys(savedSettings),
+      enabled: Object.entries(savedSettings).map(([site, setting]) => `${site}: ${setting.enabled}`)
     });
   }
 }

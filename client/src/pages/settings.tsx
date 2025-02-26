@@ -40,7 +40,6 @@ export default function Settings() {
     setSettings(initialSettings);
   }, []);
 
-  // Fetch current settings
   const { data: currentSettings, isLoading } = useQuery<SiteSettings>({
     queryKey: ["/api/settings"],
     onSuccess: (data) => {
@@ -56,12 +55,23 @@ export default function Settings() {
   // Update settings mutation
   const updateMutation = useMutation({
     mutationFn: async (newSettings: SiteSettings) => {
-      console.log('Sending settings update:', {
-        ...newSettings,
-        "WordPress Site": newSettings["WordPress Site"] ? {
-          ...newSettings["WordPress Site"],
+      // Ensure enabled state is included for each site
+      const settingsToSave = Object.fromEntries(
+        Object.entries(newSettings).map(([site, config]) => [
+          site,
+          {
+            ...config,
+            enabled: config.enabled ?? false
+          }
+        ])
+      );
+
+      console.log('Saving settings:', {
+        ...settingsToSave,
+        "WordPress Site": settingsToSave["WordPress Site"] ? {
+          ...settingsToSave["WordPress Site"],
           additionalConfig: {
-            ...newSettings["WordPress Site"].additionalConfig,
+            ...settingsToSave["WordPress Site"].additionalConfig,
             password: '[REDACTED]'
           }
         } : undefined
@@ -70,13 +80,14 @@ export default function Settings() {
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newSettings)
+        body: JSON.stringify(settingsToSave)
       });
 
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to save settings");
       }
+
       return res.json();
     },
     onSuccess: () => {
