@@ -29,7 +29,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
       price: property.price.toString(),
       bedrooms: property.bedrooms,
       bathrooms: property.bathrooms.toString(),
-      sqft: property.sqft.toString(),
+      squareMeters: property.squareMeters?.toString() || "0", // Handle potential undefined
       address: property.address,
       city: property.city,
       state: property.state,
@@ -43,7 +43,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
       price: "0",
       bedrooms: 0,
       bathrooms: "0",
-      sqft: "0",
+      squareMeters: "0",
       address: "",
       city: "",
       state: "",
@@ -63,7 +63,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
           ...data,
           price: String(data.price),
           bathrooms: String(data.bathrooms),
-          sqft: String(data.sqft)
+          squareMeters: String(data.squareMeters)
         }
       );
       return res.json();
@@ -111,10 +111,10 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 placeholder="Price"
               />
               <Input 
-                {...form.register("sqft")}
+                {...form.register("squareMeters")}
                 type="number"
                 min="0"
-                placeholder="Square Feet"
+                placeholder="Square Meters"
               />
             </div>
 

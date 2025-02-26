@@ -9,12 +9,14 @@ import Home from "@/pages/home";
 import AddProperty from "@/pages/add-property";
 import Settings from "@/pages/settings";
 import AuthPage from "@/pages/auth";
+import EditProperty from "@/pages/edit-property";
 
 function Router() {
   return (
     <Switch>
       <ProtectedRoute path="/" component={Home} />
       <ProtectedRoute path="/add-property" component={AddProperty} />
+      <ProtectedRoute path="/edit-property/:id" component={EditProperty} />
       <ProtectedRoute path="/settings" component={Settings} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/:rest*" component={NotFound} />

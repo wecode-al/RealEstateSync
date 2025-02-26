@@ -103,7 +103,7 @@ export function PropertyPreview({ property }: PropertyPreviewProps) {
           </div>
           <div className="flex items-center gap-1">
             <Square className="h-4 w-4" />
-            <span>{property.sqft} sqft</span>
+            <span>{property.squareMeters} m²</span>
           </div>
         </div>
 
