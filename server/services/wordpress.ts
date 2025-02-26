@@ -22,6 +22,14 @@ class WordPressService {
     const settings = await storage.getSettings();
     const wpSettings = settings["WordPress Site"];
 
+    console.log('WordPress Settings:', {
+      ...wpSettings,
+      additionalConfig: wpSettings?.additionalConfig ? {
+        ...wpSettings.additionalConfig,
+        password: '[REDACTED]'
+      } : null
+    });
+
     if (!wpSettings?.enabled) {
       throw new Error("WordPress is not enabled in settings");
     }
@@ -39,6 +47,12 @@ class WordPressService {
 
     // Remove trailing slashes
     config.apiUrl = config.apiUrl.replace(/\/+$/, '');
+
+    console.log('WordPress Config:', {
+      username: config.username,
+      apiUrl: config.apiUrl,
+      // Don't log password
+    });
 
     return config;
   }

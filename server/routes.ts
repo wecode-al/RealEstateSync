@@ -119,18 +119,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/settings/test/:site", async (req, res) => {
     const site = req.params.site;
-    const config = req.body;
 
-    console.log(`Testing connection for ${site}:`, {
-      ...config,
-      password: '[REDACTED]' // Don't log sensitive data
-    });
+    console.log(`Testing connection for ${site}`);
 
     try {
       if (site === "WordPress Site") {
         await wordPressService.testConnection();
       } else {
-        await albanianListingService.publishProperty({ ...config, id: 0 } as Property, site);
+        await albanianListingService.publishProperty({ ...req.body, id: 0 } as Property, site);
       }
       res.json({ success: true });
     } catch (error) {
