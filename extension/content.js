@@ -1,15 +1,22 @@
-// Handle form filling on listing sites
+// Handle messages from background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('Content script received message:', request.type);
+  console.log('Content script received message:', request);
 
   if (request.type === 'FILL_FORM') {
-    console.log('Received FILL_FORM message:', request);
-    fillForm(request.data, request.mapping);
+    fillForm(request.data, request.mapping)
+      .then(() => {
+        console.log('Form filled successfully');
+        sendResponse({ success: true });
+      })
+      .catch(error => {
+        console.error('Form filling failed:', error);
+        sendResponse({ success: false, error: error.message });
+      });
     return true;
   }
 
   if (request.type === 'CHECK_EXTENSION') {
-    console.log('Received CHECK_EXTENSION message');
+    console.log('Extension check received');
     sendResponse({ success: true });
     return true;
   }
@@ -17,71 +24,57 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 async function fillForm(propertyData, mapping) {
   try {
-    console.log('Starting to fill form with data:', propertyData);
-    console.log('Using field mapping:', mapping);
+    console.log('Starting to fill form with:', propertyData);
 
     // Wait for form to load
-    const firstSelector = Object.values(mapping)[0];
-    console.log('Waiting for form element:', firstSelector);
-    await waitForElement(firstSelector);
-    console.log('Form element found, proceeding to fill fields');
+    const firstField = await waitForElement(Object.values(mapping)[0]);
+    console.log('Form loaded, starting to fill fields');
 
     // Fill each field
     for (const [field, selector] of Object.entries(mapping)) {
       const element = document.querySelector(selector);
       if (!element) {
-        console.warn(`Element not found for selector: ${selector}`);
+        console.warn(`Element not found: ${selector}`);
         continue;
       }
 
-      console.log(`Filling field "${field}" with selector "${selector}"`);
-      console.log('Element found:', element.tagName, element.type);
+      console.log(`Filling ${field} using ${selector}`);
 
       if (element.tagName === 'SELECT') {
-        // Handle select elements
         const value = propertyData[field]?.toString();
-        console.log('Handling SELECT element with value:', value);
         const option = Array.from(element.options)
           .find(opt => opt.text.toLowerCase().includes(value.toLowerCase()));
+
         if (option) {
           element.value = option.value;
-          console.log('Selected option:', option.text);
-        } else {
-          console.warn('No matching option found for:', value);
+          console.log(`Selected option: ${option.text}`);
         }
       } else if (element.tagName === 'TEXTAREA') {
-        // Handle textareas
-        console.log('Handling TEXTAREA');
         element.value = propertyData[field];
         element.style.height = 'auto';
         element.style.height = element.scrollHeight + 'px';
-      } else if (element.type === 'file' && propertyData.images?.length) {
-        // Handle image uploads
-        console.log('Found file input, images:', propertyData.images);
-        // For now, just log that we found the image field
-        console.log('Image upload field found:', selector);
+      } else if (element.type === 'file') {
+        // Skip file inputs for now
+        console.log('Skipping file input:', selector);
       } else {
-        // Handle regular inputs
-        console.log('Handling regular input');
         element.value = propertyData[field];
       }
 
-      // Trigger change event to activate any site-specific scripts
+      // Trigger events
       element.dispatchEvent(new Event('change', { bubbles: true }));
       element.dispatchEvent(new Event('input', { bubbles: true }));
-      console.log(`Field "${field}" filled successfully`);
     }
 
-    console.log('Form filled successfully');
-    // Let the extension know we're done
+    // Update status
     chrome.runtime.sendMessage({
       type: 'UPDATE_STATUS',
       data: {
         site: 'merrjep.al',
         success: true,
-        message: 'Form filled successfully'
+        message: 'Form filled successfully!'
       }
     });
+
   } catch (error) {
     console.error('Error filling form:', error);
     chrome.runtime.sendMessage({
@@ -89,7 +82,7 @@ async function fillForm(propertyData, mapping) {
       data: {
         site: 'merrjep.al',
         success: false,
-        message: `Error filling form: ${error.message}`
+        message: `Error: ${error.message}`
       }
     });
     throw error;
@@ -97,39 +90,29 @@ async function fillForm(propertyData, mapping) {
 }
 
 function waitForElement(selector) {
-  console.log('Waiting for element:', selector);
   return new Promise((resolve, reject) => {
-    if (document.querySelector(selector)) {
-      console.log('Element found immediately:', selector);
-      return resolve(document.querySelector(selector));
+    const element = document.querySelector(selector);
+    if (element) {
+      return resolve(element);
     }
 
-    const observer = new MutationObserver(mutations => {
-      if (document.querySelector(selector)) {
-        console.log('Element found after waiting:', selector);
-        observer.disconnect();
-        resolve(document.querySelector(selector));
+    const observer = new MutationObserver((mutations, obs) => {
+      const element = document.querySelector(selector);
+      if (element) {
+        obs.disconnect();
+        resolve(element);
       }
     });
 
-    // Start observing with a timeout
     observer.observe(document.body, {
       childList: true,
       subtree: true
     });
 
-    // Add timeout to avoid infinite waiting
+    // Add timeout
     setTimeout(() => {
       observer.disconnect();
-      console.error('Timeout waiting for element:', selector);
-      reject(new Error(`Timeout waiting for element: ${selector}`));
+      reject(new Error(`Timeout waiting for ${selector}`));
     }, 30000);
   });
-}
-
-// Helper function to handle image uploads when needed
-async function handleImageUpload(input, imageUrls) {
-  // This would need to be implemented based on how you want to handle image uploads
-  // For example, you might need to download images first and then upload them
-  console.log('Image upload handling needed for:', imageUrls);
 }

@@ -1,19 +1,18 @@
 // Track status for each site
-const siteStatuses = {
+let siteStatuses = {
   "merrjep.al": { pending: true },
-  "njoftime.com": { pending: true },
-  "gazetacelesi.al": { pending: true },
-  "njoftime.al": { pending: true },
 };
 
 // Show posting status in popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Popup received message:', request);
   if (request.type === "UPDATE_STATUS") {
     updateStatus(request.data);
   }
 });
 
 function updateStatus(data) {
+  console.log('Updating status:', data);
   const container = document.getElementById("status-container");
   const siteDiv = getSiteDiv(data.site);
 
@@ -43,7 +42,7 @@ function getSiteDiv(site) {
     siteDiv.className = "site-status";
     siteDiv.innerHTML = `
       <div class="site-name">${site}</div>
-      <div class="status pending">Pending...</div>
+      <div class="status pending">Waiting to start...</div>
     `;
     container.appendChild(siteDiv);
   }
@@ -51,9 +50,9 @@ function getSiteDiv(site) {
   return siteDiv;
 }
 
-// Initialize status display for all sites
+// Initialize status display
 document.addEventListener("DOMContentLoaded", () => {
-  Object.keys(siteStatuses).forEach((site) => {
-    getSiteDiv(site);
-  });
+  console.log('Popup loaded, initializing status display');
+  // Only show Merrjep.al for now
+  getSiteDiv('merrjep.al');
 });

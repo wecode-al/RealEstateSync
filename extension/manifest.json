@@ -7,13 +7,11 @@
     "activeTab",
     "storage",
     "cookies",
-    "webNavigation"
+    "webNavigation",
+    "tabs"
   ],
   "host_permissions": [
     "https://*.merrjep.al/*",
-    "https://*.njoftime.com/*",
-    "https://*.njoftime.al/*",
-    "https://*.gazetacelesi.al/*",
     "http://localhost:*/*"
   ],
   "background": {
@@ -22,10 +20,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://*.merrjep.al/*",
-        "https://*.njoftime.com/*",
-        "https://*.njoftime.al/*",
-        "https://*.gazetacelesi.al/*"
+        "https://*.merrjep.al/*"
       ],
       "js": ["content.js"]
     }

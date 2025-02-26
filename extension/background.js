@@ -1,25 +1,29 @@
-// Handle communication between our app and content scripts
+// Listen for messages from the web app
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('Background received message:', request.type);
+  console.log('Background received message:', request);
 
-  if (request.type === 'POST_PROPERTY') {
-    handlePropertyPosting(request.data);
-    // Send immediate response to acknowledge receipt
-    console.log('Sending POST_PROPERTY response');
+  if (request.type === 'CHECK_EXTENSION') {
+    console.log('Sending CHECK_EXTENSION response');
     sendResponse({ success: true });
     return true;
   }
 
-  if (request.type === 'CHECK_EXTENSION') {
-    console.log('Received CHECK_EXTENSION request');
-    // Immediately respond to extension check
-    sendResponse({ success: true });
+  if (request.type === 'POST_PROPERTY') {
+    console.log('Starting property posting process');
+    handlePropertyPosting(request.data)
+      .then(() => {
+        console.log('Property posting initiated successfully');
+        sendResponse({ success: true });
+      })
+      .catch(error => {
+        console.error('Property posting failed:', error);
+        sendResponse({ success: false, error: error.message });
+      });
     return true;
   }
 });
 
 async function handlePropertyPosting(propertyData) {
-  // For testing, only handle Merrjep.al first
   const site = {
     name: 'merrjep.al',
     url: 'https://www.merrjep.al/post-new',
@@ -36,15 +40,23 @@ async function handlePropertyPosting(propertyData) {
   };
 
   try {
-    console.log('Starting property posting to Merrjep.al', propertyData);
-
     // Create new tab for posting
     const tab = await chrome.tabs.create({ 
-      url: site.url, 
-      active: true  // Set to true for testing to see what happens
+      url: site.url,
+      active: true
     });
 
-    // Wait a moment for the page to load
+    // Update popup status
+    chrome.runtime.sendMessage({
+      type: 'UPDATE_STATUS',
+      data: {
+        site: site.name,
+        success: true,
+        message: 'Opening Merrjep.al...'
+      }
+    });
+
+    // Wait for the page to load
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Send property data to content script
@@ -55,24 +67,16 @@ async function handlePropertyPosting(propertyData) {
       mapping: site.mapping
     });
 
-    // Update popup with status
-    chrome.runtime.sendMessage({
-      type: 'UPDATE_STATUS',
-      data: {
-        site: site.name,
-        success: true,
-        message: `Successfully started posting to ${site.name}`
-      }
-    });
   } catch (error) {
-    console.error(`Failed to post to ${site.name}:`, error);
+    console.error('Property posting error:', error);
     chrome.runtime.sendMessage({
       type: 'UPDATE_STATUS',
       data: {
         site: site.name,
         success: false,
-        message: `Failed to post to ${site.name}: ${error.message}`
+        message: `Error: ${error.message}`
       }
     });
+    throw error;
   }
 }
