@@ -16,12 +16,6 @@ export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
 
-  // Redirect if already logged in
-  if (user) {
-    navigate("/");
-    return null;
-  }
-
   const loginForm = useForm({
     defaultValues: {
       username: "",
@@ -37,6 +31,12 @@ export default function AuthPage() {
       email: "",
     },
   });
+
+  // Move useEffect logic into a regular if statement after all hooks are called
+  if (user) {
+    navigate("/");
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
