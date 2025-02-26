@@ -16,15 +16,30 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
   const [hasExtension, setHasExtension] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [checking, setChecking] = useState(true);
   const { toast } = useToast();
 
   // Check if extension is installed and working
   useEffect(() => {
     const checkExtensionStatus = async () => {
-      const isExtensionWorking = await checkExtension();
-      setHasExtension(isExtensionWorking);
+      setChecking(true);
+      try {
+        const isExtensionWorking = await checkExtension();
+        console.log('Extension status:', isExtensionWorking);
+        setHasExtension(isExtensionWorking);
+      } catch (error) {
+        console.error('Error checking extension:', error);
+        setHasExtension(false);
+      } finally {
+        setChecking(false);
+      }
     };
+
+    // Check immediately and then every 2 seconds
     checkExtensionStatus();
+    const interval = setInterval(checkExtensionStatus, 2000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handlePublishToLocalSites = async () => {
@@ -42,6 +57,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
         description: "Check the extension popup for posting status.",
       });
     } catch (error) {
+      console.error('Publishing error:', error);
       toast({
         title: "Publishing Failed",
         description: error instanceof Error ? error.message : "Failed to start publishing",
@@ -54,7 +70,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
   return (
     <>
-      {!hasExtension && (
+      {!hasExtension && !checking && (
         <Alert className="mb-4">
           <AlertTitle className="text-red-500">Chrome Extension Required</AlertTitle>
           <AlertDescription className="mt-2">
@@ -124,7 +140,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
           >
             <div className="flex items-center gap-2">
               <span className="font-semibold">Publish to Local Sites</span>
-              {publishing && <Clock className="h-4 w-4 animate-spin" />}
+              {checking && <Clock className="h-4 w-4 animate-spin" />}
             </div>
             {isOpen ? (
               <ChevronUp className="h-4 w-4" />
@@ -151,7 +167,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
           <Button
             onClick={handlePublishToLocalSites}
-            disabled={!hasExtension}
+            disabled={!hasExtension || checking}
             className="w-full"
           >
             {publishing ? (

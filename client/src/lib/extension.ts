@@ -15,10 +15,12 @@ export async function postToLocalSites(property: any) {
         },
         response => {
           if (chrome.runtime.lastError) {
+            console.error('Chrome extension error:', chrome.runtime.lastError);
             reject(new Error(chrome.runtime.lastError.message));
             return;
           }
 
+          console.log('Extension response:', response);
           if (response?.success) {
             resolve(response);
           } else {
@@ -36,23 +38,42 @@ export async function postToLocalSites(property: any) {
 // Helper to check if extension is installed and working
 export async function checkExtension(): Promise<boolean> {
   try {
+    console.log('Checking for Chrome extension...');
+
     if (!window.chrome?.runtime) {
+      console.log('Chrome runtime not found');
       return false;
     }
 
     return new Promise((resolve) => {
+      console.log('Sending CHECK_EXTENSION message...');
       chrome.runtime.sendMessage(
         { type: 'CHECK_EXTENSION' },
         response => {
           if (chrome.runtime.lastError) {
+            console.error('Chrome extension check error:', chrome.runtime.lastError);
             resolve(false);
             return;
           }
-          resolve(true);
+          console.log('Extension check response:', response);
+          resolve(!!response?.success);
         }
       );
     });
-  } catch {
+  } catch (error) {
+    console.error('Extension check error:', error);
     return false;
+  }
+}
+
+// Add type declaration for window.chrome
+declare global {
+  interface Window {
+    chrome?: {
+      runtime: {
+        sendMessage: (message: any, callback: (response: any) => void) => void;
+        lastError?: { message: string };
+      };
+    };
   }
 }
