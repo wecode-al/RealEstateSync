@@ -1,12 +1,6 @@
 // Listen for messages from the web app
-chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
-  console.log('Background script received external message:', request);
-
-  if (request.type === 'TEST_CONNECTION') {
-    console.log('Received test connection request');
-    sendResponse({ success: true });
-    return true;
-  }
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Background script received message:', request);
 
   if (request.type === 'POST_PROPERTY') {
     console.log('Starting property posting process');
@@ -52,7 +46,7 @@ async function handlePropertyPosting(propertyData) {
   };
 
   try {
-    console.log('Creating new tab for posting');
+    console.log('Opening Merrjep.al tab...');
     const tab = await chrome.tabs.create({ 
       url: site.url,
       active: true

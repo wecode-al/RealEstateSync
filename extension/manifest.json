@@ -25,12 +25,6 @@
       "js": ["content.js"]
     }
   ],
-  "externally_connectable": {
-    "matches": [
-      "http://localhost:*/*"
-    ],
-    "accepts_tls_channel_id": false
-  },
   "web_accessible_resources": [{
     "resources": ["popup.html", "popup.js"],
     "matches": ["<all_urls>"]

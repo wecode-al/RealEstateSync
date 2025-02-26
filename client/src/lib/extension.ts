@@ -1,58 +1,51 @@
 // Communication with Chrome extension
 export async function postToLocalSites(property: any) {
   try {
-    console.log('Attempting to communicate with extension...');
+    console.log('Checking Chrome extension availability...');
 
-    // Extract the extension ID from the URL if available
-    const extensionId = window.location.hash.slice(1) || 'Albanian Property Poster';
-    console.log('Using extension ID:', extensionId);
+    // First check if Chrome runtime exists
+    if (typeof chrome === 'undefined') {
+      console.error('Chrome object not found');
+      throw new Error('Please use Google Chrome browser');
+    }
 
-    // First check if extension is installed and working
-    await new Promise((resolve, reject) => {
-      if (!window.chrome?.runtime) {
-        reject(new Error('Chrome extension not installed'));
-        return;
-      }
+    if (!chrome.runtime) {
+      console.error('Chrome runtime not found');
+      throw new Error('Chrome extension not installed. Please install the extension first.');
+    }
 
-      // Try to send a test message first
-      chrome.runtime.sendMessage(
-        extensionId,
-        { type: 'TEST_CONNECTION' },
-        response => {
-          if (chrome.runtime.lastError) {
-            console.error('Extension test failed:', chrome.runtime.lastError);
-            reject(new Error('Failed to connect to extension. Please reinstall the extension.'));
-            return;
-          }
-          resolve(response);
-        }
-      );
-    });
+    console.log('Chrome extension is available');
 
     // Now send the actual property data
     console.log('Sending property data to extension:', property);
     return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        extensionId,
-        {
-          type: 'POST_PROPERTY',
-          data: property
-        },
-        response => {
-          if (chrome.runtime.lastError) {
-            console.error('Chrome extension error:', chrome.runtime.lastError);
-            reject(new Error('Failed to send data to extension. Please make sure the extension is installed correctly.'));
-            return;
-          }
+      try {
+        // Send message directly using runtime.sendMessage
+        chrome.runtime.sendMessage(
+          {
+            type: 'POST_PROPERTY',
+            data: property
+          },
+          response => {
+            // Check for runtime errors first
+            if (chrome.runtime.lastError) {
+              console.error('Chrome extension error:', chrome.runtime.lastError);
+              reject(new Error('Failed to communicate with extension. Please refresh the page and try again.'));
+              return;
+            }
 
-          console.log('Extension response:', response);
-          if (response?.success) {
-            resolve(response);
-          } else {
-            reject(new Error(response?.error || 'Failed to start posting. Make sure you are logged into Merrjep.al'));
+            console.log('Extension response:', response);
+            if (response?.success) {
+              resolve(response);
+            } else {
+              reject(new Error(response?.error || 'Failed to start posting. Please make sure you are logged into Merrjep.al'));
+            }
           }
-        }
-      );
+        );
+      } catch (err) {
+        console.error('Error sending message to extension:', err);
+        reject(new Error('Failed to communicate with extension. Please refresh the page and try again.'));
+      }
     });
 
   } catch (error) {
@@ -66,7 +59,7 @@ declare global {
   interface Window {
     chrome?: {
       runtime: {
-        sendMessage: (id: string, message: any, callback: (response: any) => void) => void;
+        sendMessage: (message: any, callback: (response: any) => void) => void;
         lastError?: { message: string };
       };
     };

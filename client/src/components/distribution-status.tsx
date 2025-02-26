@@ -22,9 +22,22 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
     try {
       setPublishing(true);
-      console.log('Publishing property:', property);
+      console.log('Starting publication process...');
+
+      // Check if Chrome is available
+      if (typeof chrome === 'undefined') {
+        console.error('Chrome object not available');
+        throw new Error('Please make sure you are using Google Chrome browser');
+      }
+
+      // Check if extension is present
+      if (!chrome.runtime) {
+        console.error('Chrome runtime not available');
+        throw new Error('Chrome extension not installed. Please install the extension first.');
+      }
 
       // Attempt to send to extension
+      console.log('Attempting to send property data:', property);
       await postToLocalSites(property);
 
       toast({
@@ -84,6 +97,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
                   <li>• Keep the extension folder on your computer</li>
                   <li>• Make sure you select the folder containing manifest.json</li>
                   <li>• The extension icon should appear in Chrome's toolbar after installation</li>
+                  <li>• After installing, refresh this page</li>
                 </ul>
               </div>
               <Button 
