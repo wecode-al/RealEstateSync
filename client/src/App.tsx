@@ -11,6 +11,14 @@ import AddProperty from "@/pages/add-property";
 import Settings from "@/pages/settings";
 import AuthPage from "@/pages/auth";
 import EditProperty from "@/pages/edit-property";
+import ImportProperty from "@/pages/import-property";
+
+// Define props type for EditProperty component
+type EditPropertyProps = {
+  params: {
+    id: string;
+  };
+};
 
 function Router() {
   return (
@@ -21,7 +29,11 @@ function Router() {
           <Switch>
             <ProtectedRoute path="/" component={Home} />
             <ProtectedRoute path="/add-property" component={AddProperty} />
-            <ProtectedRoute path="/edit-property/:id" component={EditProperty} />
+            <ProtectedRoute path="/import-property" component={ImportProperty} />
+            <ProtectedRoute 
+              path="/edit-property/:id" 
+              component={({ params }: EditPropertyProps) => <EditProperty params={params} />} 
+            />
             <ProtectedRoute path="/settings" component={Settings} />
             <Route component={NotFound} />
           </Switch>

@@ -137,3 +137,71 @@ export const siteConfigs = {
     requiresAuth: true
   }
 } as const;
+
+// Add after the existing schema definitions
+
+// Website scraper configuration schema
+export const scraperConfigs = pgTable("scraper_configs", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  baseUrl: text("base_url").notNull(),
+  selectors: jsonb("selectors").notNull(),
+  // Mapping between website fields and our property fields
+  fieldMapping: jsonb("field_mapping").notNull(),
+  // Optional authentication details if needed
+  authConfig: jsonb("auth_config"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const insertScraperConfigSchema = createInsertSchema(scraperConfigs).omit({ 
+  id: true,
+  createdAt: true,
+  updatedAt: true 
+}).extend({
+  selectors: z.object({
+    title: z.string(),
+    description: z.string(),
+    price: z.string(),
+    bedrooms: z.string(),
+    bathrooms: z.string(),
+    squareMeters: z.string(),
+    address: z.string(),
+    images: z.string(),
+    features: z.string(),
+    // Add other selector fields as needed
+  }),
+  fieldMapping: z.record(z.string(), z.string()),
+  authConfig: z.object({
+    username: z.string().optional(),
+    password: z.string().optional(),
+    apiKey: z.string().optional()
+  }).optional()
+});
+
+export type ScraperConfig = typeof scraperConfigs.$inferSelect;
+export type InsertScraperConfig = z.infer<typeof insertScraperConfigSchema>;
+
+// Example of how a configuration might look:
+export const sampleScraperConfig = {
+  name: "MyHome Real Estate",
+  baseUrl: "https://myhomerealestate.al",
+  selectors: {
+    title: "h1.property-title",
+    description: "div.property-description",
+    price: "span.property-price",
+    bedrooms: "span.bedrooms",
+    bathrooms: "span.bathrooms",
+    squareMeters: "span.area",
+    address: "div.property-address",
+    images: "div.property-gallery img",
+    features: "ul.property-features li"
+  },
+  fieldMapping: {
+    "price": "price",
+    "bedrooms": "bedrooms",
+    "bathrooms": "bathrooms",
+    "square_meters": "squareMeters",
+    // Add other field mappings
+  }
+} as const;

@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Home, Plus, Settings } from "lucide-react";
+import { Home, Plus, Settings, Import } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -34,6 +34,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <Link href="/add-property">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Property
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/import-property">
+                  <Import className="mr-2 h-4 w-4" />
+                  Import Property
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

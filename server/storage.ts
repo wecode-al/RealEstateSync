@@ -1,4 +1,4 @@
-import { properties, users, settings, type Property, type InsertProperty, type User, type InsertUser, type Setting, type InsertSetting } from "@shared/schema";
+import { properties, users, settings, scraperConfigs, type Property, type InsertProperty, type User, type InsertUser, type Setting, type InsertSetting, type ScraperConfig, type InsertScraperConfig } from "@shared/schema";
 import { distributionSites } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -19,6 +19,13 @@ export interface IStorage {
   // Settings operations
   getSettings(): Promise<Record<string, Setting>>;
   updateSettings(settings: Record<string, Partial<Setting>>): Promise<void>;
+
+  // Scraper configuration operations
+  createScraperConfig(config: InsertScraperConfig): Promise<ScraperConfig>;
+  getScraperConfig(id: number): Promise<ScraperConfig | undefined>;
+  getScraperConfigs(): Promise<ScraperConfig[]>;
+  updateScraperConfig(id: number, config: Partial<ScraperConfig>): Promise<ScraperConfig>;
+  deleteScraperConfig(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -121,6 +128,42 @@ export class DatabaseStorage implements IStorage {
         });
       }
     });
+  }
+
+  // Scraper configuration methods
+  async createScraperConfig(config: InsertScraperConfig): Promise<ScraperConfig> {
+    const [scraperConfig] = await db
+      .insert(scraperConfigs)
+      .values(config)
+      .returning();
+    return scraperConfig;
+  }
+
+  async getScraperConfig(id: number): Promise<ScraperConfig | undefined> {
+    const [config] = await db
+      .select()
+      .from(scraperConfigs)
+      .where(eq(scraperConfigs.id, id));
+    return config;
+  }
+
+  async getScraperConfigs(): Promise<ScraperConfig[]> {
+    return await db.select().from(scraperConfigs);
+  }
+
+  async updateScraperConfig(id: number, updates: Partial<ScraperConfig>): Promise<ScraperConfig> {
+    const [config] = await db
+      .update(scraperConfigs)
+      .set(updates)
+      .where(eq(scraperConfigs.id, id))
+      .returning();
+
+    if (!config) throw new Error("Scraper configuration not found");
+    return config;
+  }
+
+  async deleteScraperConfig(id: number): Promise<void> {
+    await db.delete(scraperConfigs).where(eq(scraperConfigs.id, id));
   }
 }
 
