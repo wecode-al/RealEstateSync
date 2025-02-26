@@ -1,36 +1,48 @@
-// Listen for external messages from web app
-chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
-  console.log('Background script received external message:', request);
+// Debug logging helper
+function log(...args) {
+  console.log('[Background]', ...args);
+}
+
+// Listen for messages from web app
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  log('Received message:', request);
+
+  // Handle connection check
+  if (request.type === 'CHECK_CONNECTION') {
+    log('Connection check received');
+    sendResponse({ success: true, message: 'Extension connected' });
+    return true;
+  }
 
   if (request.type === 'POST_PROPERTY') {
-    console.log('Starting property posting process');
+    log('Starting property posting process');
+
+    // Send immediate response to acknowledge receipt
+    sendResponse({ success: true, message: 'Starting property posting...' });
+
+    // Handle the property posting
     handlePropertyPosting(request.data)
       .then(() => {
-        console.log('Property posting initiated successfully');
-        sendResponse({ success: true });
+        log('Property posting initiated successfully');
       })
       .catch(error => {
-        console.error('Property posting failed:', error);
-        sendResponse({ success: false, error: error.message });
+        log('Property posting failed:', error);
+        // Update popup with error
+        chrome.runtime.sendMessage({
+          type: 'UPDATE_STATUS',
+          data: {
+            site: 'merrjep.al',
+            success: false,
+            message: error.message
+          }
+        });
       });
-    return true; // Keep message channel open for async response
-  }
-});
 
-// Listen for internal messages
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('Background script received internal message:', request);
-
-  if (request.type === 'UPDATE_STATUS') {
-    // Forward status updates to popup
-    chrome.runtime.sendMessage({
-      type: 'UPDATE_STATUS',
-      data: request.data
-    });
-    sendResponse({ success: true });
+    return true; // Keep message channel open
   }
 
-  return true; // Keep message channel open
+  // Return true to indicate we'll respond asynchronously
+  return true;
 });
 
 async function handlePropertyPosting(propertyData) {
@@ -50,7 +62,7 @@ async function handlePropertyPosting(propertyData) {
   };
 
   try {
-    console.log('Opening Merrjep.al tab...');
+    log('Opening Merrjep.al tab...');
     const tab = await chrome.tabs.create({ 
       url: site.url,
       active: true
@@ -70,15 +82,19 @@ async function handlePropertyPosting(propertyData) {
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Send property data to content script
-    console.log('Sending data to content script:', propertyData);
-    return await chrome.tabs.sendMessage(tab.id, {
+    log('Sending data to content script:', propertyData);
+    const response = await chrome.tabs.sendMessage(tab.id, {
       type: 'FILL_FORM',
       data: propertyData,
       mapping: site.mapping
     });
 
+    // If we get here without an error, the form was filled successfully
+    log('Property posting completed:', response);
+    return response;
+
   } catch (error) {
-    console.error('Property posting error:', error);
+    log('Property posting error:', error);
     throw error;
   }
 }

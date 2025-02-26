@@ -132,8 +132,8 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
                   <li>• Make sure you're logged into Merrjep.al before publishing</li>
                 </ul>
               </div>
-              <Button 
-                variant="link" 
+              <Button
+                variant="link"
                 className="p-0 text-blue-500"
                 onClick={() => setShowInstructions(false)}
               >
@@ -146,8 +146,8 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
         <CollapsibleTrigger asChild>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             className="w-full justify-between"
           >
             <div className="flex items-center gap-2">
@@ -187,10 +187,21 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
                 <Clock className="mr-2 h-4 w-4 animate-spin" />
                 Publishing...
               </>
-            ) : (
+            ) : extensionReady ? (
               'Publish to Merrjep.al'
+            ) : (
+              'Extension Not Ready'
             )}
           </Button>
+          <div className="mt-2 text-sm text-muted-foreground">
+            <p>Before publishing:</p>
+            <ul className="list-disc list-inside mt-1">
+              <li>Install the extension from the instructions above</li>
+              <li>Open <a href="https://www.merrjep.al/login" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Merrjep.al Login Page</a></li>
+              <li>Log in to your Merrjep.al account</li>
+              <li>Return here and click the publish button</li>
+            </ul>
+          </div>
         </CollapsibleContent>
       </Collapsible>
     </>

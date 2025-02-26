@@ -6,7 +6,8 @@
   "permissions": [
     "activeTab",
     "storage",
-    "tabs"
+    "tabs",
+    "cookies"
   ],
   "host_permissions": [
     "https://*.merrjep.al/*",
@@ -14,14 +15,6 @@
     "https://*.replit.dev/*",
     "https://*.replit.app/*"
   ],
-  "externally_connectable": {
-    "matches": [
-      "http://localhost:*/*",
-      "https://*.replit.dev/*",
-      "https://*.replit.app/*"
-    ],
-    "accepts_tls_channel_id": false
-  },
   "background": {
     "service_worker": "background.js"
   },

@@ -3,7 +3,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('Content script received message:', request);
 
   if (request.type === 'FILL_FORM') {
-    fillForm(request.data, request.mapping)
+    checkLoginStatus()
+      .then(isLoggedIn => {
+        if (!isLoggedIn) {
+          throw new Error('Please log in to Merrjep.al first before publishing');
+        }
+        return fillForm(request.data, request.mapping);
+      })
       .then(() => {
         console.log('Form filled successfully');
         sendResponse({ success: true });
@@ -15,6 +21,41 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 });
+
+async function checkLoginStatus() {
+  try {
+    // First check for user-related elements in the DOM
+    const profileElements = document.querySelectorAll('.my-profile, .user-menu, .logout-button');
+    const hasProfileElements = profileElements.length > 0;
+
+    if (hasProfileElements) {
+      console.log('Found profile elements, user appears to be logged in');
+      return true;
+    }
+
+    // Check if we're on a login/auth page
+    if (window.location.href.includes('login') || window.location.href.includes('auth')) {
+      console.log('On login page, user is not logged in');
+      throw new Error('Please log in first at www.merrjep.al/login before trying to publish');
+    }
+
+    // Check for authentication-related cookies
+    const authRelatedCookies = document.cookie.split(';').some(cookie => 
+      cookie.trim().startsWith('pazarwebcookie=') || 
+      cookie.trim().startsWith('VisitorTest1=')
+    );
+
+    if (!authRelatedCookies) {
+      console.log('No auth cookies found, user appears to be logged out');
+      throw new Error('You need to be logged in to Merrjep.al to publish properties. Please log in first at www.merrjep.al/login');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error checking login status:', error);
+    throw error;
+  }
+}
 
 async function fillForm(propertyData, mapping) {
   try {

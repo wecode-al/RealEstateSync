@@ -23,11 +23,21 @@ function updateStatus(data) {
     pending: false,
   };
 
+  // Update UI with appropriate styling
+  let statusClass = data.success ? "success" : "error";
+  if (data.message.toLowerCase().includes('opening') || 
+      data.message.toLowerCase().includes('starting')) {
+    statusClass = "pending";
+  }
+
   // Update UI
   siteDiv.innerHTML = `
     <div class="site-name">${data.site}</div>
-    <div class="status ${data.success ? "success" : "error"}">
+    <div class="status ${statusClass}">
       ${data.message}
+      ${!data.success && data.message.toLowerCase().includes('log in') ? 
+        '<br><small>Please <a href="https://www.merrjep.al/login" target="_blank" style="color: #0066cc; text-decoration: underline;">log in to your Merrjep.al account</a> first.</small>' : 
+        ''}
     </div>
   `;
 }
