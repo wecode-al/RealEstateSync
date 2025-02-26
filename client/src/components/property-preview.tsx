@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { DistributionStatus } from "./distribution-status";
-import { Bed, Bath, Square, MapPin } from "lucide-react";
+import { Bed, Bath, Square, MapPin, Loader2 } from "lucide-react";
 import type { Property } from "@shared/schema";
 
 interface PropertyPreviewProps {
@@ -18,14 +18,35 @@ export function PropertyPreview({ property }: PropertyPreviewProps) {
 
   const publishMutation = useMutation({
     mutationFn: async () => {
+      toast({
+        title: "Publishing...",
+        description: "Sending property to WordPress and other platforms",
+      });
       const res = await apiRequest("PATCH", `/api/properties/${property.id}/publish`);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+      const wpStatus = data.distributions["WordPress Site"];
+
+      if (wpStatus.status === "success") {
+        toast({
+          title: "Success",
+          description: "Property has been published to WordPress" + (wpStatus.postUrl ? ". Click 'View Post' to see it." : ""),
+        });
+      } else {
+        toast({
+          title: "Warning",
+          description: `WordPress publishing failed: ${wpStatus.error}`,
+          variant: "destructive"
+        });
+      }
+    },
+    onError: (error) => {
       toast({
-        title: "Success",
-        description: "Property has been published for distribution",
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
       });
     }
   });
@@ -81,7 +102,14 @@ export function PropertyPreview({ property }: PropertyPreviewProps) {
             onClick={() => publishMutation.mutate()}
             disabled={publishMutation.isPending}
           >
-            {publishMutation.isPending ? "Publishing..." : "Publish & Distribute"}
+            {publishMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Publishing...
+              </>
+            ) : (
+              "Publish & Distribute"
+            )}
           </Button>
         )}
       </CardFooter>

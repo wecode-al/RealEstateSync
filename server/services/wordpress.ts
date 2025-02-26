@@ -23,7 +23,17 @@ export class WordPressService {
       throw new Error("WordPress credentials not configured");
     }
 
-    this.apiUrl = apiUrl.replace(/\/$/, '');
+    // Validate and format the API URL
+    try {
+      const url = new URL(apiUrl);
+      if (!url.protocol) {
+        throw new Error("WordPress API URL must include http:// or https://");
+      }
+      this.apiUrl = url.origin;
+    } catch (error) {
+      throw new Error(`Invalid WordPress API URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
     this.auth = Buffer.from(`${username}:${password}`).toString('base64');
   }
 
@@ -32,21 +42,33 @@ export class WordPressService {
       console.log(`Publishing to WordPress: ${this.apiUrl}/wp-json/wp/v2/posts`);
 
       const endpoint = `${this.apiUrl}/wp-json/wp/v2/posts`;
+      const postData = {
+        title: property.title,
+        content: this.formatContent(property),
+        status: 'publish',
+      };
+
+      console.log('Sending data to WordPress:', postData);
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Authorization': `Basic ${this.auth}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title: property.title,
-          content: this.formatContent(property),
-          status: 'publish',
-        }),
+        body: JSON.stringify(postData),
       });
 
+      const responseText = await response.text();
+      console.log('WordPress API Response:', response.status, responseText);
+
       if (!response.ok) {
-        const error: WordPressError = await response.json();
+        let error: WordPressError;
+        try {
+          error = JSON.parse(responseText);
+        } catch {
+          error = { code: 'unknown', message: responseText };
+        }
         console.error('WordPress API Error:', error);
         return { 
           success: false, 
@@ -54,7 +76,7 @@ export class WordPressService {
         };
       }
 
-      const data: WordPressResponse = await response.json();
+      const data: WordPressResponse = JSON.parse(responseText);
       console.log('WordPress API Success:', data);
       return { 
         success: true,
