@@ -9,6 +9,7 @@ export interface IStorage {
   getProperties(): Promise<Property[]>;
   getProperty(id: number): Promise<Property | undefined>;
   updateProperty(id: number, property: Partial<Property>): Promise<Property>;
+  deleteProperty(id: number): Promise<void>; // Added deleteProperty method
 
   // User operations
   createUser(user: InsertUser): Promise<User>;
@@ -57,6 +58,10 @@ export class DatabaseStorage implements IStorage {
 
     if (!property) throw new Error("Property not found");
     return property;
+  }
+
+  async deleteProperty(id: number): Promise<void> { // Added deleteProperty method
+    await db.delete(properties).where(eq(properties.id, id));
   }
 
   // User methods

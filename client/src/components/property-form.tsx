@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ImageUpload } from "@/components/image-upload";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 
 export function PropertyForm() {
   const [, navigate] = useLocation();
@@ -50,6 +51,8 @@ export function PropertyForm() {
         title: "Success",
         description: "Property has been created",
       });
+      // Invalidate and refetch properties query
+      queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
       navigate("/");
     },
     onError: (error) => {

@@ -138,6 +138,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/properties/:id", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const property = await storage.getProperty(id);
+
+      if (!property) {
+        res.status(404).json({ message: "Property not found" });
+        return;
+      }
+
+      await storage.deleteProperty(id);
+      res.sendStatus(200);
+    } catch (error) {
+      console.error('Delete property error:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to delete property" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

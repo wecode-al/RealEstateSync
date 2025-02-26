@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { DistributionStatus } from "./distribution-status";
-import { Bed, Bath, Square, MapPin, Loader2 } from "lucide-react";
+import { Bed, Bath, Square, MapPin, Loader2, Trash2, RefreshCw } from "lucide-react";
 import type { Property } from "@shared/schema";
 
 interface PropertyPreviewProps {
@@ -41,6 +41,30 @@ export function PropertyPreview({ property }: PropertyPreviewProps) {
           variant: "destructive"
         });
       }
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("DELETE", `/api/properties/${property.id}`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to delete property");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+      toast({
+        title: "Success",
+        description: "Property has been deleted",
+      });
     },
     onError: (error) => {
       toast({
@@ -93,24 +117,72 @@ export function PropertyPreview({ property }: PropertyPreviewProps) {
         </div>
       </CardContent>
 
-      <CardFooter className="p-6 pt-0">
+      <CardFooter className="p-6 pt-0 flex flex-col gap-4">
         {property.published ? (
-          <DistributionStatus distributions={property.distributions} />
+          <>
+            <DistributionStatus distributions={property.distributions} />
+            <div className="flex gap-2 w-full">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="flex-1"
+                onClick={() => publishMutation.mutate()}
+                disabled={publishMutation.isPending}
+              >
+                {publishMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Republishing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Republish
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => deleteMutation.mutate()}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </>
         ) : (
-          <Button 
-            className="w-full" 
-            onClick={() => publishMutation.mutate()}
-            disabled={publishMutation.isPending}
-          >
-            {publishMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Publishing...
-              </>
-            ) : (
-              "Publish & Distribute"
-            )}
-          </Button>
+          <div className="flex gap-2 w-full">
+            <Button 
+              className="flex-1" 
+              onClick={() => publishMutation.mutate()}
+              disabled={publishMutation.isPending}
+            >
+              {publishMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Publishing...
+                </>
+              ) : (
+                "Publish & Distribute"
+              )}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         )}
       </CardFooter>
     </Card>
