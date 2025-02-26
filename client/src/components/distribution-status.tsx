@@ -1,62 +1,47 @@
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CheckCircle2, XCircle, Clock, ExternalLink, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, ChevronDown, ChevronUp, Download } from "lucide-react";
 import { useState, useEffect } from "react";
-import { distributionSites } from "@shared/schema";
 import { postToLocalSites } from "@/lib/extension";
+import { useToast } from "@/hooks/use-toast";
 
 interface DistributionStatusProps {
-  distributions: Record<string, { 
-    status: 'pending' | 'success' | 'error'; 
-    error: string | null;
-    postUrl?: string | null;
-  }>;
   property: any; // Replace with Property type
 }
 
-export function DistributionStatus({ distributions, property }: DistributionStatusProps) {
+export function DistributionStatus({ property }: DistributionStatusProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasExtension, setHasExtension] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const { toast } = useToast();
 
   // Check if extension is installed
   useEffect(() => {
     setHasExtension(!!window.chrome?.runtime);
   }, []);
 
-  const getStatusIcon = (status: 'pending' | 'success' | 'error') => {
-    switch (status) {
-      case "success":
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      case "error":
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      case "pending":
-      default:
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-    }
-  };
-
-  // Count successful, pending and failed distributions
-  const statusCount = Object.values(distributions).reduce(
-    (acc, curr) => ({
-      success: acc.success + (curr.status === "success" ? 1 : 0),
-      error: acc.error + (curr.status === "error" ? 1 : 0),
-      pending: acc.pending + (curr.status === "pending" ? 1 : 0)
-    }),
-    { success: 0, error: 0, pending: 0 }
-  );
-
   const handlePublishToLocalSites = async () => {
-    if (!hasExtension) {
+    if (!hasExtension || publishing) {
       return;
     }
 
     try {
-      const response = await postToLocalSites(property);
-      console.log('Extension response:', response);
+      setPublishing(true);
+      await postToLocalSites(property);
+      toast({
+        title: "Publishing Started",
+        description: "Check the extension popup for posting status.",
+      });
     } catch (error) {
-      console.error('Extension error:', error);
+      toast({
+        title: "Publishing Failed",
+        description: error instanceof Error ? error.message : "Failed to start publishing",
+        variant: "destructive"
+      });
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -129,14 +114,10 @@ export function DistributionStatus({ distributions, property }: DistributionStat
           <Button 
             variant="ghost" 
             className="w-full justify-between"
-            style={statusCount.error > 0 ? { borderColor: 'red', borderWidth: '1px' } : undefined}
           >
             <div className="flex items-center gap-2">
-              <span className="font-semibold">Distribution Status</span>
-              <span className={`text-sm ${statusCount.error > 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                ({statusCount.success} successful, {statusCount.error} failed
-                {statusCount.pending > 0 ? `, ${statusCount.pending} pending` : ''})
-              </span>
+              <span className="font-semibold">Publish to Local Sites</span>
+              {publishing && <Clock className="h-4 w-4 animate-spin" />}
             </div>
             {isOpen ? (
               <ChevronUp className="h-4 w-4" />
@@ -146,59 +127,38 @@ export function DistributionStatus({ distributions, property }: DistributionStat
           </Button>
         </CollapsibleTrigger>
 
-        <CollapsibleContent className="space-y-2 pt-2">
-          {distributionSites.map((site) => {
-            const status = distributions[site] || { status: 'pending', error: null };
-
-            return (
-              <div 
-                key={site} 
-                className={`flex items-center justify-between p-2 rounded ${
-                  status.status === 'error' ? 'bg-red-50' : 'bg-muted'
-                }`}
-              >
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{site}</span>
-                    {getStatusIcon(status.status)}
-                  </div>
-                  {status.error && (
-                    <span className="text-sm text-red-500 mt-1">{status.error}</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {status.status === "success" && status.postUrl && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-blue-500 hover:text-blue-700"
-                      onClick={() => window.open(status.postUrl!, '_blank')}
-                    >
-                      <ExternalLink className="h-4 w-4 mr-1" />
-                      View Post
-                    </Button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-
-          <div className="mt-4">
-            <Button
-              onClick={handlePublishToLocalSites}
-              disabled={!hasExtension || statusCount.pending > 0}
-              className="w-full"
-            >
-              {statusCount.pending > 0 ? (
-                <>
-                  <Clock className="mr-2 h-4 w-4 animate-spin" />
-                  Publishing...
-                </>
-              ) : (
-                'Publish to Local Sites'
-              )}
-            </Button>
+        <CollapsibleContent className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <h3 className="font-medium">Supported Sites:</h3>
+            <ul className="space-y-1 text-sm">
+              <li>• Merrjep.al</li>
+              <li>• Njoftime.com</li>
+              <li>• Gazetacelesi.al</li>
+              <li>• Njoftime.al</li>
+            </ul>
           </div>
+
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+            <p className="text-blue-800">
+              Make sure you are logged into the sites where you want to publish your property.
+              The extension will automatically fill in the property details on each site.
+            </p>
+          </div>
+
+          <Button
+            onClick={handlePublishToLocalSites}
+            disabled={!hasExtension || publishing}
+            className="w-full"
+          >
+            {publishing ? (
+              <>
+                <Clock className="mr-2 h-4 w-4 animate-spin" />
+                Publishing...
+              </>
+            ) : (
+              'Publish to Local Sites'
+            )}
+          </Button>
         </CollapsibleContent>
       </Collapsible>
     </>
