@@ -9,6 +9,7 @@ const router = Router();
 // Add route for saving scraper configuration
 router.post("/api/scraper-configs", async (req, res) => {
   try {
+    console.log("Received config data:", req.body);
     const config = insertScraperConfigSchema.parse(req.body);
     const savedConfig = await storage.createScraperConfig(config);
     res.json(savedConfig);
@@ -26,7 +27,7 @@ const scrapeRequestSchema = z.object({
   configId: z.number()
 });
 
-router.post("/scrape", async (req, res) => {
+router.post("/api/scrape", async (req, res) => {
   try {
     const { url, configId } = scrapeRequestSchema.parse(req.body);
 

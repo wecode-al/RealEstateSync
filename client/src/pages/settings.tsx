@@ -64,7 +64,22 @@ export default function Settings() {
   // Mutation for creating/updating scraper config
   const scraperConfigMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/scraper-configs", data);
+      const formattedData = {
+        ...data,
+        fieldMapping: {
+          title: "title",
+          description: "description",
+          price: "price",
+          bedrooms: "bedrooms",
+          bathrooms: "bathrooms",
+          squareMeters: "squareMeters",
+          address: "address",
+          images: "images",
+          features: "features"
+        }
+      };
+
+      const res = await apiRequest("POST", "/api/scraper-configs", formattedData);
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.message || "Failed to save scraper configuration");
