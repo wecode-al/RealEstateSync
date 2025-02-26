@@ -2,7 +2,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Clock, ChevronDown, ChevronUp } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { postToLocalSites } from "@/lib/extension";
 import { useToast } from "@/hooks/use-toast";
 import type { Property } from "@shared/schema";
@@ -17,24 +17,23 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
   const [publishing, setPublishing] = useState(false);
   const { toast } = useToast();
 
-  // Simplified extension check
-  const hasExtension = !!window.chrome?.runtime;
-
   const handlePublishToLocalSites = async () => {
-    if (!hasExtension || publishing) {
-      return;
-    }
+    if (publishing) return;
 
     try {
       setPublishing(true);
       console.log('Publishing property:', property);
+
+      // Attempt to send to extension
       await postToLocalSites(property);
+
       toast({
         title: "Publishing Started",
         description: "Check the extension popup for posting status.",
       });
     } catch (error) {
       console.error('Publishing error:', error);
+      setShowInstructions(true);
       toast({
         title: "Publishing Failed",
         description: error instanceof Error ? error.message : "Failed to start publishing",
@@ -47,64 +46,54 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
   return (
     <>
-      {!hasExtension && (
+      {showInstructions && (
         <Alert className="mb-4">
           <AlertTitle className="text-red-500">Chrome Extension Required</AlertTitle>
           <AlertDescription className="mt-2">
             <p className="mb-3">
               To publish to local listing sites, you need to install our Chrome extension.
-              The extension allows automatic posting to sites like Merrjep, Njoftime, and others while you're logged in.
+              The extension allows automatic posting to sites like Merrjep while you're logged in.
             </p>
-            {!showInstructions ? (
+            <div className="space-y-2 mt-2 text-sm">
+              <p className="font-semibold">Installation Steps:</p>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>In the file explorer (left sidebar):</li>
+                <ul className="ml-6 mt-1 space-y-1 list-disc">
+                  <li>Find the "extension" folder</li>
+                  <li>Right-click on it</li>
+                  <li>Select "Download" from the menu</li>
+                  <li>Note where you save the downloaded file (e.g., Downloads folder)</li>
+                </ul>
+                <li>After downloading:</li>
+                <ul className="ml-6 mt-1 space-y-1 list-disc">
+                  <li>Unzip/extract the downloaded file if it's a .zip file</li>
+                  <li>You should now have a folder named "extension" with files inside</li>
+                </ul>
+                <li>Install in Chrome:</li>
+                <ul className="ml-6 mt-1 space-y-1 list-disc">
+                  <li>Open Chrome browser</li>
+                  <li>Copy and paste this in a new tab: <code className="bg-gray-100 px-2 py-0.5 rounded">chrome://extensions</code></li>
+                  <li>Enable "Developer mode" (toggle in top right)</li>
+                  <li>Click "Load unpacked" button</li>
+                  <li>Browse to and select the "extension" folder you extracted</li>
+                </ul>
+              </ol>
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <p className="text-yellow-800 font-medium">Important Notes:</p>
+                <ul className="mt-2 space-y-1 text-yellow-700">
+                  <li>• Keep the extension folder on your computer</li>
+                  <li>• Make sure you select the folder containing manifest.json</li>
+                  <li>• The extension icon should appear in Chrome's toolbar after installation</li>
+                </ul>
+              </div>
               <Button 
                 variant="link" 
                 className="p-0 text-blue-500"
-                onClick={() => setShowInstructions(true)}
+                onClick={() => setShowInstructions(false)}
               >
-                Show Installation Instructions
+                Hide Instructions
               </Button>
-            ) : (
-              <div className="space-y-2 mt-2 text-sm">
-                <p className="font-semibold">Installation Steps:</p>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>In the file explorer (left sidebar):</li>
-                  <ul className="ml-6 mt-1 space-y-1 list-disc">
-                    <li>Find the "extension" folder</li>
-                    <li>Right-click on it</li>
-                    <li>Select "Download" from the menu</li>
-                    <li>Note where you save the downloaded file (e.g., Downloads folder)</li>
-                  </ul>
-                  <li>After downloading:</li>
-                  <ul className="ml-6 mt-1 space-y-1 list-disc">
-                    <li>Unzip/extract the downloaded file if it's a .zip file</li>
-                    <li>You should now have a folder named "extension" with files inside</li>
-                  </ul>
-                  <li>Install in Chrome:</li>
-                  <ul className="ml-6 mt-1 space-y-1 list-disc">
-                    <li>Open Chrome browser</li>
-                    <li>Copy and paste this in a new tab: <code className="bg-gray-100 px-2 py-0.5 rounded">chrome://extensions</code></li>
-                    <li>Enable "Developer mode" (toggle in top right)</li>
-                    <li>Click "Load unpacked" button</li>
-                    <li>Browse to and select the "extension" folder you extracted</li>
-                  </ul>
-                </ol>
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                  <p className="text-yellow-800 font-medium">Important Notes:</p>
-                  <ul className="mt-2 space-y-1 text-yellow-700">
-                    <li>• Keep the extension folder on your computer</li>
-                    <li>• Make sure you select the folder containing manifest.json</li>
-                    <li>• The extension icon should appear in Chrome's toolbar after installation</li>
-                  </ul>
-                </div>
-                <Button 
-                  variant="link" 
-                  className="p-0 text-blue-500"
-                  onClick={() => setShowInstructions(false)}
-                >
-                  Hide Instructions
-                </Button>
-              </div>
-            )}
+            </div>
           </AlertDescription>
         </Alert>
       )}
@@ -144,7 +133,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
           <Button
             onClick={handlePublishToLocalSites}
-            disabled={!hasExtension || publishing}
+            disabled={publishing}
             className="w-full"
           >
             {publishing ? (
