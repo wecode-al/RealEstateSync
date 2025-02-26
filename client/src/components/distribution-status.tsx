@@ -1,9 +1,14 @@
 import { Alert, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, XCircle, Clock, ExternalLink } from "lucide-react";
 import { distributionSites } from "@shared/schema";
 
 interface DistributionStatusProps {
-  distributions: Record<string, { status: string; error: string | null }>;
+  distributions: Record<string, { 
+    status: string; 
+    error: string | null;
+    postUrl?: string;  // Add postUrl property
+  }>;
 }
 
 export function DistributionStatus({ distributions }: DistributionStatusProps) {
@@ -23,7 +28,7 @@ export function DistributionStatus({ distributions }: DistributionStatusProps) {
       <Alert>
         <AlertTitle className="font-semibold">Distribution Status</AlertTitle>
       </Alert>
-      
+
       <div className="space-y-2">
         {distributionSites.map((site) => {
           const status = distributions[site];
@@ -33,6 +38,17 @@ export function DistributionStatus({ distributions }: DistributionStatusProps) {
               <div className="flex items-center gap-2">
                 {status.error && (
                   <span className="text-sm text-red-500">{status.error}</span>
+                )}
+                {status.status === "success" && status.postUrl && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-blue-500 hover:text-blue-700"
+                    onClick={() => window.open(status.postUrl, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    View Post
+                  </Button>
                 )}
                 {getStatusIcon(status.status)}
               </div>

@@ -48,7 +48,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const wpResult = await wordPressService.publishProperty(property);
     updatedDistributions["WordPress Site"] = {
       status: wpResult.success ? "success" : "error",
-      error: wpResult.error || null
+      error: wpResult.error || null,
+      postUrl: wpResult.postUrl  // Store the WordPress post URL
     };
 
     // Simulate other distribution sites

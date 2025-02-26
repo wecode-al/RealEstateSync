@@ -27,10 +27,11 @@ export class WordPressService {
     this.auth = Buffer.from(`${username}:${password}`).toString('base64');
   }
 
-  async publishProperty(property: Property): Promise<{ success: boolean; error?: string }> {
+  async publishProperty(property: Property): Promise<{ success: boolean; error?: string; postUrl?: string }> {
     try {
+      console.log(`Publishing to WordPress: ${this.apiUrl}/wp-json/wp/v2/posts`);
+
       const endpoint = `${this.apiUrl}/wp-json/wp/v2/posts`;
-      
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -46,6 +47,7 @@ export class WordPressService {
 
       if (!response.ok) {
         const error: WordPressError = await response.json();
+        console.error('WordPress API Error:', error);
         return { 
           success: false, 
           error: error.message || `Failed to publish: ${response.statusText}` 
@@ -53,9 +55,14 @@ export class WordPressService {
       }
 
       const data: WordPressResponse = await response.json();
-      return { success: true };
-      
+      console.log('WordPress API Success:', data);
+      return { 
+        success: true,
+        postUrl: data.link
+      };
+
     } catch (error) {
+      console.error('WordPress Publishing Error:', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Failed to publish to WordPress' 
