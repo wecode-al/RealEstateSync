@@ -109,6 +109,7 @@ export default function Settings() {
   // Mutations
   const scraperConfigMutation = useMutation({
     mutationFn: async (data: any) => {
+      console.log('Submitting scraper config:', data);
       const formattedData = {
         ...data,
         fieldMapping: {
@@ -137,9 +138,12 @@ export default function Settings() {
         description: "Scraper configuration saved successfully",
       });
       setIsScraperConfigOpen(false);
+      // Make sure to invalidate both queries
       queryClient.invalidateQueries({ queryKey: ["/api/scraper-configs/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/scraper-configs"] });
     },
     onError: (error) => {
+      console.error('Scraper config mutation error:', error);
       toast({
         title: "Error",
         description: error.message,
