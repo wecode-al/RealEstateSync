@@ -7,7 +7,7 @@ const router = express.Router();
 // This would be populated from environment variables in production
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID || "";
 const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET || "";
-const REDIRECT_URI = process.env.REDIRECT_URI || "https://{REPLIT_DOMAIN}/api/facebook/callback";
+const REDIRECT_URI = process.env.REDIRECT_URI || `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/api/facebook/callback`;
 
 // Step 1: Redirect user to Facebook for authorization
 router.get("/api/facebook/auth", (req, res) => {
@@ -26,7 +26,7 @@ router.get("/api/facebook/auth", (req, res) => {
 
   // Redirect to Facebook authorization endpoint
   const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&state=${state}&scope=${encodeURIComponent(scope)}`;
-  
+
   res.redirect(authUrl);
 });
 
@@ -34,7 +34,7 @@ router.get("/api/facebook/auth", (req, res) => {
 router.get("/api/facebook/callback", async (req, res) => {
   // Verify the state parameter to prevent CSRF attacks
   const { code, state } = req.query;
-  
+
   if (!req.session || state !== req.session.fbOAuthState) {
     return res.status(403).json({ error: "Invalid state parameter" });
   }
@@ -70,7 +70,7 @@ router.get("/api/facebook/callback", async (req, res) => {
     }
 
     const pagesData = await pagesResponse.json();
-    
+
     // Format page data for storage
     const pages = pagesData.data.map((page: any) => ({
       name: page.name,
