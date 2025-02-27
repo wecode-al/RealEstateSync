@@ -37,6 +37,7 @@ export default function Settings() {
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [isFbPageDialogOpen, setIsFbPageDialogOpen] = useState(false);
   const [newFbPage, setNewFbPage] = useState({ name: "", pageId: "", accessToken: "" });
+  const [isFbLoginInProgress, setIsFbLoginInProgress] = useState(false);
 
   // Get scraper configurations
   const { data: scraperConfig, isLoading: isLoadingConfig } = useQuery<ScraperConfig>({
@@ -270,43 +271,210 @@ export default function Settings() {
 
   // Function to initiate Facebook login and page selection
   const initiateOAuthFlow = () => {
-    // Create popup window for Facebook login
+    // Set login in progress
+    setIsFbLoginInProgress(true);
+
+    // Open a simulated Facebook login popup window
     const width = 600;
     const height = 700;
     const left = window.screen.width / 2 - width / 2;
     const top = window.screen.height / 2 - height / 2;
 
-    // In a real implementation, this would redirect to a server endpoint that initiates OAuth
-    // For now, we'll use a simulated flow
-    toast({
-      title: "Connecting to Facebook",
-      description: "Initializing Facebook authorization...",
-    });
+    const popupWindow = window.open(
+      "about:blank",
+      "Facebook Login",
+      `width=${width},height=${height},top=${top},left=${left}`
+    );
 
-    // Simulate OAuth process completion after a delay
-    setTimeout(() => {
-      const mockPages = [
-        { name: "Albania Real Estate", pageId: "103254896542154", accessToken: "EAABl4ZC...mock_token_1" },
-        { name: "Tirana Properties", pageId: "987612345678901", accessToken: "EAABl4ZC...mock_token_2" }
-      ];
-
-      // Update the settings with the mock pages
-      setSettings(prev => ({
-        ...prev,
-        "Facebook": {
-          ...prev["Facebook"],
-          additionalConfig: {
-            ...prev["Facebook"]?.additionalConfig,
-            pages: JSON.stringify(mockPages)
-          }
-        }
-      }));
-
+    if (!popupWindow) {
       toast({
-        title: "Success",
-        description: `Connected to Facebook and imported ${mockPages.length} pages. Don't forget to save your settings.`,
+        title: "Error",
+        description: "Popup blocked. Please allow popups for this site.",
+        variant: "destructive"
       });
-    }, 2000);
+      setIsFbLoginInProgress(false);
+      return;
+    }
+
+    // Create a basic HTML content for the login simulation
+    const popupContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Facebook Login</title>
+        <style>
+          body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            align-items: center;
+          }
+          .header {
+            background-color: #1877f2;
+            color: white;
+            width: 100%;
+            padding: 15px;
+            text-align: center;
+          }
+          .container {
+            margin: 20px;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 400px;
+          }
+          .logo {
+            font-size: 24px;
+            font-weight: bold;
+          }
+          h2 {
+            font-size: 18px;
+            margin-top: 0;
+          }
+          p {
+            margin: 15px 0;
+          }
+          button {
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+          }
+          .progress {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+          }
+          .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1877f2;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto 15px auto;
+          }
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo">facebook</div>
+        </div>
+        <div class="container">
+          <h2>Connect your Facebook Pages</h2>
+          <p>Connect your real estate listings app to Facebook to automatically post properties to your business pages.</p>
+          <p>By connecting, you'll allow the app to:</p>
+          <ul>
+            <li>See your Facebook pages</li>
+            <li>Post content to your pages</li>
+            <li>Upload photos to your pages</li>
+          </ul>
+          <p>This does not give access to your personal Facebook profile.</p>
+          <button id="connectBtn">Connect with Facebook</button>
+          <div id="progress" class="progress">
+            <div class="spinner"></div>
+            <p>Connecting to Facebook...</p>
+          </div>
+        </div>
+
+        <script>
+          document.getElementById('connectBtn').addEventListener('click', function() {
+            // Show progress indicator
+            document.getElementById('progress').style.display = 'block';
+            document.getElementById('connectBtn').style.display = 'none';
+
+            // Simulate API connection delay
+            setTimeout(function() {
+              window.opener.postMessage({ 
+                type: 'FACEBOOK_OAUTH_SUCCESS',
+                pages: [
+                  { 
+                    name: "Albania Real Estate", 
+                    pageId: "103254896542154", 
+                    accessToken: "EAABl4ZC...mock_token_1" 
+                  },
+                  { 
+                    name: "Tirana Properties", 
+                    pageId: "987612345678901", 
+                    accessToken: "EAABl4ZC...mock_token_2" 
+                  }
+                ]
+              }, '*');
+              window.close();
+            }, 2000);
+          });
+        </script>
+      </body>
+      </html>
+    `;
+
+    popupWindow.document.write(popupContent);
+
+    // Setup message event listener for when the popup sends data back
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'FACEBOOK_OAUTH_SUCCESS') {
+        // Update the settings with the connected pages
+        setSettings(prev => ({
+          ...prev,
+          "Facebook": {
+            ...prev["Facebook"],
+            additionalConfig: {
+              ...prev["Facebook"]?.additionalConfig,
+              pages: JSON.stringify(event.data.pages)
+            }
+          }
+        }));
+
+        // Show success message
+        toast({
+          title: "Success",
+          description: `Connected to Facebook and imported ${event.data.pages.length} pages. Don't forget to save your settings.`,
+        });
+
+        // Cleanup
+        window.removeEventListener('message', handleMessage);
+        setIsFbLoginInProgress(false);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    // Cleanup if the popup is closed without completing the flow
+    const checkPopupClosed = setInterval(() => {
+      if (popupWindow.closed) {
+        clearInterval(checkPopupClosed);
+        window.removeEventListener('message', handleMessage);
+        setIsFbLoginInProgress(false);
+
+        // If login was in progress and popup was closed without success, show message
+        const currentPages = settings.Facebook?.additionalConfig?.pages 
+          ? JSON.parse(settings.Facebook.additionalConfig.pages) 
+          : [];
+
+        if (currentPages.length === 0) {
+          toast({
+            title: "Connection Canceled",
+            description: "Facebook connection was canceled or timed out.",
+            variant: "destructive"
+          });
+        }
+      }
+    }, 1000);
   };
 
   // Function to add a new Facebook page
@@ -625,7 +793,7 @@ export default function Settings() {
                 settings["WordPress Site"].lastTestResult.success ? (
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
                 ) : (
-                  <AlertCircle className="h-5 w-5 text-red-500" title={settings["WordPress Site"].lastTestResult.message} />
+                  <AlertCircle className="h-5 w-5 text-red-500" />
                 )
               )}
             </div>
@@ -751,7 +919,7 @@ export default function Settings() {
                 settings["Facebook"].lastTestResult.success ? (
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
                 ) : (
-                  <AlertCircle className="h-5 w-5 text-red-500" title={settings["Facebook"].lastTestResult.message} />
+                  <AlertCircle className="h-5 w-5 text-red-500" />
                 )
               )}
             </div>
@@ -782,10 +950,17 @@ export default function Settings() {
                   <Button 
                     variant="default" 
                     size="sm" 
-                    disabled={!settings["Facebook"]?.enabled}
+                    disabled={!settings["Facebook"]?.enabled || isFbLoginInProgress}
                     onClick={initiateOAuthFlow}
                   >
-                    Connect with Facebook
+                    {isFbLoginInProgress ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Connecting...
+                      </>
+                    ) : (
+                      "Connect with Facebook"
+                    )}
                   </Button>
                   <Dialog open={isFbPageDialogOpen} onOpenChange={setIsFbPageDialogOpen}>
                     <DialogTrigger asChild>
@@ -920,7 +1095,6 @@ export default function Settings() {
         <Button
           onClick={() => updateMutation.mutate(settings)}
           disabled={updateMutation.isPending}
-          className="bg-primary hover:bg-primary/90"
         >
           {updateMutation.isPending ? (
             <>

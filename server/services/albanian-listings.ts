@@ -103,7 +103,7 @@ export class AlbanianListingService {
           currency: 'EUR',
           minimumFractionDigits: 0,
           maximumFractionDigits: 0
-        }).format(property.price);
+        }).format(Number(property.price));
 
         // In a real implementation, we would post to each configured page
         // For now, simulate using the first configured page
