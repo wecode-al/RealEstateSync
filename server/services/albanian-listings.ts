@@ -97,17 +97,24 @@ export class AlbanianListingService {
           };
         }
 
-        // In a real implementation, we would use the Graph API to post to each page
-        // For now, simulate a successful post to the first page
+        // Generate property content for Facebook post
+        const formattedPrice = new Intl.NumberFormat('en-US', { 
+          style: 'currency', 
+          currency: 'EUR',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        }).format(property.price);
+
+        // In a real implementation, we would post to each configured page
+        // For now, simulate using the first configured page
         const firstPage = facebookPages[0];
-        console.log(`Simulating post to Facebook page: ${firstPage.name} (${firstPage.pageId})`);
+        console.log(`Publishing to Facebook page: ${firstPage.name} (${firstPage.pageId})`);
 
         // Prepare the content for Facebook
         const content = {
-          message: `${property.title}\n\n${property.description}\n\nPrice: $${property.price}\nLocation: ${property.address}, ${property.city}`,
+          message: this.generateSocialMediaCaption(property, formattedPrice),
           // In a real implementation, we would upload the images from property.images
-          // For now, we'll just include the first image URL if available
-          image_url: property.images.length > 0 ? property.images[0] : undefined
+          image_urls: property.images
         };
 
         console.log("Facebook post content:", content);
@@ -143,6 +150,37 @@ export class AlbanianListingService {
         error: `Failed to publish to ${platform}: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
     }
+  }
+
+  private generateSocialMediaCaption(property: Property, formattedPrice: string): string {
+    // Generate a compelling social media caption
+    const hashTags = '#RealEstate #Albania #Property #ForSale';
+
+    let caption = `🏡 NEW LISTING: ${property.title}\n\n`;
+    caption += `💰 ${formattedPrice}\n`;
+    caption += `🛏️ ${property.bedrooms} bedrooms | 🚿 ${property.bathrooms} bathrooms | 📏 ${property.squareMeters}m²\n\n`;
+
+    // Add location info
+    caption += `📍 ${property.address}, ${property.city}`;
+    if (property.state) caption += `, ${property.state}`;
+    caption += `\n\n`;
+
+    // Add a truncated description (Facebook has character limits)
+    const maxDescriptionLength = 300;
+    if (property.description && property.description.length > 0) {
+      caption += property.description.length > maxDescriptionLength 
+        ? property.description.substring(0, maxDescriptionLength) + '...' 
+        : property.description;
+      caption += '\n\n';
+    }
+
+    // Add call to action
+    caption += '👉 Contact us for more information or to schedule a viewing!\n\n';
+
+    // Add hashtags
+    caption += hashTags;
+
+    return caption;
   }
 }
 

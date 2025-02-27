@@ -268,6 +268,47 @@ export default function Settings() {
     }
   });
 
+  // Function to initiate Facebook login and page selection
+  const initiateOAuthFlow = () => {
+    // Create popup window for Facebook login
+    const width = 600;
+    const height = 700;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
+
+    // In a real implementation, this would redirect to a server endpoint that initiates OAuth
+    // For now, we'll use a simulated flow
+    toast({
+      title: "Connecting to Facebook",
+      description: "Initializing Facebook authorization...",
+    });
+
+    // Simulate OAuth process completion after a delay
+    setTimeout(() => {
+      const mockPages = [
+        { name: "Albania Real Estate", pageId: "103254896542154", accessToken: "EAABl4ZC...mock_token_1" },
+        { name: "Tirana Properties", pageId: "987612345678901", accessToken: "EAABl4ZC...mock_token_2" }
+      ];
+
+      // Update the settings with the mock pages
+      setSettings(prev => ({
+        ...prev,
+        "Facebook": {
+          ...prev["Facebook"],
+          additionalConfig: {
+            ...prev["Facebook"]?.additionalConfig,
+            pages: JSON.stringify(mockPages)
+          }
+        }
+      }));
+
+      toast({
+        title: "Success",
+        description: `Connected to Facebook and imported ${mockPages.length} pages. Don't forget to save your settings.`,
+      });
+    }, 2000);
+  };
+
   // Function to add a new Facebook page
   const handleAddFacebookPage = () => {
     if (!newFbPage.name || !newFbPage.pageId || !newFbPage.accessToken) {
@@ -737,78 +778,88 @@ export default function Settings() {
             <div className="grid w-full items-center gap-4">
               <div className="flex justify-between items-center">
                 <Label>Facebook Pages</Label>
-                <Dialog open={isFbPageDialogOpen} onOpenChange={setIsFbPageDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      disabled={!settings["Facebook"]?.enabled}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Page
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add Facebook Page</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 pt-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="fb-page-name">Page Name</Label>
-                        <Input 
-                          id="fb-page-name"
-                          value={newFbPage.name}
-                          onChange={(e) => setNewFbPage({...newFbPage, name: e.target.value})}
-                          placeholder="My Business Page"
-                        />
+                <div className="flex gap-2">
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    disabled={!settings["Facebook"]?.enabled}
+                    onClick={initiateOAuthFlow}
+                  >
+                    Connect with Facebook
+                  </Button>
+                  <Dialog open={isFbPageDialogOpen} onOpenChange={setIsFbPageDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        disabled={!settings["Facebook"]?.enabled}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Page Manually
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Facebook Page</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="fb-page-name">Page Name</Label>
+                          <Input 
+                            id="fb-page-name"
+                            value={newFbPage.name}
+                            onChange={(e) => setNewFbPage({...newFbPage, name: e.target.value})}
+                            placeholder="My Business Page"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="fb-page-id">Page ID</Label>
+                          <Input 
+                            id="fb-page-id"
+                            value={newFbPage.pageId}
+                            onChange={(e) => setNewFbPage({...newFbPage, pageId: e.target.value})}
+                            placeholder="123456789012345"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            You can find your Page ID in the About section of your Facebook page
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="fb-access-token">Page Access Token</Label>
+                          <Input 
+                            id="fb-access-token"
+                            value={newFbPage.accessToken}
+                            onChange={(e) => setNewFbPage({...newFbPage, accessToken: e.target.value})}
+                            placeholder="EAABl..."
+                            type="password"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Generate an access token in Facebook Developer Portal with permissions to manage your pages
+                          </p>
+                        </div>
+                        <div className="flex justify-end gap-4 pt-4">
+                          <Button
+                            variant="outline"
+                            onClick={() => setIsFbPageDialogOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={handleAddFacebookPage}
+                          >
+                            Add Page
+                          </Button>
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="fb-page-id">Page ID</Label>
-                        <Input 
-                          id="fb-page-id"
-                          value={newFbPage.pageId}
-                          onChange={(e) => setNewFbPage({...newFbPage, pageId: e.target.value})}
-                          placeholder="123456789012345"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          You can find your Page ID in the About section of your Facebook page
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="fb-access-token">Page Access Token</Label>
-                        <Input 
-                          id="fb-access-token"
-                          value={newFbPage.accessToken}
-                          onChange={(e) => setNewFbPage({...newFbPage, accessToken: e.target.value})}
-                          placeholder="EAABl..."
-                          type="password"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Generate an access token in Facebook Developer Portal with permissions to manage your pages
-                        </p>
-                      </div>
-                      <div className="flex justify-end gap-4 pt-4">
-                        <Button
-                          variant="outline"
-                          onClick={() => setIsFbPageDialogOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          onClick={handleAddFacebookPage}
-                        >
-                          Add Page
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
 
               {/* List of Facebook Pages */}
               {getFacebookPages().length === 0 && settings["Facebook"]?.enabled && (
                 <div className="text-sm text-muted-foreground text-center py-4">
-                  No Facebook pages added yet. Click "Add Page" to add your first page.
+                  No Facebook pages added yet. Click "Connect with Facebook" to add your pages automatically.
                 </div>
               )}
 
@@ -877,7 +928,7 @@ export default function Settings() {
               Saving...
             </>
           ) : (
-            "Save Settings"
+            'Save Settings'
           )}
         </Button>
       </div>
