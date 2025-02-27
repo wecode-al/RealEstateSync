@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { DistributionStatus } from "./distribution-status";
-import { Bed, Bath, Square, MapPin, Loader2, Trash2, RefreshCw, Pencil } from "lucide-react";
+import { Bed, Bath, Square, MapPin, Loader2, Trash2, Pencil, Globe } from "lucide-react";
 import type { Property } from "@shared/schema";
 import { useLocation } from "wouter";
 
@@ -116,47 +115,24 @@ export function PropertyPreview({ property }: PropertyPreviewProps) {
       </CardContent>
 
       <CardFooter className="p-6 pt-0 flex flex-col gap-4">
-        {property.published && (
-          <DistributionStatus distributions={property.distributions} />
-        )}
-
         <div className="flex gap-2 w-full">
-          {property.published ? (
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="flex-1"
-              onClick={() => publishMutation.mutate()}
-              disabled={publishMutation.isPending}
-            >
-              {publishMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Republishing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Republish
-                </>
-              )}
-            </Button>
-          ) : (
-            <Button 
-              className="flex-1" 
-              onClick={() => publishMutation.mutate()}
-              disabled={publishMutation.isPending}
-            >
-              {publishMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Publishing...
-                </>
-              ) : (
-                "Publish & Distribute"
-              )}
-            </Button>
-          )}
+          <Button 
+            className="flex-1" 
+            onClick={() => publishMutation.mutate()}
+            disabled={publishMutation.isPending}
+          >
+            {publishMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Publishing...
+              </>
+            ) : (
+              <>
+                <Globe className="mr-2 h-4 w-4" />
+                {property.published ? "Update Listing" : "Publish"}
+              </>
+            )}
+          </Button>
 
           <Button
             variant="outline"

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Clock } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { postToLocalSites } from "@/lib/extension";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,7 +16,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const handlePublishToLocalSites = async () => {
+  const handlePublish = async () => {
     if (publishing) return;
 
     try {
@@ -30,13 +30,13 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
 
       toast({
         title: "Publishing Started",
-        description: "Check the extension popup for posting status.",
+        description: "Your property is being published.",
       });
     } catch (error) {
       console.error('Publishing error:', error);
       toast({
         title: "Publishing Failed",
-        description: error instanceof Error ? error.message : "Failed to start publishing",
+        description: error instanceof Error ? error.message : "Failed to publish property",
         variant: "destructive"
       });
     } finally {
@@ -45,44 +45,26 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
   };
 
   return (
-    <Card className="p-4">
+    <Card className="p-4 border-none shadow-lg bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
       <div className="space-y-4">
-        <div className="space-y-2">
-          <h3 className="font-medium">Publish to Local Sites</h3>
-          <ul className="space-y-1 text-sm text-muted-foreground">
-            <li>• Merrjep.al (Make sure you're logged in)</li>
-          </ul>
-        </div>
-
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
-          <p className="text-blue-800">
-            Currently supporting Merrjep.al. Make sure you are logged in before publishing.
-          </p>
-        </div>
-
         <Button
-          onClick={handlePublishToLocalSites}
+          onClick={handlePublish}
           disabled={publishing}
-          className="w-full"
+          className="w-full bg-primary hover:bg-primary/90"
         >
           {publishing ? (
             <>
-              <Clock className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Publishing...
             </>
           ) : (
-            'Publish to Merrjep.al'
+            'Publish Property'
           )}
         </Button>
 
-        <div className="text-sm text-muted-foreground">
-          <p>Before publishing:</p>
-          <ul className="list-disc list-inside mt-1">
-            <li>Open <a href="https://www.merrjep.al/login" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Merrjep.al Login Page</a></li>
-            <li>Log in to your Merrjep.al account</li>
-            <li>Return here and click publish</li>
-          </ul>
-        </div>
+        <p className="text-sm text-muted-foreground text-center">
+          Make sure you are logged in to your accounts before publishing.
+        </p>
       </div>
     </Card>
   );
