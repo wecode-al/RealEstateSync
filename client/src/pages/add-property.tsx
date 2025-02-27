@@ -15,9 +15,11 @@ export default function AddProperty() {
             </Button>
           </Link>
         </div>
-        
+
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold text-primary mb-8">Add New Property</h1>
+          <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            Add New Property
+          </h1>
           <PropertyForm />
         </div>
       </div>

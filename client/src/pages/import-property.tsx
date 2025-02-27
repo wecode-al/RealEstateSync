@@ -10,12 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import type { ScraperConfig, Property } from "@shared/schema";
+import type { Property } from "@shared/schema";
 
-// Form schema for URL and config selection
+// Form schema for URL
 const importSchema = z.object({
-  url: z.string().url("Please enter a valid URL"),
-  configId: z.number().min(1, "Please select a website configuration")
+  url: z.string().url("Please enter a valid URL")
 });
 
 type ImportFormData = z.infer<typeof importSchema>;
@@ -25,9 +24,9 @@ export default function ImportProperty() {
   const { toast } = useToast();
   const [importedProperty, setImportedProperty] = useState<Property | null>(null);
 
-  // Fetch available scraper configurations
-  const { data: configs, isLoading: configsLoading } = useQuery<ScraperConfig[]>({
-    queryKey: ["/api/scraper-configs"],
+  // Get the current scraper configuration
+  const { data: config, isLoading: configLoading } = useQuery({
+    queryKey: ["/api/scraper-configs/current"],
   });
 
   const form = useForm<ImportFormData>({
@@ -37,11 +36,16 @@ export default function ImportProperty() {
   // Mutation for importing property
   const importMutation = useMutation({
     mutationFn: async (data: ImportFormData) => {
+      if (!config?.id) {
+        throw new Error("No website configuration found. Please set up your website configuration in Settings first.");
+      }
+
       const res = await fetch("/api/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ ...data, configId: config.id })
       });
+
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to import property");
@@ -68,7 +72,7 @@ export default function ImportProperty() {
     importMutation.mutate(data);
   }
 
-  if (configsLoading) {
+  if (configLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -76,9 +80,34 @@ export default function ImportProperty() {
     );
   }
 
+  if (!config) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+          Import Property
+        </h1>
+        <Card className="p-6">
+          <div className="text-center py-6">
+            <p className="text-lg text-muted-foreground">
+              Please set up your website configuration in Settings before importing properties.
+            </p>
+            <Button 
+              className="mt-4"
+              onClick={() => navigate('/settings')}
+            >
+              Go to Settings
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Import Property</h1>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+        Import Property
+      </h1>
 
       {importedProperty ? (
         <Card className="p-6 mb-6">
@@ -101,6 +130,11 @@ export default function ImportProperty() {
         <Card className="p-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="mb-4">
+                <h2 className="text-lg font-medium">Importing from: {config.name}</h2>
+                <p className="text-sm text-muted-foreground">{config.baseUrl}</p>
+              </div>
+
               <FormField
                 control={form.control}
                 name="url"
@@ -109,31 +143,6 @@ export default function ImportProperty() {
                     <FormLabel>Property URL</FormLabel>
                     <FormControl>
                       <Input placeholder="https://..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="configId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Website Configuration</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1"
-                        {...field}
-                        onChange={e => field.onChange(Number(e.target.value))}
-                      >
-                        <option value="">Select a website configuration</option>
-                        {configs?.map(config => (
-                          <option key={config.id} value={config.id}>
-                            {config.name}
-                          </option>
-                        ))}
-                      </select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
