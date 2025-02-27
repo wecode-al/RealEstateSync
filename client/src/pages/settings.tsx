@@ -111,7 +111,7 @@ export default function Settings() {
       scraperForm.reset({
         name: scraperConfig.name,
         baseUrl: scraperConfig.baseUrl,
-        selectors: scraperConfig.selectors as any,
+        selectors: scraperConfig.selectors,
         fieldMapping: scraperConfig.fieldMapping
       });
     }
@@ -275,110 +275,121 @@ export default function Settings() {
         <CardHeader className="border-b border-gray-100 dark:border-gray-700">
           <div className="flex justify-between items-center">
             <CardTitle className="text-2xl">Website Configuration</CardTitle>
-            {!scraperConfig && (
-              <Dialog open={isScraperConfigOpen} onOpenChange={setIsScraperConfigOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-primary hover:bg-primary/90">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Configuration
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Add Website Configuration</DialogTitle>
-                  </DialogHeader>
-                  <Form {...scraperForm}>
-                    <form onSubmit={scraperForm.handleSubmit(data => scraperConfigMutation.mutate(data))} className="space-y-4">
-                      <FormField
-                        control={scraperForm.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Website Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="My Real Estate Website" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={scraperForm.control}
-                        name="baseUrl"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Base URL</FormLabel>
-                            <FormControl>
-                              <Input placeholder="https://example.com" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+            <Dialog open={isScraperConfigOpen} onOpenChange={setIsScraperConfigOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (scraperConfig) {
+                      scraperForm.reset({
+                        name: scraperConfig.name,
+                        baseUrl: scraperConfig.baseUrl,
+                        selectors: scraperConfig.selectors,
+                        fieldMapping: scraperConfig.fieldMapping
+                      });
+                    }
+                    setIsScraperConfigOpen(true);
+                  }}
+                >
+                  {scraperConfig ? 'Edit' : <><Plus className="h-4 w-4 mr-2" />Add</>} Configuration
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{scraperConfig ? 'Edit' : 'Add'} Website Configuration</DialogTitle>
+                </DialogHeader>
+                <Form {...scraperForm}>
+                  <form onSubmit={scraperForm.handleSubmit(data => scraperConfigMutation.mutate(data))} className="space-y-4">
+                    <FormField
+                      control={scraperForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Website Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="My Real Estate Website" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={scraperForm.control}
+                      name="baseUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Base URL</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://example.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Selectors Configuration</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Enter CSS selectors to match property information on your website. You can use multiple selectors separated by commas.
-                          Examples: ".price", "#property-title", "[data-price]"
-                        </p>
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Selectors Configuration</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Enter CSS selectors to match property information on your website. You can use multiple selectors separated by commas.
+                        Examples: ".price", "#property-title", "[data-price]"
+                      </p>
 
-                        {Object.entries(scraperForm.getValues().selectors).map(([field]) => (
-                          <FormField
-                            key={field}
-                            control={scraperForm.control}
-                            name={`selectors.${field}`}
-                            render={({ field: formField }) => (
-                              <FormItem>
-                                <FormLabel className="capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    placeholder={`Enter CSS selector for ${field}`}
-                                    {...formField}
-                                  />
-                                </FormControl>
-                                <p className="text-xs text-muted-foreground">
-                                  Example: {
-                                    field === 'price' ? '.price, .property-price, [data-price]' :
-                                      field === 'images' ? '.property-gallery img, .carousel img' :
-                                        field === 'features' ? '.features li, .amenities li' :
-                                          `.${field}, .property-${field}, [data-${field}]`
-                                  }
-                                </p>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        ))}
-                      </div>
-
-                      <div className="pt-4 flex justify-end gap-4">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setIsScraperConfigOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          type="submit"
-                          disabled={scraperConfigMutation.isPending}
-                        >
-                          {scraperConfigMutation.isPending ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Saving...
-                            </>
-                          ) : (
-                            'Save Configuration'
+                      {Object.entries(scraperForm.getValues().selectors).map(([field]) => (
+                        <FormField
+                          key={field}
+                          control={scraperForm.control}
+                          name={`selectors.${field}`}
+                          render={({ field: formField }) => (
+                            <FormItem>
+                              <FormLabel className="capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder={`Enter CSS selector for ${field}`}
+                                  {...formField}
+                                />
+                              </FormControl>
+                              <p className="text-xs text-muted-foreground">
+                                Example: {
+                                  field === 'price' ? '.price, .property-price, [data-price]' :
+                                    field === 'images' ? '.property-gallery img, .carousel img' :
+                                      field === 'features' ? '.features li, .amenities li' :
+                                        `.${field}, .property-${field}, [data-${field}]`
+                                }
+                              </p>
+                              <FormMessage />
+                            </FormItem>
                           )}
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
-            )}
+                        />
+                      ))}
+                    </div>
+
+                    <div className="pt-4 flex justify-end gap-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsScraperConfigOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={scraperConfigMutation.isPending}
+                      >
+                        {scraperConfigMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          'Save Configuration'
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent className="p-6">
