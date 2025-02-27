@@ -85,12 +85,6 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
                   {hasError && <XCircle className="h-4 w-4 text-red-500" />}
                   {!distribution && <div className="h-4 w-4" />}
                   <span className="font-medium">{site.name}</span>
-
-                  {hasError && (
-                    <span className="text-xs text-muted-foreground">
-                      {distribution.error}
-                    </span>
-                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
