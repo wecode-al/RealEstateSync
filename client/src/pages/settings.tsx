@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, AlertCircle, Plus, ArrowRight } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, Plus } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -32,7 +31,6 @@ type SiteSettings = Record<string, SiteConfig>;
 export default function Settings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [, navigate] = useLocation();
   const [settings, setSettings] = useState<SiteSettings>({});
   const [isScraperConfigOpen, setIsScraperConfigOpen] = useState(false);
   const [testUrl, setTestUrl] = useState("");
@@ -270,15 +268,6 @@ export default function Settings() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Settings</h1>
-
-        {/* Add Connection Wizard Button */}
-        <Button 
-          onClick={() => navigate("/connection-wizard")}
-          className="bg-primary hover:bg-primary/90"
-        >
-          Interactive Connection Wizard
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
       </div>
 
       {/* Scraper Configurations Section */}
@@ -505,7 +494,7 @@ export default function Settings() {
                 settings["WordPress Site"].lastTestResult.success ? (
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
                 ) : (
-                  <AlertCircle className="h-5 w-5 text-red-500" />
+                  <AlertCircle className="h-5 w-5 text-red-500" title={settings["WordPress Site"].lastTestResult.message} />
                 )
               )}
             </div>

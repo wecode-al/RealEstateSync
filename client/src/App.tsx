@@ -12,7 +12,6 @@ import Settings from "@/pages/settings";
 import AuthPage from "@/pages/auth";
 import EditProperty from "@/pages/edit-property";
 import ImportProperty from "@/pages/import-property";
-import ConnectionWizard from "@/pages/connection-wizard";
 
 // Define props type for EditProperty component
 type EditPropertyProps = {
@@ -36,7 +35,6 @@ function Router() {
               component={({ params }: EditPropertyProps) => <EditProperty params={params} />} 
             />
             <ProtectedRoute path="/settings" component={Settings} />
-            <ProtectedRoute path="/connection-wizard" component={ConnectionWizard} />
             <Route component={NotFound} />
           </Switch>
         </Layout>
