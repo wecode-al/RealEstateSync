@@ -1,6 +1,7 @@
 import { type Property } from "@shared/schema";
 import { siteConfigs } from "@shared/schema";
 import { storage } from "../storage";
+import fetch from "node-fetch";
 
 interface ListingResponse {
   success: boolean;
@@ -105,35 +106,88 @@ export class AlbanianListingService {
           maximumFractionDigits: 0
         }).format(Number(property.price));
 
-        // In a real implementation, we would post to each configured page
-        // For now, simulate using the first configured page
-        const firstPage = facebookPages[0];
-        console.log(`Publishing to Facebook page: ${firstPage.name} (${firstPage.pageId})`);
+        // Get the first configured page for posting
+        const page = facebookPages[0];
+        console.log(`Publishing to Facebook page: ${page.name} (${page.pageId})`);
 
-        // Prepare the content for Facebook
-        const content = {
-          message: this.generateSocialMediaCaption(property, formattedPrice),
-          // In a real implementation, we would upload the images from property.images
-          image_urls: property.images
-        };
+        // Create the post message
+        const message = this.generateSocialMediaCaption(property, formattedPrice);
 
-        console.log("Facebook post content:", content);
+        try {
+          // First, we need to upload the images to Facebook
+          const photoIds = await Promise.all(
+            property.images.slice(0, 10).map(async (imageUrl) => {
+              try {
+                const response = await fetch(
+                  `https://graph.facebook.com/v18.0/${page.pageId}/photos`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      url: imageUrl,
+                      published: false,
+                      access_token: page.accessToken
+                    })
+                  }
+                );
 
-        // Simulate Facebook API response
-        const success = Math.random() > 0.2; // 80% success rate for demo
-        const postId = Math.floor(Math.random() * 1000000000);
+                if (!response.ok) {
+                  const error = await response.json();
+                  console.error('Facebook photo upload error:', error);
+                  throw new Error(error.error?.message || 'Failed to upload photo to Facebook');
+                }
 
-        if (success) {
+                const data = await response.json();
+                return { media_fbid: data.id };
+              } catch (err) {
+                console.error('Error uploading photo:', err);
+                return null;
+              }
+            })
+          );
+
+          // Filter out any failed uploads
+          const validPhotoIds = photoIds.filter(id => id !== null);
+
+          // Create the post with attached photos
+          const postResponse = await fetch(
+            `https://graph.facebook.com/v18.0/${page.pageId}/feed`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                message: message,
+                attached_media: validPhotoIds,
+                access_token: page.accessToken
+              })
+            }
+          );
+
+          if (!postResponse.ok) {
+            const error = await postResponse.json();
+            throw new Error(error.error?.message || 'Failed to create Facebook post');
+          }
+
+          const postData = await postResponse.json();
+          const postId = postData.id;
+
           return {
             success: true,
-            listingUrl: `https://facebook.com/${firstPage.pageId}/posts/${postId}`
+            listingUrl: `https://facebook.com/${postId}`
           };
-        } else {
-          throw new Error("Facebook API error: Could not post to page");
+        } catch (error) {
+          console.error('Facebook API error:', error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown Facebook API error'
+          };
         }
       } else if (platform === "instagram") {
-        // Placeholder for Instagram publishing
-        // Would follow a similar pattern to Facebook, but with Instagram-specific API
+        // Instagram would use FB Graph API differently, through connected Instagram account
         return {
           success: false,
           error: "Instagram publishing not implemented yet"

@@ -269,19 +269,36 @@ export default function Settings() {
     }
   });
 
-  // Function to initiate Facebook login and page selection
+  // Function to initiate Facebook OAuth flow
   const initiateOAuthFlow = () => {
     // Set login in progress
     setIsFbLoginInProgress(true);
 
-    // Open a simulated Facebook login popup window
+    // For a real implementation, you would:
+    // 1. Define app ID from your Facebook Developer account
+    const appId = "YOUR_FACEBOOK_APP_ID"; // Replace with actual app ID in production
+
+    // 2. Set redirect URI (must match what's configured in FB Developer Console)
+    const redirectUri = encodeURIComponent(`${window.location.origin}/facebook-callback`);
+
+    // 3. Define required permissions
+    const permissions = encodeURIComponent('pages_manage_posts,pages_read_engagement,pages_show_list');
+
+    // 4. Generate and store a state parameter to prevent CSRF
+    const state = Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('fb_auth_state', state);
+
+    // 5. Build the Facebook authorization URL
+    const authUrl = `https://www.facebook.com/v16.0/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&state=${state}&scope=${permissions}`;
+
+    // 6. Open the authorization URL in a popup
     const width = 600;
     const height = 700;
     const left = window.screen.width / 2 - width / 2;
     const top = window.screen.height / 2 - height / 2;
 
     const popupWindow = window.open(
-      "about:blank",
+      authUrl,
       "Facebook Login",
       `width=${width},height=${height},top=${top},left=${left}`
     );
@@ -296,188 +313,32 @@ export default function Settings() {
       return;
     }
 
-    // Create a basic HTML content for the login simulation
-    const popupContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Facebook Login</title>
-        <style>
-          body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            align-items: center;
-          }
-          .header {
-            background-color: #1877f2;
-            color: white;
-            width: 100%;
-            padding: 15px;
-            text-align: center;
-          }
-          .container {
-            margin: 20px;
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            width: 80%;
-            max-width: 400px;
-          }
-          .logo {
-            font-size: 24px;
-            font-weight: bold;
-          }
-          h2 {
-            font-size: 18px;
-            margin-top: 0;
-          }
-          p {
-            margin: 15px 0;
-          }
-          button {
-            background-color: #1877f2;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 10px 15px;
-            font-size: 16px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 10px;
-          }
-          .progress {
-            display: none;
-            margin-top: 20px;
-            text-align: center;
-          }
-          .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #1877f2;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 2s linear infinite;
-            margin: 0 auto 15px auto;
-          }
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div class="logo">facebook</div>
-        </div>
-        <div class="container">
-          <h2>Connect your Facebook Pages</h2>
-          <p>Connect your real estate listings app to Facebook to automatically post properties to your business pages.</p>
-          <p>By connecting, you'll allow the app to:</p>
-          <ul>
-            <li>See your Facebook pages</li>
-            <li>Post content to your pages</li>
-            <li>Upload photos to your pages</li>
-          </ul>
-          <p>This does not give access to your personal Facebook profile.</p>
-          <button id="connectBtn">Connect with Facebook</button>
-          <div id="progress" class="progress">
-            <div class="spinner"></div>
-            <p>Connecting to Facebook...</p>
-          </div>
-        </div>
-
-        <script>
-          document.getElementById('connectBtn').addEventListener('click', function() {
-            // Show progress indicator
-            document.getElementById('progress').style.display = 'block';
-            document.getElementById('connectBtn').style.display = 'none';
-
-            // Simulate API connection delay
-            setTimeout(function() {
-              window.opener.postMessage({ 
-                type: 'FACEBOOK_OAUTH_SUCCESS',
-                pages: [
-                  { 
-                    name: "Albania Real Estate", 
-                    pageId: "103254896542154", 
-                    accessToken: "EAABl4ZC...mock_token_1" 
-                  },
-                  { 
-                    name: "Tirana Properties", 
-                    pageId: "987612345678901", 
-                    accessToken: "EAABl4ZC...mock_token_2" 
-                  }
-                ]
-              }, '*');
-              window.close();
-            }, 2000);
-          });
-        </script>
-      </body>
-      </html>
-    `;
-
-    popupWindow.document.write(popupContent);
-
-    // Setup message event listener for when the popup sends data back
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data && event.data.type === 'FACEBOOK_OAUTH_SUCCESS') {
-        // Update the settings with the connected pages
-        setSettings(prev => ({
-          ...prev,
-          "Facebook": {
-            ...prev["Facebook"],
-            additionalConfig: {
-              ...prev["Facebook"]?.additionalConfig,
-              pages: JSON.stringify(event.data.pages)
-            }
-          }
-        }));
-
-        // Show success message
-        toast({
-          title: "Success",
-          description: `Connected to Facebook and imported ${event.data.pages.length} pages. Don't forget to save your settings.`,
-        });
-
-        // Cleanup
-        window.removeEventListener('message', handleMessage);
-        setIsFbLoginInProgress(false);
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-
-    // Cleanup if the popup is closed without completing the flow
+    // 7. Set up a listener to handle the redirect back from Facebook
     const checkPopupClosed = setInterval(() => {
       if (popupWindow.closed) {
         clearInterval(checkPopupClosed);
-        window.removeEventListener('message', handleMessage);
         setIsFbLoginInProgress(false);
 
-        // If login was in progress and popup was closed without success, show message
-        const currentPages = settings.Facebook?.additionalConfig?.pages 
-          ? JSON.parse(settings.Facebook.additionalConfig.pages) 
-          : [];
-
-        if (currentPages.length === 0) {
-          toast({
-            title: "Connection Canceled",
-            description: "Facebook connection was canceled or timed out.",
-            variant: "destructive"
-          });
-        }
+        // If login was interrupted, show a message
+        toast({
+          title: "Facebook Login",
+          description: "Facebook authentication was canceled or timed out.",
+          variant: "destructive"
+        });
       }
     }, 1000);
+
+    // 8. In a real implementation, you would have a server endpoint that:
+    //    - Receives the auth code from Facebook redirect
+    //    - Exchanges the code for an access token
+    //    - Fetches the user's Facebook pages
+    //    - Returns the pages data to the client
+
+    // Note: This implementation is incomplete without a server endpoint to handle the OAuth callback
+    // The server would need to implement the code exchange and API calls to get the page tokens
   };
 
-  // Function to add a new Facebook page
+  // Function to add a new Facebook page manually
   const handleAddFacebookPage = () => {
     if (!newFbPage.name || !newFbPage.pageId || !newFbPage.accessToken) {
       toast({
@@ -1086,6 +947,20 @@ export default function Settings() {
                   "Test Connection"
                 )}
               </Button>
+            </div>
+
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+              <h4 className="font-semibold mb-2">How to get a Facebook Page Access Token</h4>
+              <ol className="list-decimal list-inside space-y-2 text-sm">
+                <li>Go to <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Facebook Developers</a> and create an App</li>
+                <li>Add the "Facebook Login" product to your app</li>
+                <li>Set up OAuth Redirect URI in your app settings to match your website</li>
+                <li>Go to the Graph API Explorer and select your app</li>
+                <li>Request permissions: pages_read_engagement, pages_manage_posts</li>
+                <li>Generate an access token and select your page</li>
+                <li>Click "Generate Access Token" to get your page token</li>
+                <li>Copy the resulting token and paste it here</li>
+              </ol>
             </div>
           </div>
         </CardContent>
