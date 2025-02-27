@@ -35,6 +35,8 @@ export default function Settings() {
   const [isScraperConfigOpen, setIsScraperConfigOpen] = useState(false);
   const [testUrl, setTestUrl] = useState("");
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
+  const [isFbPageDialogOpen, setIsFbPageDialogOpen] = useState(false);
+  const [newFbPage, setNewFbPage] = useState({ name: "", pageId: "", accessToken: "" });
 
   // Get scraper configurations
   const { data: scraperConfig, isLoading: isLoadingConfig } = useQuery<ScraperConfig>({
@@ -62,7 +64,7 @@ export default function Settings() {
     }
   });
 
-  // Initialize settings for WordPress site only
+  // Initialize settings for WordPress site and Facebook
   useEffect(() => {
     const initialSettings: SiteSettings = {
       "WordPress Site": {
@@ -71,6 +73,12 @@ export default function Settings() {
           username: '',
           password: '',
           apiUrl: ''
+        }
+      },
+      "Facebook": {
+        enabled: false,
+        additionalConfig: {
+          pages: JSON.stringify([])
         }
       }
     };
@@ -90,18 +98,28 @@ export default function Settings() {
 
   // Update local settings when server data is fetched
   useEffect(() => {
-    if (currentSettings?.["WordPress Site"]) {
-      const wpConfig = currentSettings["WordPress Site"] as SiteConfig;
-      setSettings({
-        "WordPress Site": {
+    if (currentSettings) {
+      const updatedSettings = { ...settings };
+
+      // Handle WordPress settings
+      if (currentSettings["WordPress Site"]) {
+        const wpConfig = currentSettings["WordPress Site"] as SiteConfig;
+        updatedSettings["WordPress Site"] = {
           ...wpConfig,
           additionalConfig: {
             username: wpConfig.additionalConfig?.username || import.meta.env.VITE_WORDPRESS_USERNAME || '',
             password: wpConfig.additionalConfig?.password || import.meta.env.VITE_WORDPRESS_APP_PASSWORD || '',
             apiUrl: wpConfig.additionalConfig?.apiUrl || import.meta.env.VITE_WORDPRESS_API_URL || ''
           }
-        }
-      });
+        };
+      }
+
+      // Handle Facebook settings
+      if (currentSettings["Facebook"]) {
+        updatedSettings["Facebook"] = currentSettings["Facebook"];
+      }
+
+      setSettings(updatedSettings);
     }
   }, [currentSettings]);
 
@@ -250,6 +268,68 @@ export default function Settings() {
     }
   });
 
+  // Function to add a new Facebook page
+  const handleAddFacebookPage = () => {
+    if (!newFbPage.name || !newFbPage.pageId || !newFbPage.accessToken) {
+      toast({
+        title: "Error",
+        description: "Please fill in all Facebook page fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const currentPages = settings.Facebook?.additionalConfig?.pages 
+      ? JSON.parse(settings.Facebook.additionalConfig.pages) 
+      : [];
+
+    const updatedPages = [...currentPages, newFbPage];
+
+    setSettings(prev => ({
+      ...prev,
+      "Facebook": {
+        ...prev["Facebook"],
+        additionalConfig: {
+          ...prev["Facebook"]?.additionalConfig,
+          pages: JSON.stringify(updatedPages)
+        }
+      }
+    }));
+
+    setNewFbPage({ name: "", pageId: "", accessToken: "" });
+    setIsFbPageDialogOpen(false);
+
+    toast({
+      title: "Success",
+      description: `Facebook page "${newFbPage.name}" added. Don't forget to save your settings.`,
+    });
+  };
+
+  // Function to remove a Facebook page
+  const handleRemoveFacebookPage = (index: number) => {
+    const currentPages = settings.Facebook?.additionalConfig?.pages 
+      ? JSON.parse(settings.Facebook.additionalConfig.pages) 
+      : [];
+
+    const updatedPages = currentPages.filter((_: any, i: number) => i !== index);
+
+    setSettings(prev => ({
+      ...prev,
+      "Facebook": {
+        ...prev["Facebook"],
+        additionalConfig: {
+          ...prev["Facebook"]?.additionalConfig,
+          pages: JSON.stringify(updatedPages)
+        }
+      }
+    }));
+
+    toast({
+      title: "Info",
+      description: "Facebook page removed. Don't forget to save your settings.",
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -262,6 +342,16 @@ export default function Settings() {
     return config.additionalConfig?.username &&
            config.additionalConfig?.password &&
            config.additionalConfig?.apiUrl;
+  };
+
+  const getFacebookPages = () => {
+    if (!settings.Facebook?.additionalConfig?.pages) return [];
+    try {
+      return JSON.parse(settings.Facebook.additionalConfig.pages);
+    } catch (e) {
+      console.error("Error parsing Facebook pages:", e);
+      return [];
+    }
   };
 
   return (
@@ -485,7 +575,7 @@ export default function Settings() {
 
       {/* WordPress Settings */}
       <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">WordPress Integration</h2>
-      <Card className="border-none shadow-lg bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+      <Card className="border-none shadow-lg bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 mb-8">
         <CardHeader className="border-b border-gray-100 dark:border-gray-700">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -593,6 +683,172 @@ export default function Settings() {
                   !settings["WordPress Site"]?.enabled ||
                   testMutation.isPending ||
                   !areWordPressFieldsFilled(settings["WordPress Site"])
+                }
+              >
+                {testMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Testing...
+                  </>
+                ) : (
+                  "Test Connection"
+                )}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Facebook Integration */}
+      <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Facebook Integration</h2>
+      <Card className="border-none shadow-lg bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 mb-8">
+        <CardHeader className="border-b border-gray-100 dark:border-gray-700">
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span>Facebook</span>
+              {settings["Facebook"]?.lastTestResult && (
+                settings["Facebook"].lastTestResult.success ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-red-500" title={settings["Facebook"].lastTestResult.message} />
+                )
+              )}
+            </div>
+            <Switch
+              checked={settings["Facebook"]?.enabled ?? false}
+              onCheckedChange={(checked) => {
+                setSettings(prev => ({
+                  ...prev,
+                  "Facebook": { 
+                    ...prev["Facebook"], 
+                    enabled: checked,
+                    additionalConfig: {
+                      ...prev["Facebook"]?.additionalConfig || {},
+                      pages: prev["Facebook"]?.additionalConfig?.pages || JSON.stringify([])
+                    }
+                  }
+                }));
+              }}
+            />
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <div className="grid w-full items-center gap-4">
+              <div className="flex justify-between items-center">
+                <Label>Facebook Pages</Label>
+                <Dialog open={isFbPageDialogOpen} onOpenChange={setIsFbPageDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      disabled={!settings["Facebook"]?.enabled}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Page
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add Facebook Page</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="fb-page-name">Page Name</Label>
+                        <Input 
+                          id="fb-page-name"
+                          value={newFbPage.name}
+                          onChange={(e) => setNewFbPage({...newFbPage, name: e.target.value})}
+                          placeholder="My Business Page"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="fb-page-id">Page ID</Label>
+                        <Input 
+                          id="fb-page-id"
+                          value={newFbPage.pageId}
+                          onChange={(e) => setNewFbPage({...newFbPage, pageId: e.target.value})}
+                          placeholder="123456789012345"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          You can find your Page ID in the About section of your Facebook page
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="fb-access-token">Page Access Token</Label>
+                        <Input 
+                          id="fb-access-token"
+                          value={newFbPage.accessToken}
+                          onChange={(e) => setNewFbPage({...newFbPage, accessToken: e.target.value})}
+                          placeholder="EAABl..."
+                          type="password"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Generate an access token in Facebook Developer Portal with permissions to manage your pages
+                        </p>
+                      </div>
+                      <div className="flex justify-end gap-4 pt-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsFbPageDialogOpen(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleAddFacebookPage}
+                        >
+                          Add Page
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              {/* List of Facebook Pages */}
+              {getFacebookPages().length === 0 && settings["Facebook"]?.enabled && (
+                <div className="text-sm text-muted-foreground text-center py-4">
+                  No Facebook pages added yet. Click "Add Page" to add your first page.
+                </div>
+              )}
+
+              {getFacebookPages().length > 0 && (
+                <div className="space-y-3 mt-4">
+                  {getFacebookPages().map((page: any, index: number) => (
+                    <Card key={index} className="p-4 border border-gray-100 dark:border-gray-700">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="font-medium">{page.name}</h4>
+                          <p className="text-xs text-muted-foreground">ID: {page.pageId}</p>
+                        </div>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleRemoveFacebookPage(index)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {settings["Facebook"]?.enabled && getFacebookPages().length === 0 && (
+                <p className="text-sm text-amber-500">
+                  You need to add at least one Facebook page to use Facebook publishing
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-4">
+              <Button
+                variant="outline"
+                onClick={() => testMutation.mutate("Facebook")}
+                disabled={
+                  !settings["Facebook"]?.enabled ||
+                  testMutation.isPending ||
+                  getFacebookPages().length === 0
                 }
               >
                 {testMutation.isPending ? (

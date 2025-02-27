@@ -5,6 +5,7 @@ import { insertScraperConfigSchema, insertPropertySchema, type Property, distrib
 import { wordPressService } from "./services/wordpress";
 import { setupAuth } from "./auth";
 import scraperRoutes from "./routes/scraper";
+import { albanianListingService } from "./services/albanian-listings";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -214,6 +215,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
           postUrl: null
         };
       }
+    } else if (site === "Facebook") {
+      try {
+        if (settings["Facebook"]?.enabled) {
+          // Check if Facebook pages are configured
+          const facebookPages = settings["Facebook"]?.additionalConfig?.pages
+            ? JSON.parse(settings["Facebook"].additionalConfig.pages)
+            : [];
+
+          if (facebookPages.length === 0) {
+            distributions[site] = {
+              status: "error",
+              error: "No Facebook pages configured",
+              postUrl: null
+            };
+          } else {
+            // Use the Albanian listing service to publish to Facebook
+            const result = await albanianListingService.publishProperty(property, "facebook");
+            distributions[site] = {
+              status: result.success ? "success" : "error",
+              error: result.error || null,
+              postUrl: result.listingUrl || null
+            };
+          }
+        } else {
+          distributions[site] = {
+            status: "error",
+            error: "Facebook integration not enabled",
+            postUrl: null
+          };
+        }
+      } catch (error) {
+        distributions[site] = {
+          status: "error",
+          error: error instanceof Error ? error.message : "Unknown error",
+          postUrl: null
+        };
+      }
     } else {
       // Handle other sites in the future
       distributions[site] = {
@@ -278,6 +316,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (site === "WordPress Site") {
         await wordPressService.testConnection();
+      } else if (site === "Facebook") {
+        // Simple connection test for Facebook
+        // In a real implementation, this would verify API tokens
+        const settings = await storage.getSettings();
+        const facebookPages = settings["Facebook"]?.additionalConfig?.pages
+          ? JSON.parse(settings["Facebook"].additionalConfig.pages)
+          : [];
+
+        if (facebookPages.length === 0) {
+          throw new Error("No Facebook pages configured");
+        }
+
+        // For now, just check if the access token is present for at least one page
+        const hasValidToken = facebookPages.some((page: any) => 
+          page.accessToken && page.accessToken.length > 20
+        );
+
+        if (!hasValidToken) {
+          throw new Error("No valid Facebook access tokens found");
+        }
       }
       res.json({ success: true });
     } catch (error) {
