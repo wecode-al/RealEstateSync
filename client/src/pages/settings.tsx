@@ -271,71 +271,7 @@ export default function Settings() {
 
   // Function to initiate Facebook OAuth flow
   const initiateOAuthFlow = () => {
-    // Set login in progress
-    setIsFbLoginInProgress(true);
-
-    // For a real implementation, you would:
-    // 1. Define app ID from your Facebook Developer account
-    const appId = "YOUR_FACEBOOK_APP_ID"; // Replace with actual app ID in production
-
-    // 2. Set redirect URI (must match what's configured in FB Developer Console)
-    const redirectUri = encodeURIComponent(`${window.location.origin}/facebook-callback`);
-
-    // 3. Define required permissions
-    const permissions = encodeURIComponent('pages_manage_posts,pages_read_engagement,pages_show_list');
-
-    // 4. Generate and store a state parameter to prevent CSRF
-    const state = Math.random().toString(36).substring(2, 15);
-    localStorage.setItem('fb_auth_state', state);
-
-    // 5. Build the Facebook authorization URL
-    const authUrl = `https://www.facebook.com/v16.0/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&state=${state}&scope=${permissions}`;
-
-    // 6. Open the authorization URL in a popup
-    const width = 600;
-    const height = 700;
-    const left = window.screen.width / 2 - width / 2;
-    const top = window.screen.height / 2 - height / 2;
-
-    const popupWindow = window.open(
-      authUrl,
-      "Facebook Login",
-      `width=${width},height=${height},top=${top},left=${left}`
-    );
-
-    if (!popupWindow) {
-      toast({
-        title: "Error",
-        description: "Popup blocked. Please allow popups for this site.",
-        variant: "destructive"
-      });
-      setIsFbLoginInProgress(false);
-      return;
-    }
-
-    // 7. Set up a listener to handle the redirect back from Facebook
-    const checkPopupClosed = setInterval(() => {
-      if (popupWindow.closed) {
-        clearInterval(checkPopupClosed);
-        setIsFbLoginInProgress(false);
-
-        // If login was interrupted, show a message
-        toast({
-          title: "Facebook Login",
-          description: "Facebook authentication was canceled or timed out.",
-          variant: "destructive"
-        });
-      }
-    }, 1000);
-
-    // 8. In a real implementation, you would have a server endpoint that:
-    //    - Receives the auth code from Facebook redirect
-    //    - Exchanges the code for an access token
-    //    - Fetches the user's Facebook pages
-    //    - Returns the pages data to the client
-
-    // Note: This implementation is incomplete without a server endpoint to handle the OAuth callback
-    // The server would need to implement the code exchange and API calls to get the page tokens
+    window.location.href = "/api/facebook/auth";
   };
 
   // Function to add a new Facebook page manually
@@ -349,8 +285,8 @@ export default function Settings() {
       return;
     }
 
-    const currentPages = settings.Facebook?.additionalConfig?.pages 
-      ? JSON.parse(settings.Facebook.additionalConfig.pages) 
+    const currentPages = settings.Facebook?.additionalConfig?.pages
+      ? JSON.parse(settings.Facebook.additionalConfig.pages)
       : [];
 
     const updatedPages = [...currentPages, newFbPage];
@@ -377,8 +313,8 @@ export default function Settings() {
 
   // Function to remove a Facebook page
   const handleRemoveFacebookPage = (index: number) => {
-    const currentPages = settings.Facebook?.additionalConfig?.pages 
-      ? JSON.parse(settings.Facebook.additionalConfig.pages) 
+    const currentPages = settings.Facebook?.additionalConfig?.pages
+      ? JSON.parse(settings.Facebook.additionalConfig.pages)
       : [];
 
     const updatedPages = currentPages.filter((_: any, i: number) => i !== index);
@@ -399,6 +335,36 @@ export default function Settings() {
       description: "Facebook page removed. Don't forget to save your settings.",
     });
   };
+
+  useEffect(() => {
+    // Parse URL params to check for Facebook auth result
+    const searchParams = new URLSearchParams(window.location.search);
+    const facebookStatus = searchParams.get('facebook');
+
+    if (facebookStatus === 'success') {
+      toast({
+        title: "Facebook Connected",
+        description: "Successfully connected to Facebook and imported your pages",
+      });
+
+      // Remove the URL parameters without refreshing the page
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      // Refresh the settings data
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+    } else if (facebookStatus === 'error') {
+      const errorMessage = searchParams.get('message') || "Facebook connection failed";
+      toast({
+        title: "Facebook Connection Failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
+
+      // Remove the URL parameters without refreshing the page
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [toast, queryClient]);
+
 
   if (isLoading) {
     return (
@@ -437,7 +403,7 @@ export default function Settings() {
             <CardTitle className="text-2xl">Website Configuration</CardTitle>
             <Dialog open={isScraperConfigOpen} onOpenChange={setIsScraperConfigOpen}>
               <DialogTrigger asChild>
-                <Button 
+                <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
@@ -789,8 +755,8 @@ export default function Settings() {
               onCheckedChange={(checked) => {
                 setSettings(prev => ({
                   ...prev,
-                  "Facebook": { 
-                    ...prev["Facebook"], 
+                  "Facebook": {
+                    ...prev["Facebook"],
                     enabled: checked,
                     additionalConfig: {
                       ...prev["Facebook"]?.additionalConfig || {},
@@ -808,26 +774,19 @@ export default function Settings() {
               <div className="flex justify-between items-center">
                 <Label>Facebook Pages</Label>
                 <div className="flex gap-2">
-                  <Button 
-                    variant="default" 
-                    size="sm" 
-                    disabled={!settings["Facebook"]?.enabled || isFbLoginInProgress}
+                  <Button
+                    variant="default"
+                    size="sm"
+                    disabled={!settings["Facebook"]?.enabled}
                     onClick={initiateOAuthFlow}
                   >
-                    {isFbLoginInProgress ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Connecting...
-                      </>
-                    ) : (
-                      "Connect with Facebook"
-                    )}
+                    Connect with Facebook
                   </Button>
                   <Dialog open={isFbPageDialogOpen} onOpenChange={setIsFbPageDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         disabled={!settings["Facebook"]?.enabled}
                       >
                         <Plus className="h-4 w-4 mr-2" />
@@ -841,19 +800,19 @@ export default function Settings() {
                       <div className="space-y-4 pt-4">
                         <div className="space-y-2">
                           <Label htmlFor="fb-page-name">Page Name</Label>
-                          <Input 
+                          <Input
                             id="fb-page-name"
                             value={newFbPage.name}
-                            onChange={(e) => setNewFbPage({...newFbPage, name: e.target.value})}
+                            onChange={(e) => setNewFbPage({ ...newFbPage, name: e.target.value })}
                             placeholder="My Business Page"
                           />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="fb-page-id">Page ID</Label>
-                          <Input 
+                          <Input
                             id="fb-page-id"
                             value={newFbPage.pageId}
-                            onChange={(e) => setNewFbPage({...newFbPage, pageId: e.target.value})}
+                            onChange={(e) => setNewFbPage({ ...newFbPage, pageId: e.target.value })}
                             placeholder="123456789012345"
                           />
                           <p className="text-xs text-muted-foreground">
@@ -862,10 +821,10 @@ export default function Settings() {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="fb-access-token">Page Access Token</Label>
-                          <Input 
+                          <Input
                             id="fb-access-token"
                             value={newFbPage.accessToken}
-                            onChange={(e) => setNewFbPage({...newFbPage, accessToken: e.target.value})}
+                            onChange={(e) => setNewFbPage({ ...newFbPage, accessToken: e.target.value })}
                             placeholder="EAABl..."
                             type="password"
                           />
@@ -908,8 +867,8 @@ export default function Settings() {
                           <h4 className="font-medium">{page.name}</h4>
                           <p className="text-xs text-muted-foreground">ID: {page.pageId}</p>
                         </div>
-                        <Button 
-                          variant="destructive" 
+                        <Button
+                          variant="destructive"
                           size="sm"
                           onClick={() => handleRemoveFacebookPage(index)}
                         >

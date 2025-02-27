@@ -6,10 +6,12 @@ import { wordPressService } from "./services/wordpress";
 import { setupAuth } from "./auth";
 import scraperRoutes from "./routes/scraper";
 import { albanianListingService } from "./services/albanian-listings";
+import facebookAuthRoutes from "./routes/facebook-auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
   app.use(scraperRoutes);
+  app.use(facebookAuthRoutes);
 
   // Scraper Configuration endpoints
   app.get("/api/scraper-configs/current", async (_req, res) => {
