@@ -142,7 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       status: 'success' | 'error';
       error: string | null;
       postUrl: string | null;
-    }> = {};
+    }> = property.distributions || {};
 
     // Only publish to WordPress if enabled
     if (settings["WordPress Site"]?.enabled) {
@@ -190,7 +190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Initialize distribution status for this site
     const distributions = { 
-      ...property.distributions 
+      ...(property.distributions || {})
     };
 
     // Site-specific publishing logic
@@ -222,7 +222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (settings["Facebook"]?.enabled) {
           // Check if Facebook pages are configured
           const facebookPages = settings["Facebook"]?.additionalConfig?.pages
-            ? JSON.parse(settings["Facebook"].additionalConfig.pages)
+            ? JSON.parse(settings["Facebook"].additionalConfig.pages as string)
             : [];
 
           if (facebookPages.length === 0) {
@@ -323,7 +323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // In a real implementation, this would verify API tokens
         const settings = await storage.getSettings();
         const facebookPages = settings["Facebook"]?.additionalConfig?.pages
-          ? JSON.parse(settings["Facebook"].additionalConfig.pages)
+          ? JSON.parse(settings["Facebook"].additionalConfig.pages as string)
           : [];
 
         if (facebookPages.length === 0) {

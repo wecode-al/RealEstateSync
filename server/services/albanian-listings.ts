@@ -88,7 +88,7 @@ export class AlbanianListingService {
 
         // Get the configured Facebook pages
         const facebookPages = facebookSettings.additionalConfig?.pages
-          ? JSON.parse(facebookSettings.additionalConfig.pages)
+          ? JSON.parse(facebookSettings.additionalConfig.pages as string)
           : [];
 
         if (facebookPages.length === 0) {
@@ -134,12 +134,12 @@ export class AlbanianListingService {
                 );
 
                 if (!response.ok) {
-                  const error = await response.json();
+                  const error = await response.json() as { error?: { message?: string } };
                   console.error('Facebook photo upload error:', error);
                   throw new Error(error.error?.message || 'Failed to upload photo to Facebook');
                 }
 
-                const data = await response.json();
+                const data = await response.json() as { id: string };
                 return { media_fbid: data.id };
               } catch (err) {
                 console.error('Error uploading photo:', err);
@@ -168,11 +168,11 @@ export class AlbanianListingService {
           );
 
           if (!postResponse.ok) {
-            const error = await postResponse.json();
+            const error = await postResponse.json() as { error?: { message?: string } };
             throw new Error(error.error?.message || 'Failed to create Facebook post');
           }
 
-          const postData = await postResponse.json();
+          const postData = await postResponse.json() as { id: string };
           const postId = postData.id;
 
           return {

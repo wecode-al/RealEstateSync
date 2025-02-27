@@ -18,7 +18,8 @@ router.get("/api/facebook/auth", (req, res) => {
   // Store a state parameter in session to prevent CSRF
   const state = Math.random().toString(36).substring(2, 15);
   if (req.session) {
-    req.session.fbOAuthState = state;
+    // Explicitly define the custom property on the session
+    req.session.fbState = state;
   }
 
   // Facebook permissions needed for page management and posting
@@ -27,6 +28,9 @@ router.get("/api/facebook/auth", (req, res) => {
   // Redirect to Facebook authorization endpoint
   const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&state=${state}&scope=${encodeURIComponent(scope)}`;
 
+  console.log(`Redirecting to Facebook OAuth URL: ${authUrl}`);
+  console.log(`REDIRECT_URI set to: ${REDIRECT_URI}`);
+
   res.redirect(authUrl);
 });
 
@@ -34,8 +38,9 @@ router.get("/api/facebook/auth", (req, res) => {
 router.get("/api/facebook/callback", async (req, res) => {
   // Verify the state parameter to prevent CSRF attacks
   const { code, state } = req.query;
+  const stateFromSession = req.session?.fbState;
 
-  if (!req.session || state !== req.session.fbOAuthState) {
+  if (!stateFromSession || state !== stateFromSession) {
     return res.status(403).json({ error: "Invalid state parameter" });
   }
 
@@ -51,11 +56,11 @@ router.get("/api/facebook/callback", async (req, res) => {
     );
 
     if (!tokenResponse.ok) {
-      const error = await tokenResponse.json();
-      throw new Error(error.error?.message || "Failed to exchange code for access token");
+      const errorData = await tokenResponse.json() as any;
+      throw new Error(errorData.error?.message || "Failed to exchange code for access token");
     }
 
-    const tokenData = await tokenResponse.json();
+    const tokenData = await tokenResponse.json() as { access_token: string };
     const userAccessToken = tokenData.access_token;
 
     // Get user's pages
@@ -65,11 +70,11 @@ router.get("/api/facebook/callback", async (req, res) => {
     );
 
     if (!pagesResponse.ok) {
-      const error = await pagesResponse.json();
-      throw new Error(error.error?.message || "Failed to get pages");
+      const errorData = await pagesResponse.json() as any;
+      throw new Error(errorData.error?.message || "Failed to get pages");
     }
 
-    const pagesData = await pagesResponse.json();
+    const pagesData = await pagesResponse.json() as { data: any[] };
 
     // Format page data for storage
     const pages = pagesData.data.map((page: any) => ({
