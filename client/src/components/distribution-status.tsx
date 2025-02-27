@@ -16,6 +16,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
   const [publishing, setPublishing] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [publishingSite, setPublishingSite] = useState<string | null>(null);
 
   const publishMutation = useMutation({
     mutationFn: async ({ siteKey }: { siteKey: string }) => {
@@ -44,6 +45,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
           variant: "destructive"
         });
       }
+      setPublishingSite(null);
     },
     onError: (error) => {
       toast({
@@ -51,6 +53,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
         description: error.message,
         variant: "destructive"
       });
+      setPublishingSite(null);
     }
   });
 
@@ -73,6 +76,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
             const isPublished = distribution?.status === "success";
             const hasError = distribution?.status === "error";
             const postUrl = distribution?.postUrl;
+            const isPublishing = publishingSite === site.key;
 
             return (
               <div key={site.key} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
@@ -93,11 +97,14 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => publishMutation.mutate({ siteKey: site.key })}
-                    disabled={publishMutation.isPending}
+                    onClick={() => {
+                      setPublishingSite(site.key);
+                      publishMutation.mutate({ siteKey: site.key });
+                    }}
+                    disabled={isPublishing || publishMutation.isPending}
                   >
-                    {publishMutation.isPending ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
+                    {isPublishing ? (
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
                     ) : isPublished ? (
                       <RefreshCw className="h-3 w-3 mr-1" />
                     ) : null}
