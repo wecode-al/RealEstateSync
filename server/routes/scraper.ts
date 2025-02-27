@@ -2,7 +2,7 @@ import { Router } from "express";
 import { WebScraper } from "../services/scraper";
 import { storage } from "../storage";
 import { z } from "zod";
-import { insertScraperConfigSchema } from "@shared/schema";
+import { insertScraperConfigSchema, insertPropertySchema } from "@shared/schema";
 
 const router = Router();
 
@@ -40,6 +40,33 @@ router.post("/api/scraper-configs", async (req, res) => {
         error: error instanceof Error ? error.message : "Failed to save scraper configuration"
       });
     }
+  }
+});
+
+// Test scraper configuration
+router.post("/api/scraper-configs/:id/test", async (req, res) => {
+  try {
+    const configId = parseInt(req.params.id);
+    const { url } = req.body;
+
+    const config = await storage.getScraperConfig(configId);
+    if (!config) {
+      return res.status(404).json({ error: "Configuration not found" });
+    }
+
+    const scraper = new WebScraper(config);
+    const propertyData = await scraper.scrapeProperty(url);
+
+    res.json({
+      success: true,
+      data: propertyData
+    });
+  } catch (error) {
+    console.error("Test scraper error:", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to test scraper"
+    });
   }
 });
 
@@ -100,46 +127,6 @@ router.post("/api/scrape", async (req, res) => {
         error: error instanceof Error ? error.message : "Failed to import property"
       });
     }
-  }
-});
-
-// Test scraper configuration
-router.post("/api/scraper-configs/:id/test", async (req, res) => {
-  try {
-    const configId = parseInt(req.params.id);
-    const { url } = req.body;
-
-    const config = await storage.getScraperConfig(configId);
-    if (!config) {
-      return res.status(404).json({ error: "Configuration not found" });
-    }
-
-    const scraper = new WebScraper(config);
-    const propertyData = await scraper.scrapeProperty(url);
-
-    res.json({
-      success: true,
-      data: propertyData
-    });
-  } catch (error) {
-    console.error("Test scraper error:", error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to test scraper"
-    });
-  }
-});
-
-// Get all scraper configurations
-router.get("/api/scraper-configs", async (_req, res) => {
-  try {
-    const configs = await storage.getScraperConfigs();
-    res.json(configs);
-  } catch (error) {
-    console.error("Error fetching scraper configs:", error);
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : "Failed to fetch scraper configurations"
-    });
   }
 });
 

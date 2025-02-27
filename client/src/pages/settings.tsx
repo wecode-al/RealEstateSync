@@ -542,6 +542,52 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Test Configuration</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Test URL</Label>
+              <Input
+                value={testUrl}
+                onChange={(e) => setTestUrl(e.target.value)}
+                placeholder="Enter a property URL to test"
+              />
+            </div>
+            <div className="flex justify-end gap-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsTestDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (scraperConfig) {
+                    testScraperMutation.mutate({
+                      configId: scraperConfig.id,
+                      url: testUrl
+                    });
+                  }
+                }}
+                disabled={testScraperMutation.isPending || !testUrl}
+              >
+                {testScraperMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Testing...
+                  </>
+                ) : (
+                  'Test Configuration'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex justify-end mt-6">
         <Button
           onClick={() => updateMutation.mutate(settings)}
