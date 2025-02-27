@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertScraperConfigSchema, type Property } from "@shared/schema";
+import { insertScraperConfigSchema, insertPropertySchema, type Property, distributionSites } from "@shared/schema";
 import { wordPressService } from "./services/wordpress";
 import { setupAuth } from "./auth";
 import scraperRoutes from "./routes/scraper";
@@ -141,40 +141,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       postUrl: string | null;
     }> = {};
 
-    // Only publish to enabled sites
-    for (const site of distributionSites) {
-      const siteSettings = settings[site];
-
-      // Skip if site is not configured
-      if (!siteSettings?.enabled) {
-        updatedDistributions[site] = {
-          status: "error",
-          error: "Site not configured",
-          postUrl: null
-        };
-        continue;
-      }
-
+    // Only publish to WordPress if enabled
+    if (settings["WordPress Site"]?.enabled) {
       try {
-        let result;
-        if (site === "WordPress Site") {
-          result = await wordPressService.publishProperty(property);
-        } else {
-          result = await localListingService.publishProperty(property, site);
-        }
-
-        updatedDistributions[site] = {
+        const result = await wordPressService.publishProperty(property);
+        updatedDistributions["WordPress Site"] = {
           status: result.success ? "success" : "error",
           error: result.error || null,
           postUrl: result.postUrl || null
         };
       } catch (error) {
-        updatedDistributions[site] = {
+        updatedDistributions["WordPress Site"] = {
           status: "error",
           error: error instanceof Error ? error.message : "Unknown error",
           postUrl: null
         };
       }
+    } else {
+      updatedDistributions["WordPress Site"] = {
+        status: "error",
+        error: "WordPress not configured",
+        postUrl: null
+      };
     }
 
     const updated = await storage.updateProperty(id, {
@@ -232,8 +220,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (site === "WordPress Site") {
         await wordPressService.testConnection();
-      } else {
-        await localListingService.publishProperty({ ...req.body, id: 0 } as Property, site);
       }
       res.json({ success: true });
     } catch (error) {
