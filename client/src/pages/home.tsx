@@ -22,7 +22,8 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties?.map((property) => (
+            {/* Sort properties to show newest first (assuming highest ID is newest) */}
+            {properties?.slice().sort((a, b) => b.id - a.id).map((property) => (
               <PropertyPreview key={property.id} property={property} />
             ))}
           </div>

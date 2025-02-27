@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 import { postToLocalSites } from "@/lib/extension";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Property } from "@shared/schema";
 
 interface DistributionStatusProps {
@@ -13,6 +14,7 @@ interface DistributionStatusProps {
 export function DistributionStatus({ property }: DistributionStatusProps) {
   const [publishing, setPublishing] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handlePublishToLocalSites = async () => {
     if (publishing) return;
@@ -22,6 +24,9 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
       console.log('Starting publication process...');
 
       await postToLocalSites(property);
+
+      // Invalidate the properties query to ensure UI updates
+      queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
 
       toast({
         title: "Publishing Started",

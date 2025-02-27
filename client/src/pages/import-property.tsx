@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ export default function ImportProperty() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [importedProperty, setImportedProperty] = useState<Property | null>(null);
+  const queryClient = useQueryClient(); // Add queryClient for cache invalidation
 
   // Get the current scraper configuration
   const { data: config, isLoading: configLoading } = useQuery({
@@ -54,6 +55,8 @@ export default function ImportProperty() {
     },
     onSuccess: (response) => {
       setImportedProperty(response.property);
+      // Invalidate the properties query to fetch the updated list
+      queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
       toast({
         title: "Success",
         description: "Property imported successfully"
