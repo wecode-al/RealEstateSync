@@ -1,18 +1,57 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPropertySchema, type Property, distributionSites } from "@shared/schema";
+import { insertScraperConfigSchema, type Property } from "@shared/schema";
 import { wordPressService } from "./services/wordpress";
-import { localListingService } from "./services/local-listings";
 import { setupAuth } from "./auth";
-import scraperRoutes from "./routes/scraper"; // Import scraper routes
+import scraperRoutes from "./routes/scraper";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Set up authentication routes
   setupAuth(app);
-
-  // Register scraper routes
   app.use(scraperRoutes);
+
+  // Scraper Configuration endpoints
+  app.get("/api/scraper-configs/current", async (_req, res) => {
+    try {
+      const config = await storage.getCurrentScraperConfig();
+      console.log('Returning current config:', config);
+      res.json(config || null);
+    } catch (error) {
+      console.error('Error fetching current scraper config:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to fetch scraper configuration" 
+      });
+    }
+  });
+
+  app.post("/api/scraper-configs", async (req, res) => {
+    try {
+      console.log('Received config data:', req.body);
+      const result = insertScraperConfigSchema.safeParse(req.body);
+      if (!result.success) {
+        console.error('Validation error:', result.error);
+        res.status(400).json({ 
+          message: "Invalid configuration data", 
+          errors: result.error 
+        });
+        return;
+      }
+
+      // Validate the data
+      console.log('Validated config:', result.data);
+
+      // Store the configuration
+      const config = await storage.setScraperConfig(result.data);
+      console.log('Stored config:', config);
+
+      res.status(201).json(config);
+    } catch (error) {
+      console.error('Error creating scraper config:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to save configuration" 
+      });
+    }
+  });
 
   app.get("/api/properties", async (_req, res) => {
     const properties = await storage.getProperties();

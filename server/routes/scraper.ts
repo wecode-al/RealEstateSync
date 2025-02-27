@@ -2,17 +2,31 @@ import { Router } from "express";
 import { WebScraper } from "../services/scraper";
 import { storage } from "../storage";
 import { z } from "zod";
-import { insertScraperConfigSchema, insertPropertySchema } from "@shared/schema";
+import { insertScraperConfigSchema } from "@shared/schema";
 
 const router = Router();
 
-// Add route for saving scraper configuration
+// Get current scraper configuration
+router.get("/api/scraper-configs/current", async (_req, res) => {
+  try {
+    const config = await storage.getCurrentScraperConfig();
+    console.log('Returning current config:', config);
+    res.json(config || null);
+  } catch (error) {
+    console.error('Error fetching current scraper config:', error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to fetch scraper configuration" 
+    });
+  }
+});
+
+// Add/update scraper configuration
 router.post("/api/scraper-configs", async (req, res) => {
   try {
     console.log("Received config data:", JSON.stringify(req.body, null, 2));
     const config = insertScraperConfigSchema.parse(req.body);
     console.log("Validated config:", JSON.stringify(config, null, 2));
-    const savedConfig = await storage.createScraperConfig(config);
+    const savedConfig = await storage.setScraperConfig(config);
     res.json(savedConfig);
   } catch (error) {
     console.error("Scraper config error:", error);

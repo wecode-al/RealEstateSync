@@ -26,6 +26,8 @@ export interface IStorage {
   getScraperConfigs(): Promise<ScraperConfig[]>;
   updateScraperConfig(id: number, config: Partial<ScraperConfig>): Promise<ScraperConfig>;
   deleteScraperConfig(id: number): Promise<void>;
+  setScraperConfig(config: InsertScraperConfig): Promise<ScraperConfig>;
+  getCurrentScraperConfig(): Promise<ScraperConfig | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -164,6 +166,32 @@ export class DatabaseStorage implements IStorage {
 
   async deleteScraperConfig(id: number): Promise<void> {
     await db.delete(scraperConfigs).where(eq(scraperConfigs.id, id));
+  }
+
+  async setScraperConfig(config: InsertScraperConfig): Promise<ScraperConfig> {
+    // First delete any existing configurations
+    await db.delete(scraperConfigs);
+
+    // Then insert the new configuration
+    const [newConfig] = await db
+      .insert(scraperConfigs)
+      .values(config)
+      .returning();
+
+    console.log('New scraper config created:', newConfig);
+    return newConfig;
+  }
+
+  async getCurrentScraperConfig(): Promise<ScraperConfig | undefined> {
+    // Get the most recently created config
+    const [config] = await db
+      .select()
+      .from(scraperConfigs)
+      .orderBy(scraperConfigs.createdAt, 'desc')
+      .limit(1);
+
+    console.log('Retrieved current config:', config);
+    return config;
   }
 }
 
