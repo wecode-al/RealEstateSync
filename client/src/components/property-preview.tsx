@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Bed, Bath, Square, MapPin, Loader2, Trash2, Pencil, Globe } from "lucide-react";
+import { Bed, Bath, Square, MapPin, Loader2, Trash2, Pencil } from "lucide-react";
 import type { Property } from "@shared/schema";
 import { useLocation } from "wouter";
 import { DistributionStatus } from "./distribution-status";
@@ -17,37 +17,6 @@ export function PropertyPreview({ property }: PropertyPreviewProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [, navigate] = useLocation();
-
-  const publishMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("PATCH", `/api/properties/${property.id}/publish`);
-      return res.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
-      const wpStatus = data.distributions["WordPress Site"];
-
-      if (wpStatus.status === "success") {
-        toast({
-          title: "Success",
-          description: "Property has been published to WordPress" + (wpStatus.postUrl ? ". Click 'View Post' to see it." : ""),
-        });
-      } else {
-        toast({
-          title: "Warning",
-          description: `WordPress publishing failed: ${wpStatus.error}`,
-          variant: "destructive"
-        });
-      }
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  });
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
@@ -117,30 +86,14 @@ export function PropertyPreview({ property }: PropertyPreviewProps) {
 
       <CardFooter className="p-6 pt-0 flex flex-col gap-4">
         <div className="flex gap-2 w-full">
-          <Button 
-            className="flex-1" 
-            onClick={() => publishMutation.mutate()}
-            disabled={publishMutation.isPending}
-          >
-            {publishMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Publishing...
-              </>
-            ) : (
-              <>
-                <Globe className="mr-2 h-4 w-4" />
-                {property.published ? "Update Listing" : "Publish"}
-              </>
-            )}
-          </Button>
-
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigate(`/edit-property/${property.id}`)}
+            className="flex-1"
           >
-            <Pencil className="h-4 w-4" />
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit
           </Button>
 
           <Button
@@ -148,18 +101,18 @@ export function PropertyPreview({ property }: PropertyPreviewProps) {
             size="sm"
             onClick={() => deleteMutation.mutate()}
             disabled={deleteMutation.isPending}
+            className="flex-1"
           >
             {deleteMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="mr-2 h-4 w-4" />
             )}
+            Delete
           </Button>
         </div>
 
-        {property.published && (
-          <DistributionStatus property={property} />
-        )}
+        <DistributionStatus property={property} />
       </CardFooter>
     </Card>
   );

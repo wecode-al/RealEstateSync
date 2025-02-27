@@ -174,6 +174,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(updated);
   });
 
+  app.patch("/api/properties/:id/publish/:site", async (req, res) => {
+    const id = Number(req.params.id);
+    const site = req.params.site;
+    const property = await storage.getProperty(id);
+    const settings = await storage.getSettings();
+
+    if (!property) {
+      res.status(404).json({ message: "Property not found" });
+      return;
+    }
+
+    // Initialize distribution status for this site
+    const distributions = { 
+      ...property.distributions 
+    };
+
+    // Site-specific publishing logic
+    if (site === "WordPress Site") {
+      try {
+        if (settings["WordPress Site"]?.enabled) {
+          const result = await wordPressService.publishProperty(property);
+          distributions[site] = {
+            status: result.success ? "success" : "error",
+            error: result.error || null,
+            postUrl: result.postUrl || null
+          };
+        } else {
+          distributions[site] = {
+            status: "error",
+            error: "WordPress not configured",
+            postUrl: null
+          };
+        }
+      } catch (error) {
+        distributions[site] = {
+          status: "error",
+          error: error instanceof Error ? error.message : "Unknown error",
+          postUrl: null
+        };
+      }
+    } else {
+      // Handle other sites in the future
+      distributions[site] = {
+        status: "error",
+        error: "Publishing to this site is not yet implemented",
+        postUrl: null
+      };
+    }
+
+    const updated = await storage.updateProperty(id, {
+      ...property,
+      published: true,
+      distributions: distributions
+    });
+
+    res.json(updated);
+  });
+
   app.delete("/api/properties/:id", async (req, res) => {
     try {
       const id = Number(req.params.id);

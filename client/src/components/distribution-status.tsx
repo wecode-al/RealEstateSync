@@ -18,26 +18,20 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
   const queryClient = useQueryClient();
 
   const publishMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("PATCH", `/api/properties/${property.id}/publish`);
+    mutationFn: async ({ siteKey }: { siteKey: string }) => {
+      const res = await apiRequest("PATCH", `/api/properties/${property.id}/publish/${siteKey}`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to publish property");
+      }
       return res.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
-      const wpStatus = data.distributions["WordPress Site"];
-
-      if (wpStatus.status === "success") {
-        toast({
-          title: "Success",
-          description: "Property has been published to WordPress" + (wpStatus.postUrl ? ". Click 'View' to see it." : ""),
-        });
-      } else {
-        toast({
-          title: "Warning",
-          description: `WordPress publishing failed: ${wpStatus.error}`,
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Success",
+        description: "Property has been published successfully",
+      });
     },
     onError: (error) => {
       toast({
@@ -87,7 +81,7 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => publishMutation.mutate()}
+                    onClick={() => publishMutation.mutate({ siteKey: site.key })}
                     disabled={publishMutation.isPending}
                   >
                     {publishMutation.isPending ? (
