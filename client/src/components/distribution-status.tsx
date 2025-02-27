@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
-import { postToLocalSites } from "@/lib/extension";
+import { Loader2, ExternalLink, RefreshCw, Check, XCircle } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import type { Property } from "@shared/schema";
 
 interface DistributionStatusProps {
@@ -16,55 +17,104 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const handlePublish = async () => {
-    if (publishing) return;
-
-    try {
-      setPublishing(true);
-      console.log('Starting publication process...');
-
-      await postToLocalSites(property);
-
-      // Invalidate the properties query to ensure UI updates
+  const publishMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PATCH", `/api/properties/${property.id}/publish`);
+      return res.json();
+    },
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+      const wpStatus = data.distributions["WordPress Site"];
 
+      if (wpStatus.status === "success") {
+        toast({
+          title: "Success",
+          description: "Property has been published to WordPress" + (wpStatus.postUrl ? ". Click 'View' to see it." : ""),
+        });
+      } else {
+        toast({
+          title: "Warning",
+          description: `WordPress publishing failed: ${wpStatus.error}`,
+          variant: "destructive"
+        });
+      }
+    },
+    onError: (error) => {
       toast({
-        title: "Publishing Started",
-        description: "Your property is being published.",
-      });
-    } catch (error) {
-      console.error('Publishing error:', error);
-      toast({
-        title: "Publishing Failed",
-        description: error instanceof Error ? error.message : "Failed to publish property",
+        title: "Error",
+        description: error.message,
         variant: "destructive"
       });
-    } finally {
-      setPublishing(false);
     }
-  };
+  });
+
+  // Sites configured in the system
+  const sites = [
+    { key: "WordPress Site", name: "WordPress" },
+    { key: "njoftime.com", name: "Njoftime.com" },
+    { key: "merrjep.al", name: "Merrjep.al" },
+    { key: "indomio.al", name: "Indomio.al" }
+  ];
 
   return (
-    <Card className="p-4 border-none shadow-lg bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+    <Card className="p-4 border-none shadow-lg">
       <div className="space-y-4">
-        <Button
-          onClick={handlePublish}
-          disabled={publishing}
-          className="w-full bg-primary hover:bg-primary/90"
-        >
-          {publishing ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Publishing...
-            </>
-          ) : (
-            'Publish Property'
-          )}
-        </Button>
+        <h3 className="font-medium text-lg mb-2">Distribution Status</h3>
 
-        <p className="text-sm text-muted-foreground text-center">
-          Make sure you are logged in to your accounts before publishing.
-        </p>
+        <div className="space-y-3">
+          {sites.map((site) => {
+            const distribution = property.distributions?.[site.key];
+            const isPublished = distribution?.status === "success";
+            const hasError = distribution?.status === "error";
+            const postUrl = distribution?.postUrl;
+
+            return (
+              <div key={site.key} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                <div className="flex items-center gap-2">
+                  {isPublished && <Check className="h-4 w-4 text-green-500" />}
+                  {hasError && <XCircle className="h-4 w-4 text-red-500" />}
+                  {!distribution && <div className="h-4 w-4" />}
+                  <span className="font-medium">{site.name}</span>
+
+                  {hasError && (
+                    <span className="text-xs text-muted-foreground">
+                      {distribution.error}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => publishMutation.mutate()}
+                    disabled={publishMutation.isPending}
+                  >
+                    {publishMutation.isPending ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : isPublished ? (
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                    ) : null}
+                    {isPublished ? "Republish" : "Publish"}
+                  </Button>
+
+                  {isPublished && postUrl && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                    >
+                      <a href={postUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        View
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </Card>
   );

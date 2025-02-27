@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Bed, Bath, Square, MapPin, Loader2, Trash2, Pencil, Globe } from "lucide-react";
 import type { Property } from "@shared/schema";
 import { useLocation } from "wouter";
+import { DistributionStatus } from "./distribution-status";
 
 interface PropertyPreviewProps {
   property: Property;
@@ -155,6 +156,10 @@ export function PropertyPreview({ property }: PropertyPreviewProps) {
             )}
           </Button>
         </div>
+
+        {property.published && (
+          <DistributionStatus property={property} />
+        )}
       </CardFooter>
     </Card>
   );
