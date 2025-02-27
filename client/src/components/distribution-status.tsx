@@ -26,12 +26,24 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
       }
       return res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
-      toast({
-        title: "Success",
-        description: "Property has been published successfully",
-      });
+
+      // Check the actual status of the publication
+      const siteStatus = data.distributions[variables.siteKey];
+
+      if (siteStatus?.status === "success") {
+        toast({
+          title: "Success",
+          description: `Property has been published to ${variables.siteKey}`,
+        });
+      } else if (siteStatus?.status === "error") {
+        toast({
+          title: "Publication Failed",
+          description: siteStatus.error || "Failed to publish property",
+          variant: "destructive"
+        });
+      }
     },
     onError: (error) => {
       toast({

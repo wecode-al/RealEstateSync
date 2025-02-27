@@ -218,7 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle other sites in the future
       distributions[site] = {
         status: "error",
-        error: "Publishing to this site is not yet implemented",
+        error: `Publishing to ${site} is not available in this version.`,
         postUrl: null
       };
     }
