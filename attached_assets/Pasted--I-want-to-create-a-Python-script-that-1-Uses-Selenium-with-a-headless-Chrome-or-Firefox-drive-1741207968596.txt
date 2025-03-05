@@ -1,0 +1,59 @@
+# I want to create a Python script that:
+# 1. Uses Selenium (with a headless Chrome or Firefox driver) to automate form-filling on the following property listing sites:
+#    - njoftime.com
+#    - njoftime.al
+#    - merrjep.al
+#    - mirliri.com
+#    - indomino
+#    - okazion.al
+#
+# 2. I want the script to:
+#    - Prompt me (or read from a config file) for the property details:
+#       * title
+#       * description
+#       * price
+#       * location
+#       * contact information
+#       * images to upload (if possible)
+#    - Log in to each website (if login is required) using credentials I store in a config file or environment variables.
+#    - Fill in the property listing form fields and submit the listing.
+#    - Wait for a success message or listing URL to confirm the post was successful.
+#    - Print a summary of the results: which sites got posted successfully, which failed, etc.
+#
+# 3. For each site, I understand the HTML form fields and site layouts are different. Provide placeholder code sections or functions for:
+#    - Logging in (if needed)
+#    - Navigating to the "post new listing" page
+#    - Filling in form fields (title, description, price, images)
+#    - Handling captcha if it appears (at least mention it or provide a way to pause for manual captcha solve)
+#
+# 4. Include comments or docstrings that explain how I can:
+#    - Modify the code to add or remove fields
+#    - Update selectors (like By.ID, By.NAME, By.XPATH) if the site changes its layout
+#    - Configure environment variables or a JSON file for credentials
+#
+# 5. Provide instructions on how to install and run this Selenium script in Replit:
+#    - Which packages I need in 'pyproject.toml' or 'requirements.txt'
+#    - How to set up ChromeDriver or a headless browser in Replit
+#    - Show how to actually launch the script (e.g., "python main.py")
+#
+# 6. Show best practices for error handling, such as:
+#    - Try/Except blocks around the login step
+#    - Handling timeouts or missing elements
+#    - Logging or printing a message if something fails
+#
+# 7. Please produce a well-structured Python script with functions like:
+#    - post_to_njoftime_com(driver, property_details)
+#    - post_to_njoftime_al(driver, property_details)
+#    - post_to_merrjep_al(driver, property_details)
+#    - etc.
+#
+# 8. Provide an overall 'main' function that:
+#    - Reads user input or a JSON config for property details and credentials
+#    - Initiates the Selenium driver
+#    - Calls each site’s posting function
+#    - Closes the driver when done
+#
+# 9. If there's anything that might violate the Terms of Service of these sites,
+#    please include a short disclaimer about it and mention that we should check the ToS.
+#
+# Finally, generate the Python script. I'll refine or test it after you provide the initial version.
