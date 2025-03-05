@@ -1,0 +1,42 @@
+Property Poster Script Architecture
+==================================
+
+┌─────────────────┐       ┌─────────────────┐
+│                 │       │                 │
+│  Configuration  │       │  Command Line   │
+│  (config.json)  │       │  Arguments      │
+│                 │       │                 │
+└────────┬────────┘       └────────┬────────┘
+         │                         │
+         └──────────┬──────────────┘
+                    │
+                    ▼
+         ┌─────────────────────┐
+         │                     │
+         │  PropertyPoster     │◄────┐
+         │  Main Class         │     │
+         │                     │     │
+         └─────────┬───────────┘     │
+                   │                 │
+                   ▼                 │
+┌─────────────────────────────────┐  │
+│                                 │  │
+│  Site-specific Post Methods:    │  │
+│  • _post_to_njoftime_com()      │  │
+│  • _post_to_merrjep_al()        │  │ Generic Utility Methods:
+│  • _post_to_indomio_al()        │  │ • wait_for_element()
+│  • _post_to_new_site() ◄──────────┐│ • safe_click()
+│                                 │  │ • handle_captcha()
+└──────────────┬──────────────────┘  │ • load_credentials()
+               │                     │
+               ▼                     │
+┌─────────────────────────────────┐  │
+│                                 │  │
+│  Site-specific Login Methods:   │  │
+│  • _login_to_njoftime()         │  │
+│  • _login_to_merrjep()          │  │
+│  • _login_to_indomio()          │──┘
+│  • _login_to_new_site()         │
+│                                 │
+└─────────────────────────────────┘
+

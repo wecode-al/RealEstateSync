@@ -1,0 +1,30 @@
+{
+  "property_details": {
+    "title": "Beautiful 2-bedroom apartment in central Tirana",
+    "description": "Spacious and modern apartment located in the heart of Tirana with amazing views. Recently renovated with high-quality materials. Close to schools, parks, and shopping centers.",
+    "price": "85000",
+    "bedrooms": 2,
+    "bathrooms": 1,
+    "area": 85.5,
+    "location": "Tirana",
+    "city": "Tirana",
+    "address": "Rruga Myslym Shyri",
+    "property_type": "Apartment",
+    "features": ["Balcony", "Parking", "Air Conditioning", "Elevator"],
+    "contact_phone": "+355 69 123 4567",
+    "contact_email": "your-email@example.com",
+    "images": ["images/image1.svg", "images/image2.svg", "images/image3.svg"]
+  },
+  "njoftime.com": {
+    "username": "your_username",
+    "password": "your_password"
+  },
+  "merrjep.al": {
+    "username": "your_username",
+    "password": "your_password"
+  },
+  "indomio.al": {
+    "username": "your_username",
+    "password": "your_password"
+  }
+}
