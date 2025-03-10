@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Loader2, ExternalLink, RefreshCw, Check, XCircle, Globe } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -65,124 +64,110 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
   ];
 
   return (
-    <Card className="p-6 border-none shadow-lg bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="space-y-8">
+      <div className="flex items-center gap-2 border-b pb-4">
+        <Globe className="h-5 w-5 text-primary" />
+        <h3 className="font-semibold text-lg">Distribution Status</h3>
+      </div>
+
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <Globe className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold text-lg">Distribution Status</h3>
-        </div>
+        {sites.map((site) => {
+          const distribution = property.distributions?.[site.key];
+          const isPublished = distribution?.status === "success";
+          const hasError = distribution?.status === "error";
+          const postUrl = distribution?.postUrl;
+          const isPublishing = publishingSite === site.key;
 
-        <div className="grid gap-4">
-          {sites.map((site) => {
-            const distribution = property.distributions?.[site.key];
-            const isPublished = distribution?.status === "success";
-            const hasError = distribution?.status === "error";
-            const postUrl = distribution?.postUrl;
-            const isPublishing = publishingSite === site.key;
-
-            return (
-              <div
-                key={site.key}
-                className={cn(
-                  "relative overflow-hidden rounded-lg transition-all duration-200",
-                  "border border-gray-100 dark:border-gray-800",
-                  "bg-white dark:bg-gray-900",
-                  "hover:shadow-md hover:scale-[1.01]"
-                )}
-              >
-                {/* Status Indicator Line */}
-                <div 
-                  className={cn(
-                    "absolute top-0 left-0 h-full w-1",
-                    isPublished ? "bg-green-500" : 
-                    hasError ? "bg-red-500" : 
-                    "bg-gray-200 dark:bg-gray-700"
+          return (
+            <div
+              key={site.key}
+              className={cn(
+                "relative pl-6 py-4",
+                "border-l-2",
+                isPublished ? "border-l-green-500" : 
+                hasError ? "border-l-red-500" : 
+                "border-l-gray-200 dark:border-l-gray-700"
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  {isPublished && (
+                    <Check className="h-5 w-5 text-green-500 shrink-0" />
                   )}
-                />
-
-                <div className="p-4 pl-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {isPublished && (
-                        <Check className="h-5 w-5 text-green-500" />
-                      )}
-                      {hasError && (
-                        <XCircle className="h-5 w-5 text-red-500" />
-                      )}
-                      {!distribution && (
-                        <div className="h-5 w-5" />
-                      )}
-                      <div>
-                        <h4 className="font-medium text-base">{site.name}</h4>
-                        {hasError && (
-                          <p className="text-sm text-red-500 mt-1">
-                            {distribution.error}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant={isPublished ? "outline" : "default"}
-                        size="sm"
-                        onClick={() => {
-                          setPublishingSite(site.key);
-                          publishMutation.mutate({ siteKey: site.key });
-                        }}
-                        disabled={isPublishing || publishMutation.isPending}
-                        className={cn(
-                          "relative min-w-[100px] transition-all duration-200",
-                          isPublished ? "hover:bg-green-50 hover:text-green-600 hover:border-green-200 dark:hover:bg-green-900/20" : 
-                          "bg-primary hover:bg-primary/90",
-                          "disabled:opacity-50 disabled:cursor-not-allowed"
-                        )}
-                      >
-                        {isPublishing ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span>Publishing...</span>
-                          </div>
-                        ) : isPublished ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <RefreshCw className="h-4 w-4" />
-                            <span>Republish</span>
-                          </div>
-                        ) : (
-                          <span>Publish</span>
-                        )}
-                      </Button>
-
-                      {isPublished && postUrl && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn(
-                            "min-w-[80px] transition-all duration-200",
-                            "hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20",
-                            "group"
-                          )}
-                          asChild
-                        >
-                          <a 
-                            href={postUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-2"
-                          >
-                            <ExternalLink className="h-4 w-4 transition-transform group-hover:scale-110" />
-                            <span>View</span>
-                          </a>
-                        </Button>
-                      )}
-                    </div>
+                  {hasError && (
+                    <XCircle className="h-5 w-5 text-red-500 shrink-0" />
+                  )}
+                  {!distribution && (
+                    <div className="h-5 w-5 shrink-0" />
+                  )}
+                  <div>
+                    <h4 className="font-medium text-base">{site.name}</h4>
+                    {hasError && (
+                      <p className="text-sm text-red-500 mt-2">
+                        {distribution.error}
+                      </p>
+                    )}
                   </div>
                 </div>
+
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant={isPublished ? "outline" : "default"}
+                    size="sm"
+                    onClick={() => {
+                      setPublishingSite(site.key);
+                      publishMutation.mutate({ siteKey: site.key });
+                    }}
+                    disabled={isPublishing || publishMutation.isPending}
+                    className={cn(
+                      "min-w-[120px] transition-all duration-200",
+                      isPublished ? "hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20" : 
+                      "bg-primary hover:bg-primary/90"
+                    )}
+                  >
+                    {isPublishing ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Publishing...</span>
+                      </div>
+                    ) : isPublished ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <RefreshCw className="h-4 w-4" />
+                        <span>Republish</span>
+                      </div>
+                    ) : (
+                      <span>Publish</span>
+                    )}
+                  </Button>
+
+                  {isPublished && postUrl && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "min-w-[100px] transition-all duration-200",
+                        "hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20",
+                        "group"
+                      )}
+                      asChild
+                    >
+                      <a 
+                        href={postUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2"
+                      >
+                        <ExternalLink className="h-4 w-4 transition-transform group-hover:scale-110" />
+                        <span>View</span>
+                      </a>
+                    </Button>
+                  )}
+                </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
-    </Card>
+    </div>
   );
 }
