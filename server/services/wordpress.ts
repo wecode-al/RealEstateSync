@@ -55,7 +55,9 @@ class WordPressService {
 
   private async makeRequest(url: string, options: RequestInit, retries = MAX_RETRIES): Promise<Response> {
     try {
+      console.log(`Making WordPress API request to: ${url}`);
       const response = await fetch(url, options);
+      console.log(`WordPress API response status: ${response.status}`);
 
       // Handle maintenance mode specifically
       if (response.status === 503) {
@@ -90,7 +92,7 @@ class WordPressService {
       const auth = Buffer.from(`${config.username}:${config.password}`).toString('base64');
       const baseUrl = config.apiUrl;
 
-      console.log(`Publishing to WordPress: ${baseUrl}/wp-json/wp/v2/posts`);
+      console.log(`Publishing to WordPress custom post type: ${baseUrl}/wp-json/wp/v2/property`);
 
       // Create a formatted content with property details
       const content = this.formatPropertyContent(property);
@@ -115,7 +117,7 @@ class WordPressService {
       };
 
       const response = await this.makeRequest(
-        `${baseUrl}/wp-json/wp/v2/posts`,
+        `${baseUrl}/wp-json/wp/v2/property`,
         {
           method: 'POST',
           headers: {
@@ -212,11 +214,11 @@ class WordPressService {
 
     switch (error.code) {
       case 'rest_no_route':
-        return "Could not connect to WordPress REST API. Please ensure your WordPress site has REST API enabled.";
+        return "The WordPress property post type is not accessible. Please ensure your custom post type 'property' is registered and REST API enabled.";
       case 'rest_cannot_create':
-        return "You don't have permission to create posts. Please check your WordPress user permissions.";
+        return "You don't have permission to create properties. Please check your WordPress user permissions.";
       case 'rest_post_invalid_id':
-        return "Failed to create the post. Please check your WordPress configuration.";
+        return "Failed to create the property. Please check your WordPress configuration.";
       default:
         return error.message || "An unknown error occurred while publishing to WordPress";
     }
@@ -268,9 +270,9 @@ class WordPressService {
         throw new Error('Not a valid WordPress REST API endpoint. Please check your API URL.');
       }
 
-      // Test posts endpoint instead of custom post type
-      const postsResponse = await this.makeRequest(
-        `${baseUrl}/wp-json/wp/v2/posts`,
+      // Test property endpoint
+      const propertyResponse = await this.makeRequest(
+        `${baseUrl}/wp-json/wp/v2/property`,
         {
           headers: {
             'Authorization': `Basic ${auth}`,
@@ -279,11 +281,16 @@ class WordPressService {
         }
       );
 
-      if (!postsResponse.ok) {
+      if (!propertyResponse.ok) {
+        const errorText = await propertyResponse.text();
+        console.error('Property endpoint test failed:', {
+          status: propertyResponse.status,
+          response: errorText
+        });
         throw new Error(this.getReadableError({
-          code: 'posts_failed',
-          message: await postsResponse.text(),
-          data: { status: postsResponse.status }
+          code: 'rest_no_route',
+          message: errorText,
+          data: { status: propertyResponse.status }
         }));
       }
 
