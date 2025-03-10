@@ -56,9 +56,8 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
     }
   });
 
-  // Sites configured in the system
+  // Albanian real estate sites
   const sites = [
-    { key: "WordPress Site", name: "WordPress" },
     { key: "njoftime.com", name: "Njoftime.com" },
     { key: "merrjep.al", name: "Merrjep.al" },
     { key: "indomio.al", name: "Indomio.al" }

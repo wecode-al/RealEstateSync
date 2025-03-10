@@ -1,37 +1,20 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Loader2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, AlertCircle, Plus } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertScraperConfigSchema } from "@shared/schema";
 import type { ScraperConfig } from "@shared/schema";
-
-interface SiteConfig {
-  enabled: boolean;
-  apiKey?: string;
-  apiSecret?: string;
-  additionalConfig?: Record<string, string>;
-  lastTestResult?: {
-    success: boolean;
-    message?: string;
-  };
-}
-
-type SiteSettings = Record<string, SiteConfig>;
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Settings() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [settings, setSettings] = useState<SiteSettings>({});
   const [isScraperConfigOpen, setIsScraperConfigOpen] = useState(false);
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [testUrl, setTestUrl] = useState("");
@@ -40,55 +23,6 @@ export default function Settings() {
   const { data: scraperConfig, isLoading: isLoadingConfig } = useQuery<ScraperConfig>({
     queryKey: ["/api/scraper-configs/current"],
   });
-
-  // Get WordPress settings
-  const { data: currentSettings, isLoading: isLoadingSettings } = useQuery({
-    queryKey: ["/api/settings"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/settings");
-      if (!res.ok) {
-        throw new Error("Failed to fetch settings");
-      }
-      return res.json();
-    }
-  });
-
-  // Initialize settings for WordPress site
-  useEffect(() => {
-    const initialSettings: SiteSettings = {
-      "WordPress Site": {
-        enabled: false,
-        additionalConfig: {
-          username: '',
-          password: '',
-          apiUrl: ''
-        }
-      }
-    };
-    setSettings(initialSettings);
-  }, []);
-
-  // Update local settings when server data is fetched
-  useEffect(() => {
-    if (currentSettings) {
-      const updatedSettings = { ...settings };
-
-      // Handle WordPress settings
-      if (currentSettings["WordPress Site"]) {
-        const wpConfig = currentSettings["WordPress Site"] as SiteConfig;
-        updatedSettings["WordPress Site"] = {
-          ...wpConfig,
-          additionalConfig: {
-            username: wpConfig.additionalConfig?.username || '',
-            password: wpConfig.additionalConfig?.password || '',
-            apiUrl: wpConfig.additionalConfig?.apiUrl || ''
-          }
-        };
-      }
-
-      setSettings(updatedSettings);
-    }
-  }, [currentSettings]);
 
   // Update scraper configuration form
   const scraperForm = useForm({
@@ -151,7 +85,7 @@ export default function Settings() {
         description: "Scraper configuration saved successfully",
       });
       setIsScraperConfigOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["/api/scraper-configs/current"] });
+      // queryClient.invalidateQueries({ queryKey: ["/api/scraper-configs/current"] });
     },
     onError: (error) => {
       toast({
@@ -189,62 +123,7 @@ export default function Settings() {
     }
   });
 
-  const testMutation = useMutation({
-    mutationFn: async (site: string) => {
-      const res = await apiRequest("POST", `/api/settings/test/${site}`, settings[site]);
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Connection test failed");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Connection test successful",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  });
-
-  const areWordPressFieldsFilled = (config: SiteConfig) => {
-    return config.additionalConfig?.username &&
-           config.additionalConfig?.password &&
-           config.additionalConfig?.apiUrl;
-  };
-
-  const updateMutation = useMutation({
-    mutationFn: async (newSettings: SiteSettings) => {
-      const res = await apiRequest("POST", "/api/settings", newSettings);
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to save settings");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Settings saved successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  });
-
-  if (isLoadingConfig || isLoadingSettings) {
+  if (isLoadingConfig) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -276,11 +155,7 @@ export default function Settings() {
           </div>
         </CardHeader>
         <CardContent className="p-6">
-          {isLoadingConfig ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : !scraperConfig ? (
+          {!scraperConfig ? (
             <div className="text-center py-8 text-muted-foreground">
               No website configuration added yet
             </div>
@@ -474,149 +349,6 @@ export default function Settings() {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* WordPress Settings */}
-      <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">WordPress Integration</h2>
-      <Card className="border-none shadow-lg bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 mb-8">
-        <CardHeader className="border-b border-gray-100 dark:border-gray-700">
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span>WordPress Site</span>
-              {settings["WordPress Site"]?.lastTestResult && (
-                settings["WordPress Site"].lastTestResult.success ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-red-500" />
-                )
-              )}
-            </div>
-            <Switch
-              checked={settings["WordPress Site"]?.enabled ?? false}
-              onCheckedChange={(checked) => {
-                setSettings(prev => ({
-                  ...prev,
-                  "WordPress Site": { ...prev["WordPress Site"], enabled: checked }
-                }));
-              }}
-            />
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-6">
-            <div className="grid w-full items-center gap-4">
-              <Label htmlFor="wordpress-username">Username</Label>
-              <Input
-                id="wordpress-username"
-                value={settings["WordPress Site"]?.additionalConfig?.username ?? ""}
-                className={settings["WordPress Site"]?.enabled && !settings["WordPress Site"]?.additionalConfig?.username ? "border-red-500" : ""}
-                onChange={(e) => {
-                  setSettings(prev => ({
-                    ...prev,
-                    "WordPress Site": {
-                      ...prev["WordPress Site"],
-                      additionalConfig: {
-                        ...prev["WordPress Site"]?.additionalConfig,
-                        username: e.target.value
-                      }
-                    }
-                  }));
-                }}
-              />
-            </div>
-
-            <div className="grid w-full items-center gap-4">
-              <Label htmlFor="wordpress-password">Application Password</Label>
-              <Input
-                id="wordpress-password"
-                type="password"
-                value={settings["WordPress Site"]?.additionalConfig?.password ?? ""}
-                className={settings["WordPress Site"]?.enabled && !settings["WordPress Site"]?.additionalConfig?.password ? "border-red-500" : ""}
-                onChange={(e) => {
-                  setSettings(prev => ({
-                    ...prev,
-                    "WordPress Site": {
-                      ...prev["WordPress Site"],
-                      additionalConfig: {
-                        ...prev["WordPress Site"]?.additionalConfig,
-                        password: e.target.value
-                      }
-                    }
-                  }));
-                }}
-              />
-            </div>
-
-            <div className="grid w-full items-center gap-4">
-              <Label htmlFor="wordpress-url">API URL</Label>
-              <Input
-                id="wordpress-url"
-                placeholder="https://your-wordpress-site.com"
-                value={settings["WordPress Site"]?.additionalConfig?.apiUrl ?? ""}
-                className={settings["WordPress Site"]?.enabled && !settings["WordPress Site"]?.additionalConfig?.apiUrl ? "border-red-500" : ""}
-                onChange={(e) => {
-                  setSettings(prev => ({
-                    ...prev,
-                    "WordPress Site": {
-                      ...prev["WordPress Site"],
-                      additionalConfig: {
-                        ...prev["WordPress Site"]?.additionalConfig,
-                        apiUrl: e.target.value
-                      }
-                    }
-                  }));
-                }}
-              />
-              <p className="text-sm text-muted-foreground">
-                Enter your WordPress site URL including http:// or https://
-              </p>
-            </div>
-
-            {settings["WordPress Site"]?.enabled && !areWordPressFieldsFilled(settings["WordPress Site"]) && (
-              <p className="text-sm text-red-500">
-                Please fill in all required fields to enable WordPress integration
-              </p>
-            )}
-
-            <div className="flex justify-end gap-4">
-              <Button
-                variant="outline"
-                onClick={() => testMutation.mutate("WordPress Site")}
-                disabled={
-                  !settings["WordPress Site"]?.enabled ||
-                  testMutation.isPending ||
-                  !areWordPressFieldsFilled(settings["WordPress Site"])
-                }
-              >
-                {testMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Testing...
-                  </>
-                ) : (
-                  "Test Connection"
-                )}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Save Settings Button */}
-      <div className="flex justify-end pt-8">
-        <Button
-          onClick={() => updateMutation.mutate(settings)}
-          disabled={updateMutation.isPending}
-        >
-          {updateMutation.isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            'Save Settings'
-          )}
-        </Button>
-      </div>
     </div>
   );
 }
