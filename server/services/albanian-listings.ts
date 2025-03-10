@@ -69,6 +69,18 @@ export class AlbanianListingService {
 
   private async publishToIndomio(property: Property, config: any): Promise<ListingResponse> {
     try {
+      // Get Indomio settings
+      const settings = await storage.getSettings();
+      const indomioSettings = settings["indomio.al"];
+
+      if (!indomioSettings?.enabled) {
+        throw new Error("Indomio integration is not enabled");
+      }
+
+      if (!indomioSettings.apiKey || !indomioSettings.apiSecret) {
+        throw new Error("Indomio API credentials are not configured");
+      }
+
       // Transform property to Indomio format
       const indomioProperty = indomioTransformer.transform(property);
       const xmlData = indomioTransformer.toXML(indomioProperty);
@@ -80,7 +92,9 @@ export class AlbanianListingService {
         headers: {
           'Content-Type': 'application/xml',
           'Accept': 'application/json',
-          // Add any required authentication headers
+          'X-API-Key': indomioSettings.apiKey,
+          'X-API-Secret': indomioSettings.apiSecret,
+          'User-Agent': 'Albanian-Real-Estate/1.0'
         },
         body: xmlData
       });
