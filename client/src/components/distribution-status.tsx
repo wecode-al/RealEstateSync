@@ -132,22 +132,24 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
                         }}
                         disabled={isPublishing || publishMutation.isPending}
                         className={cn(
-                          "transition-all duration-200",
-                          isPublished && "hover:text-primary hover:border-primary"
+                          "relative min-w-[100px] transition-all duration-200",
+                          isPublished ? "hover:bg-green-50 hover:text-green-600 hover:border-green-200 dark:hover:bg-green-900/20" : 
+                          "bg-primary hover:bg-primary/90",
+                          "disabled:opacity-50 disabled:cursor-not-allowed"
                         )}
                       >
                         {isPublishing ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            Publishing...
-                          </>
+                          <div className="flex items-center justify-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Publishing...</span>
+                          </div>
                         ) : isPublished ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Republish
-                          </>
+                          <div className="flex items-center justify-center gap-2">
+                            <RefreshCw className="h-4 w-4" />
+                            <span>Republish</span>
+                          </div>
                         ) : (
-                          "Publish"
+                          <span>Publish</span>
                         )}
                       </Button>
 
@@ -155,17 +157,21 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="hover:text-primary"
+                          className={cn(
+                            "min-w-[80px] transition-all duration-200",
+                            "hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20",
+                            "group"
+                          )}
                           asChild
                         >
                           <a 
                             href={postUrl} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="flex items-center"
+                            className="flex items-center justify-center gap-2"
                           >
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            View
+                            <ExternalLink className="h-4 w-4 transition-transform group-hover:scale-110" />
+                            <span>View</span>
                           </a>
                         </Button>
                       )}
