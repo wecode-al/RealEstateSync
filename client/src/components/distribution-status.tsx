@@ -13,7 +13,6 @@ interface DistributionStatusProps {
 }
 
 export function DistributionStatus({ property }: DistributionStatusProps) {
-  const [publishing, setPublishing] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [publishingSite, setPublishingSite] = useState<string | null>(null);
@@ -60,7 +59,6 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
   // Sites configured in the system
   const sites = [
     { key: "WordPress Site", name: "WordPress" },
-    { key: "Facebook", name: "Facebook" },
     { key: "njoftime.com", name: "Njoftime.com" },
     { key: "merrjep.al", name: "Merrjep.al" },
     { key: "indomio.al", name: "Indomio.al" }

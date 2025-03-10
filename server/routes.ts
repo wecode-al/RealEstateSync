@@ -1,17 +1,15 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertScraperConfigSchema, insertPropertySchema, type Property, distributionSites } from "@shared/schema";
+import { insertScraperConfigSchema, insertPropertySchema, type Property } from "@shared/schema";
 import { wordPressService } from "./services/wordpress";
 import { setupAuth } from "./auth";
 import scraperRoutes from "./routes/scraper";
 import { albanianListingService } from "./services/albanian-listings";
-import facebookAuthRoutes from "./routes/facebook-auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
   app.use(scraperRoutes);
-  app.use(facebookAuthRoutes);
 
   // Scraper Configuration endpoints
   app.get("/api/scraper-configs/current", async (_req, res) => {
@@ -39,9 +37,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         return;
       }
-
-      // Validate the data
-      console.log('Validated config:', result.data);
 
       // Store the configuration
       const config = await storage.setScraperConfig(result.data);
@@ -127,56 +122,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/properties/:id/publish", async (req, res) => {
-    const id = Number(req.params.id);
-    const property = await storage.getProperty(id);
-    const settings = await storage.getSettings();
-
-    if (!property) {
-      res.status(404).json({ message: "Property not found" });
-      return;
-    }
-
-    // Initialize distribution statuses
-    const updatedDistributions: Record<string, {
-      status: 'success' | 'error';
-      error: string | null;
-      postUrl: string | null;
-    }> = property.distributions || {};
-
-    // Only publish to WordPress if enabled
-    if (settings["WordPress Site"]?.enabled) {
-      try {
-        const result = await wordPressService.publishProperty(property);
-        updatedDistributions["WordPress Site"] = {
-          status: result.success ? "success" : "error",
-          error: result.error || null,
-          postUrl: result.postUrl || null
-        };
-      } catch (error) {
-        updatedDistributions["WordPress Site"] = {
-          status: "error",
-          error: error instanceof Error ? error.message : "Unknown error",
-          postUrl: null
-        };
-      }
-    } else {
-      updatedDistributions["WordPress Site"] = {
-        status: "error",
-        error: "WordPress not configured",
-        postUrl: null
-      };
-    }
-
-    const updated = await storage.updateProperty(id, {
-      ...property,
-      published: true,
-      distributions: updatedDistributions
-    });
-
-    res.json(updated);
-  });
-
   app.patch("/api/properties/:id/publish/:site", async (req, res) => {
     const id = Number(req.params.id);
     const site = req.params.site;
@@ -207,43 +152,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           distributions[site] = {
             status: "error",
             error: "WordPress not configured",
-            postUrl: null
-          };
-        }
-      } catch (error) {
-        distributions[site] = {
-          status: "error",
-          error: error instanceof Error ? error.message : "Unknown error",
-          postUrl: null
-        };
-      }
-    } else if (site === "Facebook") {
-      try {
-        if (settings["Facebook"]?.enabled) {
-          // Check if Facebook pages are configured
-          const facebookPages = settings["Facebook"]?.additionalConfig?.pages
-            ? JSON.parse(settings["Facebook"].additionalConfig.pages as string)
-            : [];
-
-          if (facebookPages.length === 0) {
-            distributions[site] = {
-              status: "error",
-              error: "No Facebook pages configured",
-              postUrl: null
-            };
-          } else {
-            // Use the Albanian listing service to publish to Facebook
-            const result = await albanianListingService.publishProperty(property, "facebook");
-            distributions[site] = {
-              status: result.success ? "success" : "error",
-              error: result.error || null,
-              postUrl: result.listingUrl || null
-            };
-          }
-        } else {
-          distributions[site] = {
-            status: "error",
-            error: "Facebook integration not enabled",
             postUrl: null
           };
         }
@@ -318,26 +226,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (site === "WordPress Site") {
         await wordPressService.testConnection();
-      } else if (site === "Facebook") {
-        // Simple connection test for Facebook
-        // In a real implementation, this would verify API tokens
-        const settings = await storage.getSettings();
-        const facebookPages = settings["Facebook"]?.additionalConfig?.pages
-          ? JSON.parse(settings["Facebook"].additionalConfig.pages as string)
-          : [];
-
-        if (facebookPages.length === 0) {
-          throw new Error("No Facebook pages configured");
-        }
-
-        // For now, just check if the access token is present for at least one page
-        const hasValidToken = facebookPages.some((page: any) => 
-          page.accessToken && page.accessToken.length > 20
-        );
-
-        if (!hasValidToken) {
-          throw new Error("No valid Facebook access tokens found");
-        }
+      } else {
+        throw new Error(`Testing ${site} connection is not supported`);
       }
       res.json({ success: true });
     } catch (error) {
