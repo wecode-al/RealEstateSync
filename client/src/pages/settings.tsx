@@ -41,7 +41,56 @@ export default function Settings() {
     queryKey: ["/api/scraper-configs/current"],
   });
 
-  // Update the scraper configuration form
+  // Get WordPress settings
+  const { data: currentSettings, isLoading: isLoadingSettings } = useQuery({
+    queryKey: ["/api/settings"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/settings");
+      if (!res.ok) {
+        throw new Error("Failed to fetch settings");
+      }
+      return res.json();
+    }
+  });
+
+  // Initialize settings for WordPress site
+  useEffect(() => {
+    const initialSettings: SiteSettings = {
+      "WordPress Site": {
+        enabled: false,
+        additionalConfig: {
+          username: '',
+          password: '',
+          apiUrl: ''
+        }
+      }
+    };
+    setSettings(initialSettings);
+  }, []);
+
+  // Update local settings when server data is fetched
+  useEffect(() => {
+    if (currentSettings) {
+      const updatedSettings = { ...settings };
+
+      // Handle WordPress settings
+      if (currentSettings["WordPress Site"]) {
+        const wpConfig = currentSettings["WordPress Site"] as SiteConfig;
+        updatedSettings["WordPress Site"] = {
+          ...wpConfig,
+          additionalConfig: {
+            username: wpConfig.additionalConfig?.username || '',
+            password: wpConfig.additionalConfig?.password || '',
+            apiUrl: wpConfig.additionalConfig?.apiUrl || ''
+          }
+        };
+      }
+
+      setSettings(updatedSettings);
+    }
+  }, [currentSettings]);
+
+  // Update scraper configuration form
   const scraperForm = useForm({
     resolver: zodResolver(insertScraperConfigSchema),
     defaultValues: {
@@ -140,21 +189,20 @@ export default function Settings() {
     }
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async (newSettings: SiteSettings) => {
-      const res = await apiRequest("POST", "/api/settings", newSettings);
+  const testMutation = useMutation({
+    mutationFn: async (site: string) => {
+      const res = await apiRequest("POST", `/api/settings/test/${site}`, settings[site]);
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || "Failed to save settings");
+        throw new Error(error.message || "Connection test failed");
       }
       return res.json();
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Settings have been saved successfully",
+        description: "Connection test successful",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
     },
     onError: (error) => {
       toast({
@@ -165,51 +213,13 @@ export default function Settings() {
     }
   });
 
-  const testMutation = useMutation({
-    mutationFn: async (site: string) => {
-      const res = await apiRequest("POST", `/api/settings/test/${site}`, settings[site]);
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Connection test failed");
-      }
-      return res.json();
-    },
-    onSuccess: (_, site) => {
-      toast({
-        title: "Success",
-        description: "Connection test successful",
-      });
-      setSettings(prev => ({
-        ...prev,
-        [site]: {
-          ...prev[site],
-          lastTestResult: { success: true }
-        }
-      }));
-    },
-    onError: (error, site) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-      setSettings(prev => ({
-        ...prev,
-        [site]: {
-          ...prev[site],
-          lastTestResult: { success: false, message: error.message }
-        }
-      }));
-    }
-  });
-
   const areWordPressFieldsFilled = (config: SiteConfig) => {
     return config.additionalConfig?.username &&
            config.additionalConfig?.password &&
            config.additionalConfig?.apiUrl;
   };
 
-  if (isLoading) {
+  if (isLoadingConfig || isLoadingSettings) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -439,6 +449,7 @@ export default function Settings() {
           </div>
         </DialogContent>
       </Dialog>
+
       {/* WordPress Settings */}
       <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">WordPress Integration</h2>
       <Card className="border-none shadow-lg bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 mb-8">
