@@ -90,11 +90,14 @@ class WordPressService {
       const auth = Buffer.from(`${config.username}:${config.password}`).toString('base64');
       const baseUrl = config.apiUrl;
 
-      console.log(`Publishing to WordPress: ${baseUrl}/wp-json/wp/v2/properties`);
+      console.log(`Publishing to WordPress: ${baseUrl}/wp-json/wp/v2/posts`);
+
+      // Create a formatted content with property details
+      const content = this.formatPropertyContent(property);
 
       const postData = {
         title: property.title,
-        content: property.description,
+        content: content,
         status: 'publish',
         meta: {
           property_price: property.price,
@@ -112,7 +115,7 @@ class WordPressService {
       };
 
       const response = await this.makeRequest(
-        `${baseUrl}/wp-json/wp/v2/properties`,
+        `${baseUrl}/wp-json/wp/v2/posts`,
         {
           method: 'POST',
           headers: {
@@ -159,6 +162,48 @@ class WordPressService {
     }
   }
 
+  private formatPropertyContent(property: Property): string {
+    let content = '';
+
+    // Add property details
+    content += `<div class="property-details">`;
+    content += `<h2>Property Details</h2>`;
+    content += `<ul>`;
+    content += `<li>Price: €${property.price}</li>`;
+    content += `<li>Bedrooms: ${property.bedrooms}</li>`;
+    content += `<li>Bathrooms: ${property.bathrooms}</li>`;
+    content += `<li>Size: ${property.squareMeters}m²</li>`;
+    content += `<li>Location: ${property.address}, ${property.city}${property.state ? `, ${property.state}` : ''}</li>`;
+    content += `</ul>`;
+
+    // Add description
+    if (property.description) {
+      content += `<div class="property-description">${property.description}</div>`;
+    }
+
+    // Add features if available
+    if (property.features && property.features.length > 0) {
+      content += `<h3>Features</h3>`;
+      content += `<ul class="property-features">`;
+      for (const feature of property.features) {
+        content += `<li>${feature}</li>`;
+      }
+      content += `</ul>`;
+    }
+
+    // Add image gallery
+    if (property.images && property.images.length > 0) {
+      content += `<div class="property-gallery">`;
+      for (const image of property.images) {
+        content += `<img src="${image}" alt="${property.title}" />`;
+      }
+      content += `</div>`;
+    }
+
+    content += `</div>`;
+    return content;
+  }
+
   private getReadableError(error: WordPressError): string {
     // Convert WordPress API errors into user-friendly messages
     if (error.data?.status === 503) {
@@ -167,11 +212,11 @@ class WordPressService {
 
     switch (error.code) {
       case 'rest_no_route':
-        return "The WordPress Properties plugin is not properly configured. Please ensure it's installed and activated.";
+        return "Could not connect to WordPress REST API. Please ensure your WordPress site has REST API enabled.";
       case 'rest_cannot_create':
-        return "You don't have permission to create properties. Please check your WordPress user permissions.";
+        return "You don't have permission to create posts. Please check your WordPress user permissions.";
       case 'rest_post_invalid_id':
-        return "Failed to create the property listing. Please check your WordPress configuration.";
+        return "Failed to create the post. Please check your WordPress configuration.";
       default:
         return error.message || "An unknown error occurred while publishing to WordPress";
     }
@@ -223,9 +268,9 @@ class WordPressService {
         throw new Error('Not a valid WordPress REST API endpoint. Please check your API URL.');
       }
 
-      // Test property post type endpoint
-      const typesResponse = await this.makeRequest(
-        `${baseUrl}/wp-json/wp/v2/types`,
+      // Test posts endpoint instead of custom post type
+      const postsResponse = await this.makeRequest(
+        `${baseUrl}/wp-json/wp/v2/posts`,
         {
           headers: {
             'Authorization': `Basic ${auth}`,
@@ -234,19 +279,12 @@ class WordPressService {
         }
       );
 
-      if (!typesResponse.ok) {
+      if (!postsResponse.ok) {
         throw new Error(this.getReadableError({
-          code: 'post_types_failed',
-          message: await typesResponse.text(),
-          data: { status: typesResponse.status }
+          code: 'posts_failed',
+          message: await postsResponse.text(),
+          data: { status: postsResponse.status }
         }));
-      }
-
-      const typesData = await typesResponse.json();
-
-      // Check if property post type exists
-      if (!typesData.properties) {
-        throw new Error('Property post type is not configured in WordPress. Please ensure the Real Estate plugin is installed and activated.');
       }
 
     } catch (error) {
