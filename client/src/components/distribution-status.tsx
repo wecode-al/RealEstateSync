@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, ExternalLink, RefreshCw, Check, XCircle } from "lucide-react";
+import { Loader2, ExternalLink, RefreshCw, Check, XCircle, Globe } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { Property } from "@shared/schema";
+import { cn } from "@/lib/utils";
 
 interface DistributionStatusProps {
   property: Property;
@@ -64,11 +65,14 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
   ];
 
   return (
-    <Card className="p-4 border-none shadow-lg">
-      <div className="space-y-4">
-        <h3 className="font-medium text-lg mb-2">Distribution Status</h3>
+    <Card className="p-6 border-none shadow-lg bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <Globe className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold text-lg">Distribution Status</h3>
+        </div>
 
-        <div className="space-y-3">
+        <div className="grid gap-4">
           {sites.map((site) => {
             const distribution = property.distributions?.[site.key];
             const isPublished = distribution?.status === "success";
@@ -77,44 +81,96 @@ export function DistributionStatus({ property }: DistributionStatusProps) {
             const isPublishing = publishingSite === site.key;
 
             return (
-              <div key={site.key} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
-                <div className="flex items-center gap-2">
-                  {isPublished && <Check className="h-4 w-4 text-green-500" />}
-                  {hasError && <XCircle className="h-4 w-4 text-red-500" />}
-                  {!distribution && <div className="h-4 w-4" />}
-                  <span className="font-medium">{site.name}</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setPublishingSite(site.key);
-                      publishMutation.mutate({ siteKey: site.key });
-                    }}
-                    disabled={isPublishing || publishMutation.isPending}
-                  >
-                    {isPublishing ? (
-                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                    ) : isPublished ? (
-                      <RefreshCw className="h-3 w-3 mr-1" />
-                    ) : null}
-                    {isPublished ? "Republish" : "Publish"}
-                  </Button>
-
-                  {isPublished && postUrl && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      asChild
-                    >
-                      <a href={postUrl} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-3 w-3 mr-1" />
-                        View
-                      </a>
-                    </Button>
+              <div
+                key={site.key}
+                className={cn(
+                  "relative overflow-hidden rounded-lg transition-all duration-200",
+                  "border border-gray-100 dark:border-gray-800",
+                  "bg-white dark:bg-gray-900",
+                  "hover:shadow-md hover:scale-[1.01]"
+                )}
+              >
+                {/* Status Indicator Line */}
+                <div 
+                  className={cn(
+                    "absolute top-0 left-0 h-full w-1",
+                    isPublished ? "bg-green-500" : 
+                    hasError ? "bg-red-500" : 
+                    "bg-gray-200 dark:bg-gray-700"
                   )}
+                />
+
+                <div className="p-4 pl-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {isPublished && (
+                        <Check className="h-5 w-5 text-green-500" />
+                      )}
+                      {hasError && (
+                        <XCircle className="h-5 w-5 text-red-500" />
+                      )}
+                      {!distribution && (
+                        <div className="h-5 w-5" />
+                      )}
+                      <div>
+                        <h4 className="font-medium text-base">{site.name}</h4>
+                        {hasError && (
+                          <p className="text-sm text-red-500 mt-1">
+                            {distribution.error}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant={isPublished ? "outline" : "default"}
+                        size="sm"
+                        onClick={() => {
+                          setPublishingSite(site.key);
+                          publishMutation.mutate({ siteKey: site.key });
+                        }}
+                        disabled={isPublishing || publishMutation.isPending}
+                        className={cn(
+                          "transition-all duration-200",
+                          isPublished && "hover:text-primary hover:border-primary"
+                        )}
+                      >
+                        {isPublishing ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Publishing...
+                          </>
+                        ) : isPublished ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Republish
+                          </>
+                        ) : (
+                          "Publish"
+                        )}
+                      </Button>
+
+                      {isPublished && postUrl && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="hover:text-primary"
+                          asChild
+                        >
+                          <a 
+                            href={postUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            View
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             );
