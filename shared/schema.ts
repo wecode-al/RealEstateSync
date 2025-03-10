@@ -43,25 +43,17 @@ export const properties = pgTable("properties", {
   description: text("description").notNull(),
   price: numeric("price").notNull(),
   bedrooms: integer("bedrooms").notNull(),
-  bathrooms: integer("bathrooms").notNull(),
+  bathrooms: numeric("bathrooms").notNull(),
   squareMeters: numeric("square_meters").notNull(),
   address: text("address").notNull(),
   city: text("city").notNull(),
-  state: text("state"),
+  state: text("state").notNull(),
   zipCode: text("zip_code").notNull(),
   propertyType: text("property_type").notNull(),
   images: text("images").array().notNull(),
   features: jsonb("features").notNull(),
   published: boolean("published").default(false).notNull(),
-  distributions: jsonb("distributions").default({}).notNull(),
-  // Add new fields for Indomio integration
-  condition: text("condition"),
-  yearBuilt: integer("year_built"),
-  furnished: boolean("furnished").default(false),
-  floor: integer("floor"),
-  coordinates: jsonb("coordinates"),
-  investment: boolean("investment").default(false),
-  listingType: text("listing_type").default("for sale"),
+  distributions: jsonb("distributions").default({}).notNull()
 });
 
 // Schema for creating/updating properties
@@ -75,18 +67,7 @@ export const insertPropertySchema = createInsertSchema(properties).omit({
   // Use coerce for numeric fields to handle both string and number inputs
   price: z.coerce.number(),
   bathrooms: z.coerce.number(),
-  squareMeters: z.coerce.number(),
-  // Add validation for new fields
-  condition: z.enum(["new", "good", "needs_renovation", "under_construction", "renovated"]).optional(),
-  yearBuilt: z.coerce.number().optional(),
-  furnished: z.boolean().optional(),
-  floor: z.coerce.number().optional(),
-  coordinates: z.object({
-    lat: z.number(),
-    lng: z.number()
-  }).optional(),
-  investment: z.boolean().optional(),
-  listingType: z.enum(["for sale", "for rent"]).optional()
+  squareMeters: z.coerce.number()
 });
 
 export type Property = typeof properties.$inferSelect;
