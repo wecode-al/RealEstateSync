@@ -219,6 +219,31 @@ export default function Settings() {
            config.additionalConfig?.apiUrl;
   };
 
+  const updateMutation = useMutation({
+    mutationFn: async (newSettings: SiteSettings) => {
+      const res = await apiRequest("POST", "/api/settings", newSettings);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to save settings");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Settings saved successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
   if (isLoadingConfig || isLoadingSettings) {
     return (
       <div className="flex items-center justify-center min-h-screen">
