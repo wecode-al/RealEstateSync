@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -19,12 +20,11 @@ export default function Settings() {
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [testUrl, setTestUrl] = useState("");
 
-  // Get scraper configurations
   const { data: scraperConfig, isLoading: isLoadingConfig } = useQuery<ScraperConfig>({
     queryKey: ["/api/scraper-configs/current"],
   });
 
-  // Update scraper configuration form
+  // Scraper configuration form
   const scraperForm = useForm({
     resolver: zodResolver(insertScraperConfigSchema),
     defaultValues: {
@@ -55,7 +55,7 @@ export default function Settings() {
     }
   }, [scraperConfig, isScraperConfigOpen]);
 
-  // Scraper configuration mutation
+  // Mutations
   const scraperConfigMutation = useMutation({
     mutationFn: async (data: any) => {
       const res = await apiRequest("POST", "/api/scraper-configs", {
@@ -82,10 +82,9 @@ export default function Settings() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Scraper configuration saved successfully",
+        description: "Configuration saved successfully",
       });
       setIsScraperConfigOpen(false);
-      // queryClient.invalidateQueries({ queryKey: ["/api/scraper-configs/current"] });
     },
     onError: (error) => {
       toast({
@@ -96,7 +95,6 @@ export default function Settings() {
     }
   });
 
-  // Test configuration mutation
   const testScraperMutation = useMutation({
     mutationFn: async ({ configId, url }: { configId: number; url: string }) => {
       const res = await apiRequest("POST", `/api/scraper-configs/${configId}/test`, { url });
@@ -171,14 +169,7 @@ export default function Settings() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        scraperForm.reset({
-                          name: scraperConfig.name,
-                          baseUrl: scraperConfig.baseUrl,
-                          selectors: scraperConfig.selectors
-                        });
-                        setIsScraperConfigOpen(true);
-                      }}
+                      onClick={() => setIsScraperConfigOpen(true)}
                     >
                       Edit
                     </Button>
