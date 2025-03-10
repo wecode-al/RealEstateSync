@@ -118,13 +118,13 @@ export class IndomioTransformer {
         brokerListingID: `ALB-${property.id}`,
         dateUpdated: new Date().toISOString().split('T')[0],
         dateAvailable: new Date().toISOString().split('T')[0],
-        size: parseFloat(property.squareMeters.toString()),
-        listingType: property.listingType || "for sale",
+        size: Number(property.squareMeters) || 0,
+        listingType: (property.listingType || "for sale") as "for sale" | "for rent",
         price: {
-          amount: parseFloat(property.price.toString()),
+          amount: Number(property.price) || 0,
           currency: "EUR"
         },
-        investment: property.investment || false,
+        investment: Boolean(property.investment),
         noAgentFee: false
       },
       location: {
@@ -138,8 +138,8 @@ export class IndomioTransformer {
           addressVisible: true
         },
         geocodes: property.coordinates ? {
-          latitude: property.coordinates.lat,
-          longitude: property.coordinates.lng
+          latitude: Number(property.coordinates.lat) || 0,
+          longitude: Number(property.coordinates.lng) || 0
         } : undefined,
         zip: property.zipCode,
         zoning: "residential",
@@ -147,15 +147,17 @@ export class IndomioTransformer {
       },
       categoryFeatures: {
         propertyType,
+        originalPropertyType: property.propertyType,
         residential_features: propertyType.category === "residential" ? {
-          bedrooms: property.bedrooms,
-          bathrooms: property.bathrooms,
+          bedrooms: Number(property.bedrooms) || 0,
+          bathrooms: Number(property.bathrooms) || 0,
           status: this.mapStatus(property.condition || "good"),
-          constructionYear: property.yearBuilt,
-          furnished: property.furnished,
+          constructionYear: property.yearBuilt || undefined,
+          furnished: Boolean(property.furnished),
           airConditioning: Array.isArray(property.features) && property.features.includes("air conditioning"),
           elevator: Array.isArray(property.features) && property.features.includes("elevator"),
-          floorNumber: property.floor?.toString() || "ground floor"
+          floorNumber: property.floor?.toString() || "ground floor",
+          levels: 1
         } : undefined
       },
       descriptions: [{
