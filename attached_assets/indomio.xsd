@@ -1,0 +1,1242 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning" attributeFormDefault="unqualified"
+    elementFormDefault="qualified" vc:minVersion="1.1" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="properties">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="property" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="property">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="mainFeatures" type="mainFeatures"/>
+                <xs:element name="location" type="location"/>
+                <xs:element name="categoryFeatures">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="propertyType">
+                                <xs:alternative test="@category = 'residential'"
+                                    type="house_category"/>
+                                <xs:alternative test="@category = 'commercial'"
+                                    type="office_category"/>
+                                <xs:alternative test="@category = 'land'" type="land_category"/>
+                                <xs:alternative test="@category = 'other'" type="other_category"/>
+                                <xs:alternative type="xs:error"/>
+                            </xs:element>
+                            <xs:element name="originalPropertyType" minOccurs="0">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The type of the property as specified in your system. e.g. penthouse or house of character.
+                                    </xs:documentation>
+                                </xs:annotation>
+                                <xs:simpleType>
+                                    <xs:restriction base="xs:string">
+                                        <xs:maxLength value="50"/>
+                                    </xs:restriction>
+                                </xs:simpleType>
+                            </xs:element>
+                            <xs:element name="residential_features" type="residential_features"
+                                minOccurs="0"/>
+                            <xs:element name="commercial_features" type="commercial_features"
+                                minOccurs="0"/>
+                            <xs:element name="land_features" type="land_features" minOccurs="0"/>
+                            <xs:element name="otherProperty_features" type="otherProperty_features"
+                                minOccurs="0"/>
+                        </xs:sequence>
+                        <xs:assert
+                            test="not(propertyType/attribute::category = 'residential') or (residential_features and not(commercial_features) and not(land_features) and not(otherProperty_features))"/>
+                        <xs:assert
+                            test="not(propertyType/attribute::category = 'commercial') or (commercial_features and not(residential_features) and not(land_features) and not(otherProperty_features))"/>
+                        <xs:assert
+                            test="not(propertyType/attribute::category = 'land') or (land_features and not(residential_features) and not(commercial_features) and not(otherProperty_features))"/>
+                        <xs:assert
+                            test="not(propertyType/attribute::category = 'other') or (otherProperty_features and not(residential_features) and not(commercial_features) and not(land_features))"
+                        />
+                    </xs:complexType>
+                </xs:element>
+                <xs:element ref="descriptions" minOccurs="0"/>
+                <xs:element name="media" minOccurs="0" type="media"/>
+                <xs:element name="agent" minOccurs="0" type="agent"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="photo">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="url">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:maxLength value="500"/>
+                            <xs:minLength value="10"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+                <xs:element name="priority">
+                    <xs:annotation>
+                        <xs:documentation>
+                            25 photos are displayed per listing (order by priority asc). 
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:unsignedByte">
+                            <xs:minInclusive value="1"/>
+                            <xs:maxInclusive value="100"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+                <xs:element ref="photoDescriptions" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="description" type="descriptionType"/>
+    <xs:element name="address" type="addressType"/>
+    <xs:element name="shortDescription" type="shortDescriptionType"/>
+    <xs:element name="photoDescription" type="photoDescriptionType"/>
+    <xs:complexType name="location">
+        <xs:sequence>
+            <xs:element name="geographyId" nillable="false">
+                <xs:simpleType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            It is the id of the level-2 or level-3 geography (see list of supported geographies). Level-1 geographies are not allowed.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:restriction base="xs:unsignedInt">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="2147483647"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="originalLocation" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The location of the property as specified in your system. The full path should be specified, e.g. Primorsko-goranska/Rijeka/Gornji Zamet
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="100"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element ref="addresses" minOccurs="0"/>
+            <xs:element name="geocodes" type="geocodes" minOccurs="0"/>
+            <xs:element name="zip" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="10"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="zoning" minOccurs="0" type="zones"> </xs:element>
+            <xs:element name="roadType" minOccurs="0" type="road_types"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:element name="youtubeURL">
+        <xs:annotation>
+            <xs:documentation>            
+            A URL to a video or other presentation of the property in youtube.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:string">
+                <xs:maxLength value="255"/>
+                <xs:minLength value="1"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:complexType name="media">
+        <xs:sequence>
+            <xs:element ref="photos" minOccurs="0"/>
+            <xs:element ref="youtubeURL" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="mainFeatures">
+        <xs:sequence>
+            <xs:element name="id" type="xs:long"/>
+            <xs:element name="brokerListingID" minOccurs="0">
+                <xs:simpleType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            Listing code as set by the broker or his own CRM/listing management software. 
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="20"/>
+                        <xs:minLength value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="dateUpdated" type="xs:date">
+                <xs:annotation>
+                    <xs:documentation>
+                        When the property listing was last updated in your system. 
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="dateAvailable">
+                <xs:simpleType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            Date that the property becomes available. If already available this should be set to a past date. If not provided will automatically set to yesterday's date.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:restriction base="xs:date">
+                        <xs:minInclusive value="2000-01-01"/>
+                        <xs:maxInclusive value="2050-12-31"/>
+                        <xs:pattern value="\p{Nd}{4}-\p{Nd}{2}-\p{Nd}{2}"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="size" type="xs:unsignedInt" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The size of the property in square meters. External areas not to be included.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="listingType" default="for sale" type="listing_types"> </xs:element>
+            <xs:element name="price" type="priceType"/>
+            <xs:element name="investment" minOccurs="0" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>
+                        True if the property is suitable for investment purposes.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="corner" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Whether the property is situated in a corner.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="view" type="view_types" minOccurs="0"/>
+            <xs:element name="noAgentFee" default="false" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>
+                        True if the agency will not charge the buyer / tenant with commission.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="descriptionType">
+        <xs:sequence>
+            <xs:element name="language" type="languages"/>
+            <xs:element name="description" nillable="false">
+                <xs:simpleType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            Description of the property in the activated languages. NOTE: no HTML is allowed.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="5000"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="shortDescriptionType">
+        <xs:sequence>
+            <xs:element name="language" type="languages"/>
+            <xs:element name="description" nillable="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Short description of the property in the activated languages. NOTE: no HTML is allowed.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="75"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="photoDescriptionType">
+        <xs:sequence>
+            <xs:element name="language" type="languages"/>
+            <xs:element name="description" nillable="false">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="250"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="addressType">
+        <xs:sequence>
+            <xs:element name="language" type="languages"/>
+            <xs:element name="streetAddress" nillable="false">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="65535"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="priceType">
+        <xs:sequence>
+            <xs:element name="amount" type="xs:unsignedInt" default="0"/>
+            <xs:element name="currency" default="EUR" type="currencies"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:element name="photos">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="photo" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="descriptions">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="description" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>    
+    <xs:element name="photoDescriptions">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="photoDescription" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="addresses">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="address" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="addressVisible" default="false" type="xs:boolean">
+                    <xs:annotation>
+                        <xs:documentation>
+                            If the address will be displayed to the end-user or not.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="geocodes">
+        <xs:sequence>
+            <xs:element name="latitude" minOccurs="0">
+                <xs:simpleType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            Latitude for optionally showing the exact location of the property on map.						
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:restriction base="xs:float">
+                        <xs:minInclusive value="-180"/>
+                        <xs:maxInclusive value="180"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="longitude" minOccurs="0">
+                <xs:simpleType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            Latitude for optionally showing the exact location of the property on map.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:restriction base="xs:float">
+                        <xs:minInclusive value="-3.402823e+38"/>
+                        <xs:maxInclusive value="3.402823e+38"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>    
+    <xs:complexType name="agent">
+        <xs:annotation>
+            <xs:documentation>                        
+                The responsible agent / employee for the property. Use this block to display different contact details per listing.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="firstName">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="35"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="lastName">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="35"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="phoneNumber">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="25"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="email">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="50"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="languages">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="gr"/>
+            <!-- Greek -->
+            <xs:enumeration value="en"/>
+            <!-- English -->
+            <xs:enumeration value="cs"/>
+            <!-- Czech -->
+            <xs:enumeration value="ru"/>
+            <!-- Russian -->
+            <xs:enumeration value="de"/>
+            <!-- German -->
+            <xs:enumeration value="bg"/>
+            <!-- Bulgarian -->
+            <xs:enumeration value="fr"/>
+            <!-- French -->
+            <xs:enumeration value="es"/>
+            <!-- Spanish -->
+            <xs:enumeration value="tr"/>
+            <!-- Turkish -->
+            <xs:enumeration value="pl"/>
+            <!-- Polish -->
+            <xs:enumeration value="sr"/>
+            <!-- Serbian -->
+            <xs:enumeration value="zh"/>
+            <!-- Chinese -->
+            <xs:enumeration value="nl"/>
+            <!-- Dutch -->
+            <xs:enumeration value="ar"/>
+            <!-- Arabic -->
+            <xs:enumeration value="ro"/>
+            <!-- Romanian -->
+            <xs:enumeration value="me"/>
+            <!-- Montenegrin -->
+            <xs:enumeration value="mt"/>
+            <!-- Maltese -->
+            <xs:enumeration value="bs"/>
+            <!-- Bosnian -->
+            <xs:enumeration value="hr"/>
+            <!-- Croatian -->
+            <xs:enumeration value="sr"/>
+            <!-- Slovenian -->
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="mainPropertyCategories">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="residential"/>
+            <xs:enumeration value="commercial"/>
+            <xs:enumeration value="land"/>
+            <xs:enumeration value="other"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="house_category">
+        <xs:attribute name="category" type="xs:string" use="required"/>
+        <xs:attribute name="subCategory" type="house_types" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="office_category">
+        <xs:attribute name="category" type="xs:string" use="required"/>
+        <xs:attribute name="subCategory" type="office_types" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="land_category">
+        <xs:attribute name="category" type="xs:string" use="required"/>
+        <xs:attribute name="subCategory" type="land_types" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="other_category">
+        <xs:attribute name="category" type="xs:string" use="required"/>
+        <xs:attribute name="subCategory" type="other_types" use="required"/>
+    </xs:complexType>
+    <xs:simpleType name="house_types">
+        <xs:restriction base="xs:NMTOKENS">
+            <xs:enumeration value="apartment"/>
+            <xs:enumeration value="studio"/>
+            <xs:enumeration value="maisonette"/>
+            <xs:enumeration value="detached"/>
+            <xs:enumeration value="villa"/>
+            <xs:enumeration value="loft"/>
+            <xs:enumeration value="bungalow"/>
+            <xs:enumeration value="building"/>
+            <xs:enumeration value="apartment complex"/>
+            <xs:enumeration value="farm"/>
+            <xs:enumeration value="houseboat"/>
+            <xs:enumeration value="other residential"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="office_types">
+        <xs:restriction base="xs:NMTOKENS">
+            <xs:enumeration value="office"/>
+            <xs:enumeration value="store"/>
+            <xs:enumeration value="warehouse"/>
+            <xs:enumeration value="industrial space"/>
+            <xs:enumeration value="craft space"/>
+            <xs:enumeration value="hotel"/>
+            <xs:enumeration value="business building"/>
+            <xs:enumeration value="hall"/>
+            <xs:enumeration value="showroom"/>
+            <xs:enumeration value="other commercial"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="land_types">
+        <xs:restriction base="xs:NMTOKENS">
+            <xs:enumeration value="plot"/>
+            <xs:enumeration value="parcel"/>
+            <xs:enumeration value="island"/>
+            <xs:enumeration value="other land"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="other_types">
+        <xs:restriction base="xs:NMTOKENS">
+            <xs:enumeration value="parking spot"/>
+            <xs:enumeration value="business"/>
+            <xs:enumeration value="prefabricated"/>
+            <xs:enumeration value="air"/>
+            <xs:enumeration value="other"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="floors">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="basement"/>
+            <xs:enumeration value="semi basement"/>
+            <xs:enumeration value="ground floor"/>
+            <xs:enumeration value="semi ground floor"/>
+            <xs:enumeration value="1"/>
+            <xs:enumeration value="2"/>
+            <xs:enumeration value="3"/>
+            <xs:enumeration value="4"/>
+            <xs:enumeration value="5"/>
+            <xs:enumeration value="6"/>
+            <xs:enumeration value="7"/>
+            <xs:enumeration value="8"/>
+            <xs:enumeration value="9"/>
+            <xs:enumeration value="10"/>
+            <xs:enumeration value="11"/>
+            <xs:enumeration value="12"/>
+            <xs:enumeration value="13"/>
+            <xs:enumeration value="14"/>
+            <xs:enumeration value="15"/>
+            <xs:enumeration value="16"/>
+            <xs:enumeration value="17"/>
+            <xs:enumeration value="18"/>
+            <xs:enumeration value="19"/>
+            <xs:enumeration value="20"/>
+            <xs:enumeration value="21"/>
+            <xs:enumeration value="22"/>
+            <xs:enumeration value="23"/>
+            <xs:enumeration value="24"/>
+            <xs:enumeration value="25"/>
+            <xs:enumeration value="26"/>
+            <xs:enumeration value="27"/>
+            <xs:enumeration value="28"/>
+            <xs:enumeration value="29"/>
+            <xs:enumeration value="30"/>
+            <xs:enumeration value="31"/>
+            <xs:enumeration value="32"/>
+            <xs:enumeration value="33"/>
+            <xs:enumeration value="34"/>
+            <xs:enumeration value="35"/>
+            <xs:enumeration value="36"/>
+            <xs:enumeration value="37"/>
+            <xs:enumeration value="38"/>
+            <xs:enumeration value="39"/>
+            <xs:enumeration value="40"/>
+            <xs:enumeration value="41"/>
+            <xs:enumeration value="42"/>
+            <xs:enumeration value="43"/>
+            <xs:enumeration value="44"/>
+            <xs:enumeration value="45"/>
+            <xs:enumeration value="46"/>
+            <xs:enumeration value="47"/>
+            <xs:enumeration value="48"/>
+            <xs:enumeration value="49"/>
+            <xs:enumeration value="50"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="energy_classes">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="not required"/>
+            <xs:enumeration value="A+"/>
+            <xs:enumeration value="A"/>
+            <xs:enumeration value="B+"/>
+            <xs:enumeration value="B"/>
+            <xs:enumeration value="C"/>
+            <xs:enumeration value="D"/>
+            <xs:enumeration value="E"/>
+            <xs:enumeration value="F"/>
+            <xs:enumeration value="G"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="view_types">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="view at sea"/>
+            <xs:enumeration value="view at mountain"/>
+            <xs:enumeration value="panoramic view"/>
+            <xs:enumeration value="view at park"/>
+            <xs:enumeration value="view at square"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="orientations">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="east"/>
+            <xs:enumeration value="east-west"/>
+            <xs:enumeration value="east-meridian"/>
+            <xs:enumeration value="north"/>
+            <xs:enumeration value="north-east"/>
+            <xs:enumeration value="north-west"/>
+            <xs:enumeration value="west"/>
+            <xs:enumeration value="west-meridian"/>
+            <xs:enumeration value="meridian"/>
+            <xs:enumeration value="south"/>
+            <xs:enumeration value="south-east"/>
+            <xs:enumeration value="south-west"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="currentTypes">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="single phase"/>
+            <xs:enumeration value="three phase"/>
+            <xs:enumeration value="industrial"/>
+            <xs:enumeration value="none"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="heatingControllers">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="individual"/>
+            <xs:enumeration value="autonomous"/>
+            <xs:enumeration value="central"/>
+            <xs:enumeration value="none"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="heatingMediums">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="petrol"/>
+            <xs:enumeration value="natural gas"/>
+            <xs:enumeration value="gas"/>
+            <xs:enumeration value="current"/>
+            <xs:enumeration value="stove"/>
+            <xs:enumeration value="thermal accumulator"/>
+            <xs:enumeration value="pellet"/>
+            <xs:enumeration value="infrared"/>
+            <xs:enumeration value="fan coil"/>
+            <xs:enumeration value="wood"/>
+            <xs:enumeration value="teleheating"/>
+            <xs:enumeration value="geothermal energy"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="zones">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="agricultural"/>
+            <xs:enumeration value="commercial"/>
+            <xs:enumeration value="industrial"/>
+            <xs:enumeration value="recreational"/>
+            <xs:enumeration value="residential"/>
+            <xs:enumeration value="unincorporated"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="road_types">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="asphalt"/>
+            <xs:enumeration value="pedestrian"/>
+            <xs:enumeration value="paved"/>
+            <xs:enumeration value="dirt road"/>
+            <xs:enumeration value="no road access"/>
+            <xs:enumeration value="sea"/>
+            <xs:enumeration value="other"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="floor_types">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="marble"/>
+            <xs:enumeration value="wood"/>
+            <xs:enumeration value="stone"/>
+            <xs:enumeration value="ceramic tiles"/>
+            <xs:enumeration value="mosaic tiles"/>
+            <xs:enumeration value="wood and marble"/>
+            <xs:enumeration value="marble and tile"/>
+            <xs:enumeration value="wood and stone"/>
+            <xs:enumeration value="stone and marble"/>
+            <xs:enumeration value="wood and tile"/>
+            <xs:enumeration value="wood and mosaic"/>
+            <xs:enumeration value="industrial"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="property_statuses">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="under construction"/>
+            <xs:enumeration value="newly built"/>
+            <xs:enumeration value="incomplete"/>
+            <xs:enumeration value="renovated"/>
+            <xs:enumeration value="requires renovation"/>
+            <xs:enumeration value="excellent"/>
+            <xs:enumeration value="good"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="slopes">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="plane"/>
+            <xs:enumeration value="inclining"/>
+            <xs:enumeration value="amphitheatric"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="frame_types">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="wooden"/>
+            <xs:enumeration value="aluminium"/>
+            <xs:enumeration value="synthetic"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="currencies">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="EUR"/>
+            <!-- Euro -->
+            <xs:enumeration value="USD"/>
+            <!-- US Dollar -->
+            <xs:enumeration value="GBP"/>
+            <!-- British Pound -->
+            <xs:enumeration value="RSD"/>
+            <!-- Serbian Dinar -->
+            <xs:enumeration value="BAM"/>
+            <!-- Bosnian Convertible Marka -->
+            <xs:enumeration value="HRK"/>
+            <!-- Croatian Kuna -->
+            <xs:enumeration value="ALL"/>
+            <!-- Albanian Lek -->
+            <xs:enumeration value="MKD"/>
+            <!-- Albanian Lek -->
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="listing_types">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="for sale"/>
+            <xs:enumeration value="for rent"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="residential_features">
+        <xs:all>
+            <xs:element name="bedrooms" minOccurs="0" default="1">
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedShort">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="200"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="livingRooms" default="0" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedShort">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="99"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="kitchens" default="0" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedShort">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="99"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="bathrooms" default="0" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Full bathrooms.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedShort">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="200"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="halfBathrooms" default="0" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        WC / half bathrooms.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedShort">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="200"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="status" type="property_statuses" minOccurs="0"/>
+            <xs:element name="constructionYear" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedInt">
+                        <xs:minInclusive value="1501"/>
+                        <xs:maxInclusive value="2020"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="renovationYear" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        When was the property renovated.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:short">
+                        <xs:minInclusive value="1901"/>
+                        <xs:maxInclusive value="2020"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="parkingSpaces" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedByte">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="99"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="floorNumber" type="floors" minOccurs="0"/>
+            <xs:element name="levels" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        How many levels/floors does the property have (useful mostly for maisonette, detached houses, villas).
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedByte">
+                        <xs:minInclusive value="1"/>
+                        <xs:maxInclusive value="100"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="furnished" minOccurs="0" type="xs:boolean"/>
+            <xs:element name="lotSize" type="xs:unsignedInt" minOccurs="0"/>
+            <xs:element name="airConditioning" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="elevator" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="storageSpace" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Whether the property has storage space.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="veranda" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Whether the property has at least one veranda (big balcony).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="balconiesSize" default="0" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The total size of all balconies in square meters.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:int">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="500"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="satelliteReceiver" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="internalStairs" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="solarWaterHeating" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Whether the property has a solar water heater.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="garden" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="attic" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="swimmingPool" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="secureDoor" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="penthouse" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="alarm" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="fireplace" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="playroom" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="preserved" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="nightPower" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="neoclassic" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="energyClass" type="energy_classes" minOccurs="0"/>
+            <xs:element name="orientation" type="orientations" minOccurs="0"/>
+            <xs:element name="heatingController" type="heatingControllers" minOccurs="0"/>
+            <xs:element name="heatingMedium" type="heatingMediums" minOccurs="0"/>
+            <xs:element name="heatingUnderFloor" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="windowScreen" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="awning" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="doubleGlass" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="airy" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="bright" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="painted" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="forCommercialUse" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="facade" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="distanceSea" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Distance (in meters) from sea.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:int">
+                        <xs:minInclusive value="1"/>
+                        <xs:maxInclusive value="99999"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="commonExpenses" type="priceType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The common expenses per month on average (in euros).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="frameType" type="frame_types" minOccurs="0"/>
+            <xs:element name="floorType" type="floor_types" minOccurs="0"/>
+            <xs:element name="holidayHome" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="luxHome" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="studentHome" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="petsAllowed" minOccurs="0" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines whether pets are allowed in the property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="commercial_features">
+        <xs:all>
+            <xs:element name="rooms" default="1" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedShort">
+                        <xs:minInclusive value="1"/>
+                        <xs:maxInclusive value="200"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="bathrooms" default="0" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Full bathrooms.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedShort">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="65535"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="halfBathrooms" default="0" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedShort">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="65535"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="status" type="property_statuses" minOccurs="0"/>
+            <xs:element name="constructionYear" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedInt">
+                        <xs:minInclusive value="1501"/>
+                        <xs:maxInclusive value="2020"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="renovationYear" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        When was the property renovated.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:short">
+                        <xs:minInclusive value="1901"/>
+                        <xs:maxInclusive value="2020"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="parkingSpaces" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedByte">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="99"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="floorNumber" type="floors" minOccurs="0"/>
+            <xs:element name="levels" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        How many levels/floors does the property have (useful mostly for commercial buildings with multiple floors).
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedByte">
+                        <xs:minInclusive value="1"/>
+                        <xs:maxInclusive value="100"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="lotSize" type="xs:unsignedInt" minOccurs="0"/>
+            <xs:element name="airConditioning" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="storageSpace" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Whether the property has storage space.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="veranda" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Whether the property has at least one veranda (big balcony).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="internalStairs" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="secureDoor" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="penthouse" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="alarm" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="furredCeiling" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="freightElevator" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="loadingDock" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Whether the property has a loading dock for merchandise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="preserved" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="equipped" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="energyClass" type="energy_classes" minOccurs="0"/>
+            <xs:element name="current" type="currentTypes" minOccurs="0"/>
+            <xs:element name="heatingController" type="heatingControllers" minOccurs="0"/>
+            <xs:element name="heatingMedium" type="heatingMediums" minOccurs="0"/>
+            <xs:element name="heatingUnderFloor" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="structuredWiring" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="airy" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="bright" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="painted" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="garden" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="facade" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="shopWindowLength" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The length (in meters) of the shop window.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:int">
+                        <xs:minInclusive value="1"/>
+                        <xs:maxInclusive value="999"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="commonExpenses" type="priceType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The common expenses per month on average (in euros).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="floorType" type="floor_types" minOccurs="0"/>
+            <xs:element name="petsAllowed" minOccurs="0" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines whether pets are allowed in the property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="land_features">
+        <xs:all>
+            <xs:element name="buildingCoeficient" default="0" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Building Coefficient for the plot
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:float">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="10"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="withinCityPlan" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Whether the property is within city plan or not.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="agriculturalUse" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="orientation" type="orientations" minOccurs="0"/>
+            <xs:element name="slope" type="slopes" minOccurs="0"/>
+            <xs:element name="coverageRatio" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The ratio of a building's total floor area (that is allowed to be built) to the size of the piece of land upon which it is built.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedByte">
+                        <xs:minInclusive value="1"/>
+                        <xs:maxInclusive value="100"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="frontLength" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The length (in meters) of the front side (facade).
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedInt">
+                        <xs:minInclusive value="1"/>
+                        <xs:maxInclusive value="9999"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="distanceSea" default="0" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Distance (in meters) from sea.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:int">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="99999"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="otherProperty_features">
+        <xs:all>
+            <xs:element name="rooms" default="1" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedShort">
+                        <xs:minInclusive value="1"/>
+                        <xs:maxInclusive value="200"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="bathrooms" default="0" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Full bathrooms.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedShort">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="65535"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="halfBathrooms" default="0" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedShort">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="65535"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="parkingSpaces" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedByte">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="99"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="floorNumber" type="floors" minOccurs="0"/>
+            <xs:element name="levels" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        How many levels/floors does the property have (useful mostly for commercial buildings with multiple floors).
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedByte">
+                        <xs:minInclusive value="1"/>
+                        <xs:maxInclusive value="100"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="status" type="property_statuses" minOccurs="0"/>
+            <xs:element name="constructionYear" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedInt">
+                        <xs:minInclusive value="1501"/>
+                        <xs:maxInclusive value="2020"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="airConditioning" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="storageSpace" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Whether the property has storage space.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="veranda" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Whether the property has at least one veranda (big balcony).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="internaStairs" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="secureDoor" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="penthouse" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="alarm" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="furredCeiling" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="freightElevator" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="loadingDock" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Whether the property has a loading dock for merchandise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="equipped" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string"/>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="energyClass" type="energy_classes" minOccurs="0"/>
+            <xs:element name="heatingController" type="heatingControllers" minOccurs="0"/>
+            <xs:element name="heatingMedium" type="heatingMediums" minOccurs="0"/>
+            <xs:element name="heatingUnderFloor" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="petsAllowed" minOccurs="0" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines whether pets are allowed in the property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+</xs:schema>
