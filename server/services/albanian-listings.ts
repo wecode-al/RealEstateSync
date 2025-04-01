@@ -3,6 +3,7 @@ import { siteConfigs } from "@shared/schema";
 import { storage } from "../storage";
 import fetch from "node-fetch";
 import { merrjepListingService } from "./merrjep-listings";
+import { okazionListingService } from "./okazion-listings";
 
 interface ListingResponse {
   success: boolean;
