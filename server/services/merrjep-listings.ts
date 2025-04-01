@@ -46,11 +46,30 @@ export class MerrJepListingService {
         };
       }
       
-      // Launch browser
-      this.browser = await puppeteer.launch({
-        headless: true, // Use headless mode
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
+      // Launch browser with system-installed Chromium
+      console.log('Launching Puppeteer browser using system Chromium...');
+      try {
+        // Use the system-installed Chromium instead of the bundled one
+        const executablePath = '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium';
+        console.log(`Using Chromium at: ${executablePath}`);
+        
+        this.browser = await puppeteer.launch({
+          headless: true,
+          executablePath, // Use system Chromium
+          args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--disable-features=site-per-process'
+          ],
+          dumpio: true // Output browser console logs
+        });
+        console.log('Browser launched successfully');
+      } catch (launchError) {
+        console.error('Failed to launch browser:', launchError);
+        throw new Error(`Browser launch failed: ${launchError instanceof Error ? launchError.message : 'Unknown error'}`);
+      }
       
       const page = await this.browser.newPage();
       
@@ -120,30 +139,85 @@ export class MerrJepListingService {
     try {
       console.log('Logging in to MerrJep...');
       
-      await page.goto(this.loginUrl, { waitUntil: 'networkidle0' });
+      // Navigate to login page with timeout handling
+      try {
+        console.log(`Navigating to login URL: ${this.loginUrl}`);
+        await page.goto(this.loginUrl, { 
+          waitUntil: 'networkidle0',
+          timeout: 60000 // Increase timeout to 60 seconds
+        });
+      } catch (navigationError) {
+        console.error('Navigation to login page failed:', navigationError);
+        throw new Error(`Could not navigate to login page: ${navigationError instanceof Error ? navigationError.message : 'Unknown error'}`);
+      }
       
-      // Wait for login form
-      await page.waitForSelector('input[name="Email"]');
-      await page.waitForSelector('input[name="Password"]');
+      // Check if page is accessible
+      const pageTitle = await page.title();
+      console.log(`Page title: ${pageTitle}`);
+      
+      // Take screenshot for debugging (in production, store these in logs)
+      await page.screenshot({ path: './screenshots/login-page.png' });
+      console.log('Screenshot taken of login page');
+      
+      // Wait for login form with better error handling
+      try {
+        console.log('Waiting for email input field...');
+        await page.waitForSelector('input[name="Email"]', { timeout: 10000 });
+        
+        console.log('Waiting for password input field...');
+        await page.waitForSelector('input[name="Password"]', { timeout: 10000 });
+      } catch (selectorError) {
+        console.error('Login form elements not found:', selectorError);
+        throw new Error(`Login form not found: ${selectorError instanceof Error ? selectorError.message : 'Unknown error'}`);
+      }
       
       // Fill in login credentials
+      console.log('Entering username and password...');
       await page.type('input[name="Email"]', credentials.username);
       await page.type('input[name="Password"]', credentials.password);
       
       // Click login button
-      await Promise.all([
-        page.waitForNavigation({ waitUntil: 'networkidle0' }),
-        page.click('button[type="submit"]') // Or the appropriate login button selector
-      ]);
+      console.log('Clicking login button...');
+      try {
+        await Promise.all([
+          page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 60000 }),
+          page.click('button[type="submit"]')
+        ]);
+      } catch (loginError) {
+        console.error('Login click or navigation failed:', loginError);
+        throw new Error(`Login action failed: ${loginError instanceof Error ? loginError.message : 'Unknown error'}`);
+      }
+      
+      // Take another screenshot after login attempt
+      await page.screenshot({ path: './screenshots/after-login.png' });
+      console.log('Screenshot taken after login attempt');
       
       // Check if login was successful (e.g., by checking for user profile element)
+      console.log('Checking login status...');
       const isLoggedIn = await page.evaluate(() => {
         // This selector needs to be adjusted based on MerrJep's actual UI
-        return !!document.querySelector('.user-profile-menu') || 
-               !!document.querySelector('.user-account-link');
+        const profileMenu = document.querySelector('.user-profile-menu');
+        const accountLink = document.querySelector('.user-account-link');
+        
+        // Log what we find for debugging
+        console.log('Profile menu found:', !!profileMenu);
+        console.log('Account link found:', !!accountLink);
+        
+        return !!profileMenu || !!accountLink;
       });
       
       console.log('Login status:', isLoggedIn ? 'Success' : 'Failed');
+      
+      // If login failed, try to get more information about why
+      if (!isLoggedIn) {
+        const errorMessage = await page.evaluate(() => {
+          const errorElement = document.querySelector('.validation-summary-errors') || 
+                              document.querySelector('.error-message');
+          return errorElement ? errorElement.textContent?.trim() : 'No error message displayed';
+        });
+        console.log('Login error message:', errorMessage);
+      }
+      
       return isLoggedIn;
     } catch (error) {
       console.error('Login error:', error);
