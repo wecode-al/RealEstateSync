@@ -139,12 +139,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
-      // Convert numeric values to strings for storage
-      const updated = await storage.updateProperty(id, {
+      // Prepare data for update
+      const updateData = {
         ...result.data,
+        // Convert numeric fields to appropriate types
+        price: result.data.price?.toString(),
+        bathrooms: result.data.bathrooms?.toString(),
+        squareMeters: result.data.squareMeters?.toString(),
         distributions: property.distributions,
         published: property.published
-      });
+      };
+      
+      const updated = await storage.updateProperty(id, updateData);
 
       res.json(updated);
     } catch (error) {
@@ -186,11 +192,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
     }
 
-    const updated = await storage.updateProperty(id, {
-      ...property,
+    // Create a properly typed update object
+    const updateData = {
       published: true,
-      distributions: distributions
-    });
+      distributions: distributions,
+      // Include these string typed fields
+      price: property.price,
+      bathrooms: property.bathrooms,
+      squareMeters: property.squareMeters
+    };
+
+    const updated = await storage.updateProperty(id, updateData);
 
     res.json(updated);
   });

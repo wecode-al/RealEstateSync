@@ -29,7 +29,7 @@ type SiteStatusRecord = Record<SiteKey, SiteStatus | null>;
 export function SiteStatusChecker() {
   const { toast } = useToast();
   const [isChecking, setIsChecking] = useState(false);
-  const [siteStatus, setSiteStatus] = useState<SiteStatusRecord>({} as SiteStatusRecord);
+  const [siteStatus, setSiteStatus] = useState<Record<string, SiteStatus | null>>({});
   const [checkingSite, setCheckingSite] = useState<SiteKey | null>(null);
   const [sites, setSites] = useState<SiteInfo[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -93,7 +93,7 @@ export function SiteStatusChecker() {
     const emptyStatus = sites.reduce((acc, site) => {
       acc[site.key] = null;
       return acc;
-    }, {} as SiteStatusRecord);
+    }, {} as Record<string, SiteStatus | null>);
     setSiteStatus(emptyStatus);
 
     // Check each site
@@ -158,8 +158,8 @@ export function SiteStatusChecker() {
                 className={cn(
                   "flex items-center justify-between p-3 rounded-md",
                   "border border-border",
-                  status?.available ? "bg-green-50 dark:bg-green-950/20" : 
-                  status === null ? "bg-gray-50 dark:bg-gray-800/30" : 
+                  status && status.available ? "bg-green-50 dark:bg-green-950/20" : 
+                  !status ? "bg-gray-50 dark:bg-gray-800/30" : 
                   "bg-red-50 dark:bg-red-950/20"
                 )}
               >
@@ -167,10 +167,10 @@ export function SiteStatusChecker() {
                   {status?.available && (
                     <CheckCircle2 className="h-5 w-5 text-green-500" />
                   )}
-                  {status === null && (
+                  {!status && (
                     <Globe className="h-5 w-5 text-gray-400" />
                   )}
-                  {status !== null && !status.available && (
+                  {status && !status.available && (
                     <XCircle className="h-5 w-5 text-red-500" />
                   )}
                   
@@ -183,7 +183,7 @@ export function SiteStatusChecker() {
                 </div>
                 
                 <div className="flex items-center gap-3">
-                  {status !== null && (
+                  {status && (
                     <Badge variant={status.available ? "outline" : "destructive"} className={cn(
                       "rounded-full px-3 py-1",
                       status.available && "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400"

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
@@ -35,10 +35,12 @@ export default function AuthPage() {
     },
   });
 
-  if (user) {
-    navigate("/");
-    return null;
-  }
+  // Use useEffect for navigation to avoid setState during render
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -61,7 +63,7 @@ export default function AuthPage() {
               <TabsContent value="login">
                 <Form {...loginForm}>
                   <form
-                    onSubmit={loginForm.handleSubmit((data) => loginMutation.mutate({ ...data, remember: rememberMe }))}
+                    onSubmit={loginForm.handleSubmit((data) => loginMutation.mutate(data))}
                     className="space-y-4"
                   >
                     <div className="space-y-2">
