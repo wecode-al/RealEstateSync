@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertScraperConfigSchema, insertPropertySchema, siteConfigs } from "@shared/schema";
+import { insertScraperConfigSchema, insertPropertySchema, siteConfigs, distributionSites, type PropertyDistributions } from "@shared/schema";
 import { setupAuth } from "./auth";
 import scraperRoutes from "./routes/scraper";
 import { albanianListingService } from "./services/albanian-listings";
@@ -139,11 +139,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
+      // Convert numeric values to strings for storage
       const updated = await storage.updateProperty(id, {
         ...result.data,
-        price: Number(result.data.price),
-        bathrooms: Number(result.data.bathrooms),
-        squareMeters: Number(result.data.squareMeters),
         distributions: property.distributions,
         published: property.published
       });
@@ -168,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     // Initialize distribution status for this site
-    const distributions = { 
+    const distributions: Record<string, any> = { 
       ...(property.distributions || {})
     };
 

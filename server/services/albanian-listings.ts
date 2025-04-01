@@ -25,20 +25,42 @@ export class AlbanianListingService {
     try {
       console.log(`Checking status for ${siteName}: ${config.baseUrl}`);
       
-      // TODO: Replace with actual API health check when credentials are provided
-      // For now, simulate status check for testing
-      const isAvailable = Math.random() > 0.1; // 90% availability for demo
+      // Try to fetch the website to check if it's available
+      const timeout = 8000; // 8 seconds timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
       
-      if (isAvailable) {
-        return {
-          available: true,
-          message: `${siteName} is online and ready to receive listings`
-        };
-      } else {
-        return {
-          available: false,
-          message: `${siteName} is currently experiencing issues or maintenance`
-        };
+      try {
+        const response = await fetch(config.baseUrl, { 
+          method: 'HEAD', 
+          signal: controller.signal,
+          headers: { 'User-Agent': 'Property-Distribution-Tool/1.0' }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          return {
+            available: true,
+            message: `${siteName} is online and ready to receive listings`
+          };
+        } else {
+          return {
+            available: false,
+            message: `${siteName} returned status code ${response.status}`
+          };
+        }
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          return {
+            available: false,
+            message: `${siteName} request timed out after ${timeout/1000} seconds`
+          };
+        }
+        
+        throw fetchError; // Re-throw to be caught by outer try/catch
       }
     } catch (error) {
       console.error(`${siteName} Status Check Error:`, error);
