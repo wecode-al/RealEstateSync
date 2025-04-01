@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertScraperConfigSchema, insertPropertySchema } from "@shared/schema";
+import { insertScraperConfigSchema, insertPropertySchema, siteConfigs } from "@shared/schema";
 import { setupAuth } from "./auth";
 import scraperRoutes from "./routes/scraper";
 import { albanianListingService } from "./services/albanian-listings";

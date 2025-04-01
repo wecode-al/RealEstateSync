@@ -13,6 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertScraperConfigSchema } from "@shared/schema";
 import type { ScraperConfig } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import { SiteStatusChecker } from "@/components/site-status-checker";
 
 export default function Settings() {
   const { toast } = useToast();
@@ -162,6 +163,11 @@ export default function Settings() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Settings</h1>
+      </div>
+
+      {/* Site Status Section */}
+      <div className="mb-8">
+        <SiteStatusChecker />
       </div>
 
       {/* Website Configuration Section */}

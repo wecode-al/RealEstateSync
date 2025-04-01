@@ -2,6 +2,7 @@ import { type Property } from "@shared/schema";
 import { siteConfigs } from "@shared/schema";
 import { storage } from "../storage";
 import fetch from "node-fetch";
+import { merrjepListingService } from "./merrjep-listings";
 
 interface ListingResponse {
   success: boolean;
@@ -48,6 +49,12 @@ export class AlbanianListingService {
     }
   }
   async publishProperty(property: Property, siteName: string): Promise<ListingResponse> {
+    // Special case for MerrJep.al - use the Puppeteer-based service
+    if (siteName === 'merrjep.al') {
+      console.log(`Publishing to ${siteName} using Puppeteer-based service`);
+      return await merrjepListingService.publishProperty(property);
+    }
+    
     const config = siteConfigs[siteName as keyof typeof siteConfigs];
 
     if (!config) {

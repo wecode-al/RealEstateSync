@@ -1,0 +1,165 @@
+Below is a **detailed prompt** you can provide to a Replit AI (or any code-generation tool) so it can scaffold out a **Puppeteer-based** solution that logs in to MerrJep, navigates to the “Post Ad” form, fills it out, uploads images, and submits. Then, after the prompt, you’ll see notes on **form-field matching** for MerrJep.al based on the HTML you shared (so you or the AI can map each listing field correctly in code).
+
+---
+
+## **Prompt for Replit Agent**
+
+**Goal**  
+I need to automate property listing on [https://www.merrjep.al/posto-njoftim-falas](https://www.merrjep.al/posto-njoftim-falas) using Node.js + Puppeteer. The script will:
+
+1. **Log in** with valid MerrJep credentials (username/password).  
+2. **Navigate** to the “Post Ad” (krijoni njoftim/posto njoftim falas) page.  
+3. **Fill out** all required fields: name, email, phone, category, subcategory, location, title, description, price, currency, etc.  
+4. **Upload images** for the listing.  
+5. **Click** “Hapi tjeter” to advance to verification. (Optionally confirm success if the site immediately shows some success page or summary—depending on how MerrJep flow works in final steps.)  
+
+**Implementation Requirements**  
+- Use **Node.js** (latest LTS), **Puppeteer** (latest).  
+- Store MerrJep login credentials in environment variables, e.g. `MERRJEP_EMAIL` and `MERRJEP_PASSWORD`, or accept them as arguments to a function.  
+- Provide a sample function like `publishMerrjepListing(listingData)` that receives JSON with keys matching each needed form field (e.g., title, description, category, etc.).  
+- Show how we can **upload multiple images** by setting file paths on `<input type="file">`.  
+- Implement **robust waits** for selectors (e.g. `await page.waitForSelector(...)`) so the script doesn’t get ahead of MerrJep’s dynamic page loads.  
+- Return some **result object** indicating success/failure—ideally capturing the new listing URL if it’s displayed.  
+
+**Steps**  
+1. **Login**  
+   - Open [https://www.merrjep.al/Registration/Login](https://www.merrjep.al/Registration/Login) (or whatever the sign-in URL is).  
+   - Wait for the login form, fill in `email` + `password`, click “Hyr” or “Login.”  
+   - Wait for the login to complete, maybe confirm by checking your user name in the header.  
+
+2. **Go to Post Page**  
+   - Navigate to [https://www.merrjep.al/posto-njoftim-falas](https://www.merrjep.al/posto-njoftim-falas).  
+   - The form is fairly large; wait for the necessary fields to load.  
+
+3. **Populate Form**  
+   - Use the actual form element `name` or `id` attributes from the HTML. For instance:  
+     - Name: `ChangeAdContactInfoCmd.Name`  
+     - Email: `ChangeAdContactInfoCmd.Email`  
+     - Phone: `ChangeAdContactInfoCmd.Phone`  
+     - Category (Kategoria): `#Category` or `name="Category"`  
+     - Subcategory: `#SubCategory` (shown/hidden dynamically)  
+     - Title: `ChangeAdDescriptionCmd.Title`  
+     - Description: `ChangeAdDescriptionCmd.Description`  
+     - Price: `ChangeAdPriceCmd.Value`  
+     - Currency: `ChangeAdPriceCmd.Currency` (radio: `ALL` or `EUR`)  
+     - Photos: The site has an `<input id="uploadId_images" type="file" ...>` inside a label.  
+   - Fill them out carefully (using `page.type()` or `page.select()` or `page.click()` for radio boxes).  
+
+4. **Upload Images**  
+   - The standard Puppeteer approach is `page.setInputFiles('#uploadId_images', ['path/to/img1.jpg', 'path/to/img2.jpg'])`.  
+   - MerrJep’s site has some custom JavaScript for image uploading. Puppeteer might need to wait for file processing or to see that the preview thumbs appear.  
+   - For multiple images, consider repeating the “setInputFiles” step or combining them in an array, depending on how the site handles multi-file inputs.  
+
+5. **Agree to Terms**  
+   - The form has checkboxes:  
+     - `ChangeAdContactInfoCmd.IsAcceptedDataCollection` (for personal data management)  
+     - `ChangeAdContactInfoCmd.IsAgreedWithRules` (for rules & conditions)  
+   - Make sure to check them before submission: `await page.click('#ChangeAdContactInfoCmd_IsAgreedWithRules')` (or the correct selector).  
+
+6. **Submit**  
+   - Click the button “Hapi tjetër” (`button` or `.btn.btn-primary`), which presumably leads to the next verification page.  
+   - Possibly wait for a response or some success indicator.  
+
+7. **Return**  
+   - Return success/fail plus any final link if shown (the site might not show the new listing URL until after payment or final confirmation). If no direct URL is displayed, just confirm that we advanced to the next step.  
+
+**Important Points**  
+- **Error Handling**: If login fails or the form rejects input, handle that gracefully.  
+- **CAPTCHA**: If MerrJep presents a CAPTCHA, we’ll handle that manually or prompt the user.  
+- **Performance**: Because Puppeteer loads the entire page, it’s slower but very reliable. Use `page.goto(...)` with `waitUntil: 'networkidle0'`, etc.  
+- **Maintenance**: If MerrJep changes their form structure or field names, we’ll need to update selectors.  
+
+**What the Code Should Include**  
+- A self-contained Node.js module or script, e.g. `merrjepPublisher.js`, exporting `async function publishMerrjepListing(listingData)`.  
+- A usage example from an Express route, e.g.:
+  ```js
+  app.post('/publish/merrjep', async (req, res) => {
+    try {
+      const result = await publishMerrjepListing(req.body);
+      res.json(result);
+    } catch (err) {
+      res.status(500).send({ error: err.message });
+    }
+  });
+  ```  
+- Logs or console messages at key steps to track progress.  
+- Optionally, a “headless: false” mode for debugging.  
+
+**Deliverable**  
+Please generate a single JavaScript file (or a minimal project with `package.json`) containing:
+
+1. The `publishMerrjepListing` function.  
+2. A sample usage snippet (like `node example.js`).  
+3. All relevant Puppeteer code to fill out the form fields.  
+4. Basic login handling using environment variables.  
+5. Comments explaining each step.  
+
+Make sure to note any extra packages we need (`npm install puppeteer dotenv` etc.).
+
+---
+
+## **Form Setup & Field Matching in MerrJep**
+
+From the HTML snippet provided, here are some essential form fields to match:
+
+- **Name**  
+  - Selector: `input[name="ChangeAdContactInfoCmd.Name"]`
+- **Email**  
+  - Selector: `input[name="ChangeAdContactInfoCmd.Email"]`
+- **Phone**  
+  - Selector: `input[name="ChangeAdContactInfoCmd.Phone"]`
+- **Category**  
+  - Selector: `#Category` (it’s a `<select>`).  
+  - You’ll likely do `await page.select('#Category', 'someValue')` or wait for dynamic AJAX loads.
+- **Subcategory**  
+  - Selector: `#SubCategory` (hidden until a main category is chosen).  
+- **Location** (Komuna)  
+  - Selector: `#Location`  
+  - Possibly a second `<select id="SubLocation">` appears if the location has sub-locations.  
+- **Title** (Titulli)  
+  - `input[name="ChangeAdDescriptionCmd.Title"]`
+- **Description** (Përshkrimi)  
+  - `textarea[name="ChangeAdDescriptionCmd.Description"]`
+- **Price**  
+  - `input[name="ChangeAdPriceCmd.Value"]`
+- **Currency**  
+  - `input[name="ChangeAdPriceCmd.Currency"]` (radio with values `ALL` or `EUR`)
+- **Photos**  
+  - The chunk of HTML for photos references `#uploadId_images`.  
+  - Typically: `await page.setInputFiles('#uploadId_images', ['/path/to/image1.jpg', '/path/to/image2.jpg'])`
+- **Terms Checkboxes**  
+  - `#ChangeAdContactInfoCmd_IsAcceptedDataCollection`  
+  - `#ChangeAdContactInfoCmd_IsAgreedWithRules`
+
+When filling these in Puppeteer, you’ll do something like:
+```js
+await page.waitForSelector('input[name="ChangeAdContactInfoCmd.Name"]');
+await page.type('input[name="ChangeAdContactInfoCmd.Name"]', listingData.name);
+// etc...
+```
+
+For categories, subcategories, and location selects, watch out for dynamic loads. You might do:
+```js
+await page.select('#Category', listingData.categoryValue);
+// Wait for subcategory dropdown to appear
+await page.waitForTimeout(1000);
+await page.select('#SubCategory', listingData.subcategoryValue);
+```
+
+**Image Upload** might require extra waits if MerrJep processes files in background. After `setInputFiles`, you might wait for a thumbnail or hidden field to confirm the upload finished:
+```js
+await page.setInputFiles('#uploadId_images', ['path/to/img1.jpg']);
+// Possibly wait for a success indicator: 
+await page.waitForSelector('.item-image-images'); 
+```
+
+**Finally**, click the next button:
+```js
+await page.click('button.btn.btn-primary');
+// The label is “Hapi tjetër”
+```
+…and wait for the next page or a success message.
+
+---
+
+**Use this entire prompt** in Replit so the AI sees the big picture (login flow, form fields, uploading images, etc.). The generated code may need some manual refinement, especially for dynamic parts (like subcategories or verifying the final posted ad). But this prompt should give Replit Agent enough context to produce a solid Puppeteer skeleton that you can tweak as needed.

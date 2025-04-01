@@ -53,7 +53,9 @@ export const properties = pgTable("properties", {
   images: text("images").array().notNull(),
   features: jsonb("features").notNull(),
   published: boolean("published").default(false).notNull(),
-  distributions: jsonb("distributions").default({}).notNull()
+  distributions: jsonb("distributions").default({}).notNull(),
+  phone: text("phone"),
+  currency: text("currency").default("ALL")
 });
 
 // Schema for creating/updating properties
