@@ -24,7 +24,7 @@ interface MerrJepResponse {
  * 5. Submitting the form
  */
 export class MerrJepListingService {
-  private loginUrl = 'https://www.merrjep.al/Registration/Login';
+  private loginUrl = 'https://www.merrjep.al/login'; // Updated login URL
   private postAdUrl = 'https://www.merrjep.al/posto-njoftim-falas';
   private browser: Browser | null = null;
   
@@ -189,27 +189,78 @@ export class MerrJepListingService {
       
       // Wait for login form with better error handling
       try {
-        console.log('Waiting for email input field...');
-        await page.waitForSelector('input[name="Email"]', { timeout: 10000 });
+        console.log('Waiting for username input field...');
+        await page.waitForSelector('#username, input[name="username"], input[type="email"], .login-form input[type="text"]', { timeout: 20000 });
         
         console.log('Waiting for password input field...');
-        await page.waitForSelector('input[name="Password"]', { timeout: 10000 });
+        await page.waitForSelector('#password, input[name="password"], input[type="password"], .login-form input[type="password"]', { timeout: 20000 });
       } catch (selectorError) {
         console.error('Login form elements not found:', selectorError);
         throw new Error(`Login form not found: ${selectorError instanceof Error ? selectorError.message : 'Unknown error'}`);
       }
       
+      // Take another screenshot of the login form
+      await page.screenshot({ path: './screenshots/login-form.png' });
+      
+      // Evaluate to get the actual selectors
+      const formSelectors = await page.evaluate(() => {
+        const emailInput = document.querySelector('#username, input[name="username"], input[type="email"], .login-form input[type="text"]') as HTMLInputElement | null;
+        const passwordInput = document.querySelector('#password, input[name="password"], input[type="password"], .login-form input[type="password"]') as HTMLInputElement | null;
+        
+        return {
+          emailSelector: emailInput ? emailInput.id || emailInput.name : null,
+          passwordSelector: passwordInput ? passwordInput.id || passwordInput.name : null
+        };
+      });
+      
+      console.log('Form selectors found:', formSelectors);
+      
       // Fill in login credentials
       console.log('Entering username and password...');
-      await page.type('input[name="Email"]', credentials.username);
-      await page.type('input[name="Password"]', credentials.password);
+      // Try multiple selector strategies to find the right input fields
+      await page.evaluate((credentials) => {
+        // Try different possible selectors for the email/username field
+        const emailField = document.querySelector('#username, input[name="username"], input[type="email"], .login-form input[type="text"]');
+        const passwordField = document.querySelector('#password, input[name="password"], input[type="password"], .login-form input[type="password"]');
+        
+        if (emailField) {
+          emailField.value = credentials.username;
+        }
+        
+        if (passwordField) {
+          passwordField.value = credentials.password;
+        }
+      }, credentials);
       
       // Click login button
       console.log('Clicking login button...');
       try {
+        // First find the login button
+        const loginButtonSelector = await page.evaluate(() => {
+          const submitButton = document.querySelector('button[type="submit"], input[type="submit"], .login-button, .btn-login, button.login');
+          if (submitButton) {
+            const tagName = submitButton.tagName.toLowerCase();
+            const type = submitButton.getAttribute('type');
+            const className = submitButton.className;
+            
+            // Return information about the button for logging
+            return { found: true, tagName, type, className };
+          }
+          return { found: false };
+        });
+        
+        console.log('Login button details:', loginButtonSelector);
+        
+        // Take a screenshot before clicking
+        await page.screenshot({ path: './screenshots/before-login-click.png' });
+        
+        // Use multiple potential selectors for the login button
         await Promise.all([
           page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 60000 }),
-          page.click('button[type="submit"]')
+          page.evaluate(() => {
+            const button = document.querySelector('button[type="submit"], input[type="submit"], .login-button, .btn-login, button.login');
+            if (button) button.click();
+          })
         ]);
       } catch (loginError) {
         console.error('Login click or navigation failed:', loginError);
