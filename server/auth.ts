@@ -78,6 +78,21 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res) => {
     try {
+      // Validate required fields
+      if (!req.body.username || !req.body.password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+
+      // Validate username format
+      if (req.body.username.length < 3) {
+        return res.status(400).json({ message: "Username must be at least 3 characters long" });
+      }
+
+      // Validate password strength
+      if (req.body.password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      }
+
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
@@ -90,23 +105,39 @@ export function setupAuth(app: Express) {
       });
 
       req.login(user, (err) => {
-        if (err) throw err;
+        if (err) {
+          console.error("Login error after registration:", err);
+          return res.status(500).json({ message: "Error during authentication after registration" });
+        }
         res.status(201).json(user);
       });
     } catch (error) {
+      console.error("Registration error:", error);
       res.status(500).json({ message: "Failed to create user" });
     }
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user) => {
-      if (err) return next(err);
+    // Validate required fields
+    if (!req.body.username || !req.body.password) {
+      return res.status(400).json({ message: "Username and password are required" });
+    }
+
+    passport.authenticate("local", (err: any, user: SelectUser | false) => {
+      if (err) {
+        console.error("Login authentication error:", err);
+        return next(err);
+      }
+      
       if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       req.login(user, (err) => {
-        if (err) return next(err);
+        if (err) {
+          console.error("Login session error:", err);
+          return next(err);
+        }
 
         // Set session expiry based on remember me
         if (req.body.remember) {
@@ -115,14 +146,41 @@ export function setupAuth(app: Express) {
           req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 1 day
         }
 
-        res.json(user);
+        // Save the session
+        req.session.save(err => {
+          if (err) {
+            console.error("Session save error:", err);
+            return res.status(500).json({ message: "Failed to save session" });
+          }
+          
+          // Return user data without password
+          const { password, ...userWithoutPassword } = user;
+          res.json(userWithoutPassword);
+        });
       });
     })(req, res, next);
   });
 
   app.post("/api/logout", (req, res) => {
-    req.logout(() => {
-      res.sendStatus(200);
+    if (!req.isAuthenticated()) {
+      return res.status(200).json({ message: "Not logged in" });
+    }
+    
+    req.logout((err) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      
+      // Destroy the session
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Session destruction error:", err);
+          return res.status(500).json({ message: "Failed to destroy session" });
+        }
+        
+        res.status(200).json({ message: "Logged out successfully" });
+      });
     });
   });
 
@@ -130,6 +188,14 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    res.json(req.user);
+    
+    try {
+      // Return user data without sensitive information
+      const { password, ...userWithoutPassword } = req.user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("User fetch error:", error);
+      res.status(500).json({ message: "Error retrieving user information" });
+    }
   });
 }

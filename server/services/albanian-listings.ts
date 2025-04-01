@@ -10,6 +10,43 @@ interface ListingResponse {
 }
 
 export class AlbanianListingService {
+  // Check if a site is available and return its status
+  async checkSiteStatus(siteName: string): Promise<{ available: boolean; message: string }> {
+    const config = siteConfigs[siteName as keyof typeof siteConfigs];
+    
+    if (!config) {
+      return {
+        available: false,
+        message: `Configuration not found for ${siteName}`
+      };
+    }
+    
+    try {
+      console.log(`Checking status for ${siteName}: ${config.baseUrl}`);
+      
+      // TODO: Replace with actual API health check when credentials are provided
+      // For now, simulate status check for testing
+      const isAvailable = Math.random() > 0.1; // 90% availability for demo
+      
+      if (isAvailable) {
+        return {
+          available: true,
+          message: `${siteName} is online and ready to receive listings`
+        };
+      } else {
+        return {
+          available: false,
+          message: `${siteName} is currently experiencing issues or maintenance`
+        };
+      }
+    } catch (error) {
+      console.error(`${siteName} Status Check Error:`, error);
+      return {
+        available: false,
+        message: error instanceof Error ? error.message : `Unable to connect to ${siteName}`
+      };
+    }
+  }
   async publishProperty(property: Property, siteName: string): Promise<ListingResponse> {
     const config = siteConfigs[siteName as keyof typeof siteConfigs];
 
@@ -45,15 +82,40 @@ export class AlbanianListingService {
 
       // TODO: Replace with actual API calls when credentials are provided
       // For now, simulate API responses for testing
-      const success = Math.random() > 0.1; // 90% success rate for demo
-      if (success) {
+      // We add proper error handling to detect site-specific issues
+      
+      // Check if site is temporarily unavailable (random simulation for demo)
+      const siteAvailable = Math.random() > 0.05; // 95% availability rate
+      if (!siteAvailable) {
         return {
-          success: true,
-          listingUrl: `${config.baseUrl}/listing/${Date.now()}`
+          success: false,
+          error: `${siteName} is temporarily unavailable. Please try again later.`
         };
-      } else {
-        throw new Error("API connection failed");
       }
+      
+      // Check if the site accepts this property type (random simulation for demo)
+      const propertyTypeAccepted = Math.random() > 0.05; // 95% acceptance rate
+      if (!propertyTypeAccepted) {
+        return {
+          success: false,
+          error: `${siteName} does not accept properties of type '${property.propertyType}' at this time.`
+        };
+      }
+      
+      // Check for image upload issues (random simulation for demo)
+      const imagesUploaded = Math.random() > 0.05; // 95% upload success rate
+      if (!imagesUploaded) {
+        return {
+          success: false,
+          error: `Failed to upload images to ${siteName}. Please try again.`
+        };
+      }
+      
+      // Everything passed, simulate successful listing
+      return {
+        success: true,
+        listingUrl: `${config.baseUrl}/listing/${Date.now()}-${property.id}`
+      };
 
     } catch (error) {
       console.error(`${siteName} Publishing Error:`, error);

@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Loader2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,7 +20,25 @@ export default function Settings() {
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [testUrl, setTestUrl] = useState("");
 
-  const { data: scraperConfig, isLoading: isLoadingConfig } = useQuery<ScraperConfig>({
+  // Define explicit interface for selectors
+  interface ScraperSelectors {
+    title: string;
+    description: string;
+    price: string;
+    bedrooms: string;
+    bathrooms: string;
+    squareMeters: string;
+    address: string;
+    images: string;
+    features: string;
+  }
+
+  // Define strong typing for our scraper config
+  interface TypedScraperConfig extends Omit<ScraperConfig, 'selectors'> {
+    selectors: ScraperSelectors;
+  }
+
+  const { data: scraperConfig, isLoading: isLoadingConfig } = useQuery<TypedScraperConfig>({
     queryKey: ["/api/scraper-configs/current"],
   });
 
@@ -47,13 +65,24 @@ export default function Settings() {
   // Effect to update form when editing configuration
   useEffect(() => {
     if (scraperConfig && isScraperConfigOpen) {
+      // No need for type assertion now since we properly typed our scraper config
       scraperForm.reset({
         name: scraperConfig.name,
         baseUrl: scraperConfig.baseUrl,
-        selectors: scraperConfig.selectors
+        selectors: {
+          title: scraperConfig.selectors.title || "",
+          description: scraperConfig.selectors.description || "",
+          price: scraperConfig.selectors.price || "",
+          bedrooms: scraperConfig.selectors.bedrooms || "",
+          bathrooms: scraperConfig.selectors.bathrooms || "",
+          squareMeters: scraperConfig.selectors.squareMeters || "",
+          address: scraperConfig.selectors.address || "",
+          images: scraperConfig.selectors.images || "",
+          features: scraperConfig.selectors.features || ""
+        }
       });
     }
-  }, [scraperConfig, isScraperConfigOpen]);
+  }, [scraperConfig, isScraperConfigOpen, scraperForm]);
 
   // Mutations
   const scraperConfigMutation = useMutation({
@@ -189,7 +218,7 @@ export default function Settings() {
                     {Object.entries(scraperConfig.selectors).map(([field, selector]) => (
                       <div key={field} className="p-3 bg-muted/30 rounded-md">
                         <span className="text-sm font-medium capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}</span>
-                        <p className="text-sm font-mono text-muted-foreground break-all">{selector || '—'}</p>
+                        <p className="text-sm font-mono text-muted-foreground break-all">{String(selector) || '—'}</p>
                       </div>
                     ))}
                   </div>
@@ -242,22 +271,132 @@ export default function Settings() {
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(scraperForm.getValues().selectors).map(([field]) => (
-                    <FormField
-                      key={field}
-                      control={scraperForm.control}
-                      name={`selectors.${field}`}
-                      render={({ field: formField }) => (
-                        <FormItem>
-                          <FormLabel className="capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}</FormLabel>
-                          <FormControl>
-                            <Input placeholder={`Enter CSS selector for ${field}`} {...formField} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  ))}
+                  <FormField
+                    key="title"
+                    control={scraperForm.control}
+                    name="selectors.title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="capitalize">Title</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter CSS selector for title" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    key="description"
+                    control={scraperForm.control}
+                    name="selectors.description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="capitalize">Description</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter CSS selector for description" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    key="price"
+                    control={scraperForm.control}
+                    name="selectors.price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="capitalize">Price</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter CSS selector for price" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    key="bedrooms"
+                    control={scraperForm.control}
+                    name="selectors.bedrooms"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="capitalize">Bedrooms</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter CSS selector for bedrooms" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    key="bathrooms"
+                    control={scraperForm.control}
+                    name="selectors.bathrooms"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="capitalize">Bathrooms</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter CSS selector for bathrooms" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    key="squareMeters"
+                    control={scraperForm.control}
+                    name="selectors.squareMeters"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="capitalize">Square Meters</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter CSS selector for square meters" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    key="address"
+                    control={scraperForm.control}
+                    name="selectors.address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="capitalize">Address</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter CSS selector for address" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    key="images"
+                    control={scraperForm.control}
+                    name="selectors.images"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="capitalize">Images</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter CSS selector for images" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    key="features"
+                    control={scraperForm.control}
+                    name="selectors.features"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="capitalize">Features</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter CSS selector for features" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </div>
 

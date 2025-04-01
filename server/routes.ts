@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertScraperConfigSchema, insertPropertySchema } from "@shared/schema";
@@ -6,12 +6,53 @@ import { setupAuth } from "./auth";
 import scraperRoutes from "./routes/scraper";
 import { albanianListingService } from "./services/albanian-listings";
 
+// Authentication middleware
+function isAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ message: "Authentication required" });
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
   app.use(scraperRoutes);
+  
+  // Site status endpoints
+  app.get("/api/sites", isAuthenticated, async (_req, res) => {
+    try {
+      // Get the list of all available distribution sites from schema
+      const allSites = Object.keys(siteConfigs).map(site => ({
+        key: site,
+        name: site.charAt(0).toUpperCase() + site.slice(1).replace(/\.[^.]+$/, ''),
+        baseUrl: siteConfigs[site as keyof typeof siteConfigs].baseUrl
+      }));
+      
+      res.json(allSites);
+    } catch (error) {
+      console.error('Sites listing error:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to retrieve sites list" 
+      });
+    }
+  });
+  
+  app.get("/api/sites/status/:siteName", isAuthenticated, async (req, res) => {
+    try {
+      const siteName = req.params.siteName;
+      const status = await albanianListingService.checkSiteStatus(siteName);
+      res.json(status);
+    } catch (error) {
+      console.error('Site status check error:', error);
+      res.status(500).json({ 
+        available: false,
+        message: error instanceof Error ? error.message : "Failed to check site status" 
+      });
+    }
+  });
 
   // Scraper Configuration endpoints
-  app.get("/api/scraper-configs/current", async (_req, res) => {
+  app.get("/api/scraper-configs/current", isAuthenticated, async (_req, res) => {
     try {
       const config = await storage.getCurrentScraperConfig();
       res.json(config || null);
@@ -23,7 +64,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/scraper-configs", async (req, res) => {
+  app.post("/api/scraper-configs", isAuthenticated, async (req, res) => {
     try {
       const result = insertScraperConfigSchema.safeParse(req.body);
       if (!result.success) {
@@ -45,12 +86,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Property endpoints
-  app.get("/api/properties", async (_req, res) => {
+  app.get("/api/properties", isAuthenticated, async (_req, res) => {
     const properties = await storage.getProperties();
     res.json(properties);
   });
 
-  app.get("/api/properties/:id", async (req, res) => {
+  app.get("/api/properties/:id", isAuthenticated, async (req, res) => {
     const property = await storage.getProperty(Number(req.params.id));
     if (!property) {
       res.status(404).json({ message: "Property not found" });
@@ -59,7 +100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(property);
   });
 
-  app.post("/api/properties", async (req, res) => {
+  app.post("/api/properties", isAuthenticated, async (req, res) => {
     const result = insertPropertySchema.safeParse(req.body);
     if (!result.success) {
       res.status(400).json({ message: "Invalid property data", errors: result.error });
@@ -82,7 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/properties/:id", async (req, res) => {
+  app.patch("/api/properties/:id", isAuthenticated, async (req, res) => {
     try {
       const id = Number(req.params.id);
       const property = await storage.getProperty(id);
@@ -116,7 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/properties/:id/publish/:site", async (req, res) => {
+  app.patch("/api/properties/:id/publish/:site", isAuthenticated, async (req, res) => {
     const id = Number(req.params.id);
     const site = req.params.site;
     const property = await storage.getProperty(id);
@@ -156,7 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(updated);
   });
 
-  app.delete("/api/properties/:id", async (req, res) => {
+  app.delete("/api/properties/:id", isAuthenticated, async (req, res) => {
     try {
       const id = Number(req.params.id);
       const property = await storage.getProperty(id);

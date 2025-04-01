@@ -84,14 +84,11 @@ export const propertyTypes = [
 ] as const;
 
 export const distributionSites = [
-  "WordPress Site",
   "njoftime.com",
   "njoftime.al",
   "merrjep.al",
-  "mirlir",
+  "mirlir.com",
   "indomio.al",
-  "instagram",
-  "facebook",
   "okazion.al"
 ] as const;
 
@@ -121,7 +118,7 @@ export const siteConfigs = {
     apiEndpoint: "/api/properties",
     requiresAuth: true
   },
-  "mirlir": {
+  "mirlir.com": {
     baseUrl: "https://mirlir.com",
     apiEndpoint: "/api/listings",
     requiresAuth: true
