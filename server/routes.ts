@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertScraperConfigSchema, insertPropertySchema, siteConfigs, distributionSites, type PropertyDistributions } from "@shared/schema";
+import { insertScraperConfigSchema, insertPropertySchema, siteConfigs, distributionSites, type PropertyDistributions, type AppSetting } from "@shared/schema";
 import { setupAuth } from "./auth";
 import scraperRoutes from "./routes/scraper";
 import { albanianListingService } from "./services/albanian-listings";
@@ -47,6 +47,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         available: false,
         message: error instanceof Error ? error.message : "Failed to check site status" 
+      });
+    }
+  });
+  
+  // MerrJep credentials endpoints
+  app.get("/api/settings/merrjep", isAuthenticated, async (_req, res) => {
+    try {
+      const appSettings = await storage.getAppSettings();
+      const merrjepUsername = appSettings["MERRJEP_USERNAME"]?.value || null;
+      
+      res.json({
+        username: merrjepUsername
+      });
+    } catch (error) {
+      console.error('Error fetching MerrJep credentials:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to fetch MerrJep credentials" 
+      });
+    }
+  });
+  
+  app.post("/api/settings/merrjep", isAuthenticated, async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username) {
+        return res.status(400).json({ message: "Username is required" });
+      }
+      
+      // Update app settings
+      const settingsToUpdate: Record<string, Partial<AppSetting>> = {
+        "MERRJEP_USERNAME": {
+          key: "MERRJEP_USERNAME",
+          value: username,
+          description: "MerrJep.al username for publishing properties"
+        }
+      };
+      
+      // Only update password if provided
+      if (password) {
+        settingsToUpdate["MERRJEP_PASSWORD"] = {
+          key: "MERRJEP_PASSWORD",
+          value: password,
+          description: "MerrJep.al password for publishing properties"
+        };
+      }
+      
+      await storage.updateAppSettings(settingsToUpdate);
+      
+      res.json({ 
+        success: true,
+        message: "MerrJep credentials updated successfully" 
+      });
+    } catch (error) {
+      console.error('Error updating MerrJep credentials:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to update MerrJep credentials" 
       });
     }
   });

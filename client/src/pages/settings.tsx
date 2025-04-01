@@ -19,7 +19,27 @@ export default function Settings() {
   const { toast } = useToast();
   const [isScraperConfigOpen, setIsScraperConfigOpen] = useState(false);
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
+  const [isMerrjepCredentialsDialogOpen, setIsMerrjepCredentialsDialogOpen] = useState(false);
   const [testUrl, setTestUrl] = useState("");
+  const [merrjepUsername, setMerrjepUsername] = useState('');
+  const [merrjepPassword, setMerrjepPassword] = useState('••••••••••••');
+  
+  // Define the type for MerrJep settings
+  interface MerrjepSettings {
+    username: string;
+  }
+  
+  // Fetch the current MerrJep credentials
+  const { data: merrjepSettings, refetch: refetchMerrjepSettings } = useQuery<MerrjepSettings>({
+    queryKey: ["/api/settings/merrjep"]
+  });
+  
+  // Effect to update form when merrjepSettings changes
+  useEffect(() => {
+    if (merrjepSettings && merrjepSettings.username) {
+      setMerrjepUsername(merrjepSettings.username);
+    }
+  }, [merrjepSettings]);
 
   // Define explicit interface for selectors
   interface ScraperSelectors {
@@ -150,6 +170,33 @@ export default function Settings() {
       });
     }
   });
+  
+  // MerrJep credentials update mutation
+  const updateMerrjepCredentialsMutation = useMutation({
+    mutationFn: async (credentials: { username: string; password: string }) => {
+      const res = await apiRequest("POST", "/api/settings/merrjep", credentials);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to update MerrJep credentials");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "MerrJep credentials updated successfully",
+      });
+      setIsMerrjepCredentialsDialogOpen(false);
+      refetchMerrjepSettings();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
 
   if (isLoadingConfig) {
     return (
@@ -169,6 +216,58 @@ export default function Settings() {
       <div className="mb-8">
         <SiteStatusChecker />
       </div>
+
+      {/* Site Credentials Section */}
+      <Card className="mb-8 border-none shadow-lg bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+        <CardHeader className="border-b border-gray-100 dark:border-gray-700">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-2xl">External Site Credentials</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <div className="border border-gray-100 dark:border-gray-700 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <img src="/merrjep-logo.png" alt="MerrJep" className="h-6 w-6 rounded" onError={(e) => e.currentTarget.style.display = 'none'} />
+                  MerrJep.al
+                </h3>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setIsMerrjepCredentialsDialogOpen(true)}
+                >
+                  Update Credentials
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="merrjep-username">Username</Label>
+                  <Input 
+                    id="merrjep-username" 
+                    placeholder="Enter MerrJep.al username/email" 
+                    value={merrjepUsername} 
+                    disabled
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="merrjep-password">Password</Label>
+                  <Input 
+                    id="merrjep-password" 
+                    type="password" 
+                    placeholder="••••••••••••"
+                    value={merrjepPassword} 
+                    disabled
+                  />
+                </div>
+              </div>
+              <div className="mt-4">
+                <p className="text-sm text-muted-foreground">These credentials are used for automated property posting to MerrJep.al</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Website Configuration Section */}
       <Card className="mb-8 border-none shadow-lg bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
@@ -479,6 +578,68 @@ export default function Settings() {
                   </>
                 ) : (
                   'Test Configuration'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* MerrJep Credentials Dialog */}
+      <Dialog open={isMerrjepCredentialsDialogOpen} onOpenChange={setIsMerrjepCredentialsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update MerrJep Credentials</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="dialog-merrjep-username">Username / Email</Label>
+              <Input
+                id="dialog-merrjep-username"
+                value={merrjepUsername}
+                onChange={(e) => setMerrjepUsername(e.target.value)}
+                placeholder="Enter your MerrJep.al username or email"
+              />
+            </div>
+            <div>
+              <Label htmlFor="dialog-merrjep-password">Password</Label>
+              <Input
+                id="dialog-merrjep-password"
+                type="password"
+                value={merrjepPassword === '••••••••••••' ? '' : merrjepPassword}
+                onChange={(e) => setMerrjepPassword(e.target.value)}
+                placeholder="Enter your MerrJep.al password"
+              />
+            </div>
+            <div className="flex justify-end gap-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsMerrjepCredentialsDialogOpen(false);
+                  // Reset password if it was changed but not submitted
+                  if (merrjepPassword !== '••••••••••••' && merrjepSettings?.username) {
+                    setMerrjepPassword('••••••••••••');
+                  }
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  updateMerrjepCredentialsMutation.mutate({
+                    username: merrjepUsername,
+                    password: merrjepPassword === '••••••••••••' ? '' : merrjepPassword
+                  });
+                }}
+                disabled={updateMerrjepCredentialsMutation.isPending || !merrjepUsername || (merrjepPassword === '••••••••••••' && !merrjepSettings?.username)}
+              >
+                {updateMerrjepCredentialsMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Credentials'
                 )}
               </Button>
             </div>

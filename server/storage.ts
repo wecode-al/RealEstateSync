@@ -1,4 +1,4 @@
-import { properties, users, settings, scraperConfigs, type Property, type InsertProperty, type User, type InsertUser, type Setting, type InsertSetting, type ScraperConfig, type InsertScraperConfig } from "@shared/schema";
+import { properties, users, settings, appSettings, scraperConfigs, type Property, type InsertProperty, type User, type InsertUser, type Setting, type InsertSetting, type AppSetting, type InsertAppSetting, type ScraperConfig, type InsertScraperConfig } from "@shared/schema";
 import { distributionSites } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -19,6 +19,11 @@ export interface IStorage {
   // Settings operations
   getSettings(): Promise<Record<string, Setting>>;
   updateSettings(settings: Record<string, Partial<Setting>>): Promise<void>;
+  
+  // App settings operations
+  getAppSettings(): Promise<Record<string, AppSetting>>;
+  getAppSetting(key: string): Promise<AppSetting | undefined>;
+  updateAppSettings(settings: Record<string, Partial<AppSetting>>): Promise<void>;
 
   // Scraper configuration operations
   createScraperConfig(config: InsertScraperConfig): Promise<ScraperConfig>;
@@ -131,6 +136,51 @@ export class DatabaseStorage implements IStorage {
       }
     });
   }
+  
+  // App settings methods
+  async getAppSettings(): Promise<Record<string, AppSetting>> {
+    const allSettings = await db.select().from(appSettings);
+    return Object.fromEntries(
+      allSettings.map(setting => [setting.key, setting])
+    );
+  }
+  
+  async getAppSetting(key: string): Promise<AppSetting | undefined> {
+    const [setting] = await db
+      .select()
+      .from(appSettings)
+      .where(eq(appSettings.key, key));
+    return setting;
+  }
+  
+  async updateAppSettings(newSettings: Record<string, Partial<AppSetting>>): Promise<void> {
+    await db.transaction(async (tx) => {
+      for (const [key, setting] of Object.entries(newSettings)) {
+        // Check if setting exists
+        const [existingSetting] = await tx
+          .select()
+          .from(appSettings)
+          .where(eq(appSettings.key, key));
+        
+        if (existingSetting) {
+          // Update existing setting
+          await tx.update(appSettings)
+            .set({
+              value: setting.value,
+              description: setting.description
+            })
+            .where(eq(appSettings.key, key));
+        } else {
+          // Insert new setting
+          await tx.insert(appSettings).values({
+            key,
+            value: setting.value,
+            description: setting.description
+          });
+        }
+      }
+    });
+  }
 
   // Scraper configuration methods
   async createScraperConfig(config: InsertScraperConfig): Promise<ScraperConfig> {
@@ -187,7 +237,7 @@ export class DatabaseStorage implements IStorage {
     const [config] = await db
       .select()
       .from(scraperConfigs)
-      .orderBy(scraperConfigs.createdAt, 'desc')
+      .orderBy(scraperConfigs.id)
       .limit(1);
 
     console.log('Retrieved current config:', config);

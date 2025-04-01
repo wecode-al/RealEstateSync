@@ -2,7 +2,7 @@ import { pgTable, text, serial, integer, numeric, boolean, jsonb, timestamp } fr
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Add settings table definition
+// Site settings table definition for site-specific integrations
 export const settings = pgTable("settings", {
   id: serial("id").primaryKey(),
   site: text("site").notNull(),
@@ -18,6 +18,21 @@ export const insertSettingSchema = createInsertSchema(settings).omit({
 
 export type Setting = typeof settings.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
+
+// Application-wide settings table
+export const appSettings = pgTable("app_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value"),
+  description: text("description"),
+});
+
+export const insertAppSettingSchema = createInsertSchema(appSettings).omit({ 
+  id: true 
+});
+
+export type AppSetting = typeof appSettings.$inferSelect;
+export type InsertAppSetting = z.infer<typeof insertAppSettingSchema>;
 
 // Users table
 export const users = pgTable("users", {

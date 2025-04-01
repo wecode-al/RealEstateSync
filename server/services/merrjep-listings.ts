@@ -1,5 +1,6 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import { Property } from '@shared/schema';
+import { storage } from '../storage';
 
 interface MerrJepCredentials {
   username: string;
@@ -38,11 +39,11 @@ export class MerrJepListingService {
       console.log('Starting MerrJep property publishing process');
       
       // Check for credentials
-      const credentials = this.getCredentials();
+      const credentials = await this.getCredentials();
       if (!credentials) {
         return {
           success: false,
-          error: 'MerrJep credentials not found. Please set MERRJEP_USERNAME and MERRJEP_PASSWORD environment variables.'
+          error: 'MerrJep credentials not found. Please update MerrJep credentials in Settings.'
         };
       }
       
@@ -119,17 +120,44 @@ export class MerrJepListingService {
   }
   
   /**
-   * Retrieves MerrJep credentials from environment variables
+   * Retrieves MerrJep credentials from app settings or environment variables
    */
-  private getCredentials(): MerrJepCredentials | null {
-    const username = process.env.MERRJEP_USERNAME;
-    const password = process.env.MERRJEP_PASSWORD;
-    
-    if (!username || !password) {
+  private async getCredentials(): Promise<MerrJepCredentials | null> {
+    try {
+      // First try to get credentials from app settings database
+      const appSettings = await storage.getAppSettings();
+      const usernameFromSettings = appSettings["MERRJEP_USERNAME"]?.value;
+      const passwordFromSettings = appSettings["MERRJEP_PASSWORD"]?.value;
+      
+      if (usernameFromSettings && passwordFromSettings) {
+        return { 
+          username: usernameFromSettings, 
+          password: passwordFromSettings 
+        };
+      }
+      
+      // Fallback to environment variables if settings not found
+      const username = process.env.MERRJEP_USERNAME;
+      const password = process.env.MERRJEP_PASSWORD;
+      
+      if (username && password) {
+        return { username, password };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error retrieving MerrJep credentials:', error);
+      
+      // Last resort fallback to environment variables
+      const username = process.env.MERRJEP_USERNAME;
+      const password = process.env.MERRJEP_PASSWORD;
+      
+      if (username && password) {
+        return { username, password };
+      }
+      
       return null;
     }
-    
-    return { username, password };
   }
   
   /**
