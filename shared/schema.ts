@@ -65,6 +65,7 @@ export const properties = pgTable("properties", {
   state: text("state").notNull(),
   zipCode: text("zip_code").notNull(),
   propertyType: text("property_type").notNull(),
+  listingType: text("listing_type").default("Shitet").notNull(),
   images: text("images").array().notNull(),
   features: jsonb("features").notNull(),
   published: boolean("published").default(false).notNull(),
@@ -99,6 +100,13 @@ export const propertyTypes = [
   "Vila",                             // Villas
   "Tokё | Truall",                    // Land | Plots
   "Prona jashte vendit"               // Properties abroad
+] as const;
+
+export const listingTypes = [
+  "Shitet",                // For sale
+  "Jepet me qera",         // For rent
+  "Kërkesë për blerje",    // Want to buy
+  "Kërkesë për qera"       // Want to rent
 ] as const;
 
 export const distributionSites = [

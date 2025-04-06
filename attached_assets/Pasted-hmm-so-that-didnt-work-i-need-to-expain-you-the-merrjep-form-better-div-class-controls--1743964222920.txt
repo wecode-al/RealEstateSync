@@ -1,0 +1,36 @@
+hmm so that didnt work. i need to expain you the merrjep form better
+
+<div class="controls">
+        <input checked="checked" data-val="true" data-val-required="'Is Company' must not be empty." id="ChangeAdContactInfoCmd_IsCompany" name="ChangeAdContactInfoCmd.IsCompany" type="radio" value="False">
+        Person fizik
+        <input id="ChangeAdContactInfoCmd_IsCompany" name="ChangeAdContactInfoCmd.IsCompany" type="radio" value="True">
+        Kompani
+    </div>
+    dont change this is delfaut by the user
+2.
+this imput is the user name
+
+<input class="company-dependent" data-val="true" data-val-length="Emri duhet të jenë në mes karaktereve 2 dhe 50." data-val-length-max="50" data-val-length-min="2" data-val-required="Shkruani një emër – e domosdoshme" id="ChangeAdContactInfoCmd_Name" name="ChangeAdContactInfoCmd.Name" type="text" value="METI" maxlength="50">
+and auto-populates so we dont need to do anything there.
+
+the same on this imputs
+
+<input data-val="true" data-val-email="E-mail adresa duhet të jetë si në formatin e mëposhtëm username@domain.com. Ju lutemi kontrolloni dhe provoni përsëri." data-val-length="50 karaktere maksimum." data-val-length-max="50" data-val-requiredif="Shkruani email adresën – e domosdoshme" data-val-requiredif-dependentproperty="ChangeAdContactInfoCmd.IsPhoneHidden" data-val-requiredif-targetvalue="true" id="ChangeAdContactInfoCmd_Email" name="ChangeAdContactInfoCmd.Email" type="text" value="harkeri98@gmail.com" maxlength="50"> <input data-val="true" data-val-length="Duhet të shënoni më së paku 5 karaktere." data-val-length-min="5" data-val-required="Shkruani një numër telefoni - e domosdoshme" id="ChangeAdContactInfoCmd_Phone" maxlength="60" name="ChangeAdContactInfoCmd.Phone" type="text" value="692045121"> <input id="ChangeAdContactInfoCmd_WhatsApp" name="ChangeAdContactInfoCmd.WhatsApp" type="text" value="0692045121"> <input id="ChangeAdContactInfoCmd_Viber" name="ChangeAdContactInfoCmd.Viber" type="text" value=""> <input id="ChangeAdContactInfoCmd_Skype" name="ChangeAdContactInfoCmd.Skype" type="text" value="">
+so these need to stay as they are .
+
+now the category select field
+
+<a class="ui-selectmenu ui-widget ui-state-default ui-corner-all ui-selectmenu-dropdown" id="Category-button" role="button" href="#" aria-haspopup="true" aria-owns="Category-menu" style="width: 221.25px;"><span class="ui-selectmenu-status">«Zgjidhni një kategori»</span><span class="ui-selectmenu-icon ui-icon ui-icon-triangle-1-s"></span></a>
+
+we need to populate based on our field
+
+and if you select one of them, new fields show
+
+example:
+if i select Apartments; new fields show and i need to select:
+
+Shitet or Jepet me qera (there are more fields) but these are the 2 most important.
+
+for this to work we will be needed to add these selections on our app also and map them.
+
+do this and then i will tell you more steps

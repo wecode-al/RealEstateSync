@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { insertPropertySchema, propertyTypes, type InsertProperty, type Property } from "@shared/schema";
+import { insertPropertySchema, propertyTypes, listingTypes, type InsertProperty, type Property } from "@shared/schema";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -36,8 +36,9 @@ export function PropertyForm({ property }: PropertyFormProps) {
       state: property.state,
       zipCode: property.zipCode,
       propertyType: property.propertyType,
+      listingType: property.listingType || "Shitet",
       images: property.images,
-      features: property.features
+      features: property.features as string[]
     } : {
       title: "",
       description: "",
@@ -49,7 +50,8 @@ export function PropertyForm({ property }: PropertyFormProps) {
       city: "",
       state: "",
       zipCode: "",
-      propertyType: "Single Family Home",
+      propertyType: "Apartamente",
+      listingType: "Shitet",
       images: [],
       features: []
     }
@@ -147,6 +149,20 @@ export function PropertyForm({ property }: PropertyFormProps) {
               </SelectTrigger>
               <SelectContent>
                 {propertyTypes.map((type) => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select 
+              onValueChange={(value) => form.setValue("listingType", value)}
+              defaultValue={form.getValues("listingType") || "Shitet"}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Listing Type" />
+              </SelectTrigger>
+              <SelectContent>
+                {listingTypes.map((type) => (
                   <SelectItem key={type} value={type}>{type}</SelectItem>
                 ))}
               </SelectContent>

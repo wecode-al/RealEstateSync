@@ -451,41 +451,194 @@ export class MerrJepListingService {
     await page.type('input[name="ChangeAdContactInfoCmd.Email"]', process.env.CONTACT_EMAIL || 'contact@example.com');
     await page.type('input[name="ChangeAdContactInfoCmd.Phone"]', property.phone || '355000000000');
     
-    // Select category with detailed logging
+    // Select category using jQuery UI selectmenu
     console.log(`Property type: ${property.propertyType}`);
     const categoryValue = this.mapPropertyTypeToCategory(property.propertyType);
     console.log(`Selected category value: ${categoryValue}`);
     
     try {
-      await page.waitForSelector('#Category', { timeout: 5000 });
-      console.log('Category selector found, attempting to select category');
+      // First, check if the jQuery UI selectmenu is present
+      await page.waitForSelector('#Category-button', { timeout: 5000 });
+      console.log('jQuery UI selectmenu found for category');
       
       // Take screenshot before category selection
       await page.screenshot({ path: './screenshots/before-category-select.png' });
       
-      await page.select('#Category', categoryValue);
-      console.log('Category selected successfully');
+      // Click the selectmenu to open the dropdown
+      await page.click('#Category-button');
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Wait for subcategory to appear
-      console.log('Waiting for subcategory to load');
+      console.log('Selecting category via jQuery UI selectmenu');
+      
+      // Execute JS to set the value and trigger change event
+      await page.evaluate((categoryVal) => {
+        // Set the value on the actual select element
+        const selectElement = document.querySelector('#Category');
+        if (selectElement) {
+          // @ts-ignore - Value property exists on HTMLSelectElement
+          selectElement.value = categoryVal;
+          
+          // Trigger change event to make dependent fields appear
+          const event = new Event('change', { bubbles: true });
+          selectElement.dispatchEvent(event);
+          
+          // Also try jQuery trigger if available
+          // @ts-ignore - jQuery might be available
+          if (typeof jQuery !== 'undefined') {
+            // @ts-ignore
+            jQuery('#Category').trigger('change');
+          }
+        }
+      }, categoryValue);
+      
+      console.log('Category value set, waiting for UI to update');
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Take screenshot after category selection
-      await page.screenshot({ path: './screenshots/after-category-select.png' });
-      
-      // Check if subcategory exists
-      const hasSubcategory = await page.$('#SubCategory') !== null;
-      console.log(`Subcategory selector exists: ${hasSubcategory}`);
+      // Now wait for the subcategory selectmenu to appear
+      const hasSubcategory = await page.$('#SubCategory-button') !== null;
+      console.log(`Subcategory selectmenu exists: ${hasSubcategory}`);
       
       if (hasSubcategory) {
         const subcategoryValue = this.mapPropertyTypeToSubcategory(property.propertyType);
         console.log(`Selected subcategory value: ${subcategoryValue}`);
-        await page.select('#SubCategory', subcategoryValue);
-        console.log('Subcategory selected successfully');
+        
+        // Click the subcategory selectmenu
+        await page.click('#SubCategory-button');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Set the subcategory value via JS
+        await page.evaluate((subcatVal) => {
+          // Set the value on the actual select element
+          const selectElement = document.querySelector('#SubCategory');
+          if (selectElement) {
+            // @ts-ignore - Value property exists on HTMLSelectElement
+            selectElement.value = subcatVal;
+            
+            // Trigger change event
+            const event = new Event('change', { bubbles: true });
+            selectElement.dispatchEvent(event);
+            
+            // Also try jQuery trigger if available
+            // @ts-ignore - jQuery might be available
+            if (typeof jQuery !== 'undefined') {
+              // @ts-ignore
+              jQuery('#SubCategory').trigger('change');
+            }
+          }
+        }, subcategoryValue);
+        
+        console.log('Subcategory value set');
       }
+      
+      // Take screenshot after category selection
+      await page.screenshot({ path: './screenshots/after-category-select.png' });
+      
+      // Now we need to select the listing type (Shitet/Jepet me qera/etc)
+      console.log(`Listing type: ${property.listingType || 'Shitet'}`);
+      
+      // Wait for listing type options to appear 
+      // These will show up only after category selection
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Take a screenshot to see what fields are available after category selection
+      await page.screenshot({ path: './screenshots/before-listing-type.png' });
+      
+      // Use property.listingType if available, otherwise default to "Shitet" (For sale)
+      const listingType = property.listingType || 'Shitet';
+      console.log(`Looking for listing type option: ${listingType}`);
+      
+      // Check if there are any visible radio buttons for listing type
+      // Exclude the Person/Company radio buttons that we want to leave at default
+      const radioButtons = await page.$$('input[type="radio"]:not([name="ChangeAdContactInfoCmd.IsCompany"])');
+      console.log(`Found ${radioButtons.length} radio buttons (excluding person/company)`);
+      
+      // Try to find and click the appropriate radio button by its parent text
+      let listingTypeFound = false;
+      
+      try {
+        listingTypeFound = await page.evaluate((typeText) => {
+          // Skip the Person/Company radios which we want to leave at default
+          const radioButtons = Array.from(document.querySelectorAll('input[type="radio"]:not([name="ChangeAdContactInfoCmd.IsCompany"])'));
+          console.log(`Looking at ${radioButtons.length} radio buttons for listing type`);
+          
+          // First look for exact parent text matches - most reliable
+          for (const radio of radioButtons) {
+            const parentText = radio.parentElement?.textContent?.trim() || '';
+            console.log(`Radio option: ${parentText}`);
+            
+            if (parentText.includes(typeText)) {
+              // @ts-ignore - click() exists on HTMLElement
+              radio.click();
+              console.log(`Found and clicked radio with text: ${parentText}`);
+              return true;
+            }
+          }
+          
+          // Try with more flexible matching if exact matching failed
+          for (const radio of radioButtons) {
+            // Check the label text associated with this radio
+            const labelText = document.querySelector(`label[for="${radio.id}"]`)?.textContent?.trim() || '';
+            
+            // Look at parent div context too
+            const parentText = radio.parentElement?.textContent?.trim() || '';
+            const grandparentText = radio.parentElement?.parentElement?.textContent?.trim() || '';
+            
+            console.log(`Radio option contexts: Label=${labelText}, Parent=${parentText.substring(0, 20)}...`);
+            
+            // Try to match by different text properties
+            if (labelText.includes(typeText) || 
+                parentText.includes(typeText) || 
+                grandparentText.includes(typeText) || 
+                radio.id?.includes(typeText.toLowerCase())) {
+              // @ts-ignore - click() exists on HTMLElement
+              radio.click();
+              console.log(`Found and clicked radio with matching context`);
+              return true;
+            }
+          }
+          
+          return false;
+        }, listingType);
+      } catch (error) {
+        console.error('Error trying to find listing type radio:', error);
+      }
+      
+      // Take another screenshot to see if we selected anything
+      await page.screenshot({ path: './screenshots/after-listing-type.png' });
+      
+      console.log(`Listing type selection ${listingTypeFound ? 'successful' : 'failed'}`);
+      
+      // Don't fallback to clicking random radio buttons as that could lead to incorrect listings
+      if (!listingTypeFound) {
+        console.log('Could not find listing type radio buttons that match our criteria');
+        console.log('This might be expected if these options appear later in the form flow');
+        // We'll continue with the form and try to find these options later if needed
+      }
+      
+      // Take another screenshot after listing type selection
+      await page.screenshot({ path: './screenshots/after-listing-type-select.png' });
+      
     } catch (error) {
-      console.error('Error selecting category/subcategory:', error);
-      // Continue with form filling despite category selection error
+      console.error('Error with category/property type selection:', error);
+      console.log('Trying alternative category selection approach...');
+      
+      try {
+        // Fallback: try standard select element if jQuery UI is not present
+        await page.select('#Category', categoryValue);
+        console.log('Category selected using standard select element');
+        
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Try standard select for subcategory if available
+        if (await page.$('#SubCategory') !== null) {
+          const subcategoryValue = this.mapPropertyTypeToSubcategory(property.propertyType);
+          await page.select('#SubCategory', subcategoryValue);
+          console.log('Subcategory selected using standard select element');
+        }
+      } catch (fallbackError) {
+        console.error('All category selection methods failed:', fallbackError);
+        // Continue with form filling despite category selection error
+      }
     }
     
     // Select location
