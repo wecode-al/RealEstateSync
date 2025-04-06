@@ -451,15 +451,41 @@ export class MerrJepListingService {
     await page.type('input[name="ChangeAdContactInfoCmd.Email"]', process.env.CONTACT_EMAIL || 'contact@example.com');
     await page.type('input[name="ChangeAdContactInfoCmd.Phone"]', property.phone || '355000000000');
     
-    // Select category
-    await page.waitForSelector('#Category');
-    await page.select('#Category', this.mapPropertyTypeToCategory(property.propertyType));
+    // Select category with detailed logging
+    console.log(`Property type: ${property.propertyType}`);
+    const categoryValue = this.mapPropertyTypeToCategory(property.propertyType);
+    console.log(`Selected category value: ${categoryValue}`);
     
-    // Wait for subcategory to appear (if applicable)
-    // Use setTimeout instead of waitForTimeout which is not part of the Puppeteer API
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    if (await page.$('#SubCategory') !== null) {
-      await page.select('#SubCategory', this.mapPropertyTypeToSubcategory(property.propertyType));
+    try {
+      await page.waitForSelector('#Category', { timeout: 5000 });
+      console.log('Category selector found, attempting to select category');
+      
+      // Take screenshot before category selection
+      await page.screenshot({ path: './screenshots/before-category-select.png' });
+      
+      await page.select('#Category', categoryValue);
+      console.log('Category selected successfully');
+      
+      // Wait for subcategory to appear
+      console.log('Waiting for subcategory to load');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Take screenshot after category selection
+      await page.screenshot({ path: './screenshots/after-category-select.png' });
+      
+      // Check if subcategory exists
+      const hasSubcategory = await page.$('#SubCategory') !== null;
+      console.log(`Subcategory selector exists: ${hasSubcategory}`);
+      
+      if (hasSubcategory) {
+        const subcategoryValue = this.mapPropertyTypeToSubcategory(property.propertyType);
+        console.log(`Selected subcategory value: ${subcategoryValue}`);
+        await page.select('#SubCategory', subcategoryValue);
+        console.log('Subcategory selected successfully');
+      }
+    } catch (error) {
+      console.error('Error selecting category/subcategory:', error);
+      // Continue with form filling despite category selection error
     }
     
     // Select location
@@ -581,6 +607,24 @@ export class MerrJepListingService {
   }
   
   /**
+   * Checks if the page shows the Albanian internet connection error message
+   */
+  private async checkForConnectionError(page: Page): Promise<boolean> {
+    try {
+      const hasConnectionError = await page.evaluate(() => {
+        const pageContent = document.body.textContent?.toLowerCase() || '';
+        return pageContent.includes('lidhja e internetit ka humbur') || 
+               pageContent.includes('internet connection lost') ||
+               pageContent.includes('problem me internetin');
+      });
+      return hasConnectionError;
+    } catch (e) {
+      console.error('Error checking for connection error:', e);
+      return false;
+    }
+  }
+
+  /**
    * Submits the form and handles the result
    */
   private async submitForm(page: Page): Promise<MerrJepResponse> {
@@ -674,6 +718,44 @@ export class MerrJepListingService {
       // Try to determine if submission was successful
       const currentUrl = page.url();
       console.log('Current URL after submission:', currentUrl);
+      
+      // Check for Albanian internet connection error and try to recover
+      const hasConnectionError = await this.checkForConnectionError(page);
+      if (hasConnectionError) {
+        console.log('Detected Albanian internet connection error, attempting to retry...');
+        
+        // Try to navigate back to the form page
+        try {
+          // Click the browser back button
+          await page.goBack();
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          console.log('Navigated back, attempting to resubmit');
+          
+          // Take screenshot of the recovery attempt
+          await page.screenshot({ path: './screenshots/recovery-attempt.png' });
+          
+          // Find submit button again
+          const recoveryButton = await page.$('button.btn.btn-primary, button[type="submit"]');
+          if (recoveryButton) {
+            console.log('Found recovery submit button, trying again');
+            await recoveryButton.click();
+            await new Promise(resolve => setTimeout(resolve, 8000));
+            
+            // Check again after recovery attempt
+            const stillHasError = await this.checkForConnectionError(page);
+            if (stillHasError) {
+              console.log('Still getting connection error after retry');
+              return {
+                success: false,
+                error: 'Internet connection error persisted after retry (Lidhja e internetit ka humbur)'
+              };
+            }
+          }
+        } catch (e) {
+          console.log('Recovery attempt failed:', e);
+          // Continue with normal error handling
+        }
+      }
       
       // Check for success indicators in the URL or page content
       const isSuccess = await page.evaluate(() => {
