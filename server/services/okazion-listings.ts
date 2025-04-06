@@ -37,12 +37,12 @@ export class OkazionListingService {
     try {
       console.log('Starting Okazion.al property publishing process');
       
-      // Check for credentials
-      const credentials = this.getCredentials();
+      // Check for credentials from app settings
+      const credentials = await this.getCredentials();
       if (!credentials) {
         return {
           success: false,
-          error: 'Okazion.al credentials not found. Please set OKAZION_USERNAME and OKAZION_PASSWORD environment variables.'
+          error: 'Okazion.al credentials not found. Please add credentials in Settings.'
         };
       }
       
@@ -100,17 +100,35 @@ export class OkazionListingService {
   }
   
   /**
-   * Retrieves Okazion.al credentials from environment variables
+   * Retrieves Okazion.al credentials from app settings
    */
-  private getCredentials(): OkazionCredentials | null {
-    const username = process.env.OKAZION_USERNAME;
-    const password = process.env.OKAZION_PASSWORD;
-    
-    if (!username || !password) {
+  private async getCredentials(): Promise<OkazionCredentials | null> {
+    try {
+      // Import storage dynamically to avoid circular dependency
+      const { storage } = await import('../storage');
+      
+      // Get Okazion credentials from app_settings table
+      const okazionSettings = await storage.getAppSetting('okazion');
+      
+      if (!okazionSettings || !okazionSettings.value) {
+        return null;
+      }
+      
+      // Parse the credentials from the settings value
+      const credentials = JSON.parse(okazionSettings.value);
+      
+      if (!credentials.username || !credentials.password) {
+        return null;
+      }
+      
+      return {
+        username: credentials.username,
+        password: credentials.password
+      };
+    } catch (error) {
+      console.error('Error retrieving Okazion credentials:', error);
       return null;
     }
-    
-    return { username, password };
   }
   
   /**
@@ -158,7 +176,7 @@ export class OkazionListingService {
     console.log('Filling ad form with property data:', property.title);
     
     // Get credentials for contact email
-    const credentials = this.getCredentials();
+    const credentials = await this.getCredentials();
     const contactEmail = credentials?.username || process.env.CONTACT_EMAIL || 'contact@example.com';
     
     // Select the real estate category

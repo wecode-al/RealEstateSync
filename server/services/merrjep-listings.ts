@@ -245,45 +245,75 @@ export class MerrJepListingService {
       
       console.log('Form elements found:', JSON.stringify(formElements, null, 2));
       
-      // Wait for login form with specific selectors from the actual page
+      // Handle a two-step login process
       try {
         console.log('Waiting for email/phone input field...');
         await page.waitForSelector('#EmailOrPhone', { timeout: 30000 });
         
-        console.log('Waiting for password input field...');
-        await page.waitForSelector('#Password', { timeout: 30000 });
-      } catch (selectorError) {
-        console.error('Login form elements not found:', selectorError);
-        await page.screenshot({ path: './screenshots/login-form-not-found.png' });
-        throw new Error(`Login form not found: ${selectorError instanceof Error ? selectorError.message : 'Unknown error'}`);
-      }
-      
-      // Take another screenshot of the login form
-      await page.screenshot({ path: './screenshots/login-form.png' });
-      
-      console.log('Form inputs found, filling credentials...');
-      
-      // Fill in login credentials directly with page.type for better stability
-      await page.type('#EmailOrPhone', credentials.username);
-      await page.type('#Password', credentials.password);
-      
-      console.log('Credentials entered successfully');
-      
-      // Click login button - using the exact selector provided: <button type="submit" class="btn btn-block">Kyçuni</button>
-      console.log('Clicking login button...');
-      try {
-        // Take a screenshot before clicking
-        await page.screenshot({ path: './screenshots/before-login-click.png' });
+        // Take screenshot before entering email
+        await page.screenshot({ path: './screenshots/login-form-step1.png' });
         
-        // Use the exact button selector 
-        console.log('Clicking on button with selector: button[type="submit"].btn.btn-block');
+        // Fill in email/phone first
+        console.log('Filling email/phone field...');
+        await page.type('#EmailOrPhone', credentials.username);
+        
+        // Click continue button to proceed to password step
+        console.log('Clicking continue button...');
+        await page.screenshot({ path: './screenshots/before-continue-click.png' });
+        
+        // Click the continue button and wait for either navigation or network response
+        try {
+          await Promise.any([
+            // Wait for response
+            page.waitForResponse(
+              response => response.url().includes('Account') || 
+                          response.url().includes('llogaria') || 
+                          response.url().includes('login'), 
+              { timeout: 30000 }
+            ),
+            // Wait for navigation
+            page.waitForNavigation({ timeout: 30000 }),
+            // Wait for the password field to appear (this might happen without navigation)
+            page.waitForSelector('#Password', { timeout: 30000 })
+          ]);
+          
+          // Click the button (we don't wait for a specific event since we handle them above)
+          await page.click('button[type="submit"].btn.btn-block');
+        } catch (continueError) {
+          console.log('Continue button click had an issue:', continueError);
+          // Even if the promises fail, still try clicking the button
+          await page.click('button[type="submit"].btn.btn-block');
+        }
+        
+        // Short wait after clicking to let the page update
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Wait for the password field to appear in the second step
+        console.log('Waiting for password field to appear...');
+        await page.waitForSelector('#Password', { timeout: 30000 });
+        
+        // Take screenshot of the second step
+        await page.screenshot({ path: './screenshots/login-form-step2.png' });
+        
+        // Fill in password
+        console.log('Filling password field...');
+        await page.type('#Password', credentials.password);
+        
+        console.log('Credentials entered successfully');
+        
+        // Click the login button for final submission
+        console.log('Clicking final login button...');
+        await page.screenshot({ path: './screenshots/before-final-login-click.png' });
+        
+        // Click the login button
         await Promise.all([
           page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 60000 }),
           page.click('button[type="submit"].btn.btn-block')
         ]);
       } catch (loginError) {
-        console.error('Login click or navigation failed:', loginError);
-        throw new Error(`Login action failed: ${loginError instanceof Error ? loginError.message : 'Unknown error'}`);
+        console.error('Login process failed:', loginError);
+        await page.screenshot({ path: './screenshots/login-error.png' });
+        throw new Error(`Login process failed: ${loginError instanceof Error ? loginError.message : 'Unknown error'}`);
       }
       
       // Take another screenshot after login attempt
@@ -302,24 +332,48 @@ export class MerrJepListingService {
       
       // Check if we're redirected to the dashboard or still on the login page
       const isLoggedIn = await page.evaluate(() => {
-        // Check for various indicators of successful login
-        const isLoginPage = document.querySelector('#EmailOrPhone') !== null;
-        const hasErrorMessage = document.querySelector('.validation-summary-errors, .error-message') !== null;
-        const hasUserMenu = document.querySelector('.user-menu, .user-profile, .logout-link, .account-menu') !== null;
+        // Check for login page elements (both steps 1 and 2)
+        const isOnStep1 = document.querySelector('#EmailOrPhone') !== null &&
+                           !document.querySelector('#Password');
+        const isOnStep2 = document.querySelector('#Password') !== null;
+        const isOnLoginPage = isOnStep1 || isOnStep2;
         
-        // Check page content for phrases that indicate we're logged in
-        const pageContent = document.body.textContent || '';
-        const loggedInPhrases = ['miqtë tuaj', 'llogaria ime', 'profili im', 'dilni', 'çkyçu'];
-        const containsLoggedInPhrase = loggedInPhrases.some(phrase => pageContent.toLowerCase().includes(phrase));
+        // Check for error messages
+        const hasErrorMessage = document.querySelector('.validation-summary-errors, .error-message, .field-validation-error') !== null;
+        
+        // Check for indicators that we're logged in
+        const hasUserMenu = document.querySelector('.user-menu, .user-profile, .logout-link, .account-menu, .profile-menu') !== null;
+        
+        // Check URLs that could indicate we're on a post-login page
+        const currentUrl = window.location.href;
+        const isOnProfilePage = currentUrl.includes('/profile') || 
+                               currentUrl.includes('/account') || 
+                               currentUrl.includes('/dashboard');
+        
+        // Check page content for phrases that indicate we're logged in (in Albanian)
+        const pageContent = document.body.textContent?.toLowerCase() || '';
+        const loggedInPhrases = [
+          'miqtë tuaj', 'llogaria ime', 'profili im', 'dilni', 'çkyçu',
+          'posto njoftim', 'njoftimet e mia', 'përshëndetje', 'dërgoni mesazh'
+        ];
+        const containsLoggedInPhrase = loggedInPhrases.some(phrase => pageContent.includes(phrase));
+        
+        // Get the post ad button which is only visible to logged in users
+        const hasPostAdButton = document.querySelector('.post-ad-button, a[href*="posto-njoftim"]') !== null;
         
         // Log findings for debugging
-        console.log('Is on login page:', isLoginPage);
+        console.log('Is on login page step 1:', isOnStep1);
+        console.log('Is on login page step 2:', isOnStep2);
         console.log('Has error message:', hasErrorMessage);
         console.log('Has user menu:', hasUserMenu);
+        console.log('Is on profile page:', isOnProfilePage);
         console.log('Contains logged in phrase:', containsLoggedInPhrase);
+        console.log('Has post ad button:', hasPostAdButton);
         
-        // Success if we're not on login page AND either have a user menu or logged in phrase
-        return !isLoginPage && !hasErrorMessage && (hasUserMenu || containsLoggedInPhrase);
+        // Success if we're not on login page AND no errors AND (have a user menu OR logged in phrase OR on profile page OR have post ad button)
+        return !isOnLoginPage && 
+               !hasErrorMessage && 
+               (hasUserMenu || containsLoggedInPhrase || isOnProfilePage || hasPostAdButton);
       });
       
       console.log('Login status:', isLoggedIn ? 'Success' : 'Failed');
