@@ -24,7 +24,8 @@ interface MerrJepResponse {
  * 5. Submitting the form
  */
 export class MerrJepListingService {
-  private loginUrl = 'https://www.merrjep.al/login'; // Updated login URL
+  private baseUrl = 'https://www.merrjep.al';
+  private loginUrl = 'https://www.merrjep.al/identifikimi'; // Updated login URL based on Albanian "identification"
   private postAdUrl = 'https://www.merrjep.al/posto-njoftim-falas';
   private browser: Browser | null = null;
   
@@ -187,15 +188,73 @@ export class MerrJepListingService {
       await page.screenshot({ path: './screenshots/login-page.png' });
       console.log('Screenshot taken of login page');
       
-      // Wait for login form with better error handling
+      // Get the page content to help with debugging
+      const pageContent = await page.content();
+      console.log('Page URL:', page.url());
+      
+      // Log page HTML structure to help identify form elements
+      console.log('Page content snippet:', pageContent.substring(0, 500) + '...');
+      
+      // Check if we need to navigate to a different login page (site might have redirected us)
+      if (!pageContent.includes('login') && !pageContent.includes('identifikimi')) {
+        console.log('Not on login page, attempting to find login link...');
+        
+        // Look for login links
+        const loginLink = await page.evaluate(() => {
+          const links = Array.from(document.querySelectorAll('a'));
+          for (const link of links) {
+            const href = link.getAttribute('href');
+            const text = link.textContent?.toLowerCase() || '';
+            if (
+              href?.includes('login') || 
+              href?.includes('identifikimi') || 
+              text.includes('login') ||
+              text.includes('hyr') ||  // Albanian for "enter/login"
+              text.includes('identifikohu') // Albanian for "identify yourself"
+            ) {
+              return href;
+            }
+          }
+          return null;
+        });
+        
+        if (loginLink) {
+          console.log('Found login link:', loginLink);
+          const fullLoginUrl = loginLink.startsWith('http') ? loginLink : `${this.baseUrl}${loginLink.startsWith('/') ? '' : '/'}${loginLink}`;
+          console.log('Navigating to login link:', fullLoginUrl);
+          await page.goto(fullLoginUrl, { waitUntil: 'networkidle0' });
+          
+          // Take screenshot after navigation
+          await page.screenshot({ path: './screenshots/login-page-after-link.png' });
+        } else {
+          console.log('No login link found, attempting direct navigation to /login');
+          await page.goto(`${this.baseUrl}/login`, { waitUntil: 'networkidle0' });
+        }
+      }
+      
+      // Analyze the form elements that are present
+      const formElements = await page.evaluate(() => {
+        const inputElements = Array.from(document.querySelectorAll('input'));
+        return inputElements.map(input => ({
+          type: input.type,
+          name: input.name,
+          id: input.id,
+          placeholder: input.placeholder
+        }));
+      });
+      
+      console.log('Form elements found:', JSON.stringify(formElements, null, 2));
+      
+      // Wait for login form with better error handling - use more generic selectors
       try {
         console.log('Waiting for username input field...');
-        await page.waitForSelector('#username, input[name="username"], input[type="email"], .login-form input[type="text"]', { timeout: 20000 });
+        await page.waitForSelector('input[type="email"], input[type="text"], input[name="email"], input[name="username"], input[name="perdoruesi"], input.username, input.email', { timeout: 30000 });
         
         console.log('Waiting for password input field...');
-        await page.waitForSelector('#password, input[name="password"], input[type="password"], .login-form input[type="password"]', { timeout: 20000 });
+        await page.waitForSelector('input[type="password"], input[name="password"], input[name="fjalekalimi"], input.password', { timeout: 30000 });
       } catch (selectorError) {
         console.error('Login form elements not found:', selectorError);
+        await page.screenshot({ path: './screenshots/login-form-not-found.png' });
         throw new Error(`Login form not found: ${selectorError instanceof Error ? selectorError.message : 'Unknown error'}`);
       }
       
