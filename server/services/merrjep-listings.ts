@@ -580,38 +580,186 @@ export class MerrJepListingService {
     console.log('Submitting form');
     
     try {
-      // Click the submit button and wait for navigation
-      await Promise.all([
-        page.waitForNavigation({ waitUntil: 'networkidle0' }),
-        page.click('button.btn.btn-primary') // "Hapi tjetër" button
-      ]);
+      // Take screenshot before clicking submit
+      try {
+        await page.screenshot({ path: './screenshots/before-submit.png' });
+      } catch (e) {
+        console.error('Failed to take screenshot before submit:', e);
+      }
       
-      // Check if submission was successful
+      // First try to find the correct submit button
+      console.log('Looking for submit button...');
+      const buttonSelectors = [
+        'button.btn.btn-primary', 
+        'button[type="submit"]', 
+        'input[type="submit"]'
+      ];
+      
+      // Also try to find buttons by text content (Puppeteer doesn't support :contains selector)
+      try {
+        const buttonsByText = await page.evaluate(() => {
+          const buttons = Array.from(document.querySelectorAll('button'));
+          return buttons
+            .filter(btn => {
+              const text = btn.textContent?.toLowerCase() || '';
+              return text.includes('hapi tjetër') || 
+                     text.includes('vazhdo') || 
+                     text.includes('posto') || 
+                     text.includes('publiko');
+            })
+            .map(btn => {
+              // Create a unique selector for this button
+              let selector = 'button';
+              if (btn.id) selector += `#${btn.id}`;
+              if (btn.className) selector += `.${btn.className.split(' ').join('.')}`;
+              return selector;
+            });
+        });
+        
+        // Add these to our selectors
+        buttonSelectors.push(...buttonsByText);
+      } catch (e) {
+        console.log('Error finding buttons by text:', e);
+      }
+      
+      let submitButton = null;
+      for (const selector of buttonSelectors) {
+        try {
+          const button = await page.$(selector);
+          if (button) {
+            submitButton = button;
+            console.log(`Found submit button with selector: ${selector}`);
+            break;
+          }
+        } catch (e) {
+          // Continue to next selector
+        }
+      }
+      
+      if (!submitButton) {
+        console.log('No submit button found with predefined selectors, looking for any button...');
+        // Try to find any button that might be the submit button
+        const allButtons = await page.$$('button');
+        if (allButtons.length > 0) {
+          // Use the last button on the page, which is often the submit button
+          submitButton = allButtons[allButtons.length - 1];
+          console.log(`Using last button on page as fallback (found ${allButtons.length} buttons)`);
+        } else {
+          throw new Error('No buttons found on the page');
+        }
+      }
+      
+      // Click the button but don't wait for navigation to complete (which might time out)
+      console.log('Clicking submit button...');
+      await submitButton.click();
+      
+      // Instead of waiting for full navigation, wait a reasonable amount of time
+      console.log('Waiting after form submission...');
+      await new Promise(resolve => setTimeout(resolve, 8000));
+      
+      // Take screenshot after clicking submit
+      try {
+        await page.screenshot({ path: './screenshots/after-submit.png' });
+      } catch (e) {
+        console.error('Failed to take screenshot after submit:', e);
+      }
+      
+      // Try to determine if submission was successful
+      const currentUrl = page.url();
+      console.log('Current URL after submission:', currentUrl);
+      
+      // Check for success indicators in the URL or page content
       const isSuccess = await page.evaluate(() => {
-        // This would need to be adjusted based on MerrJep's actual success page
-        return !document.querySelector('.error-message') && 
-               !document.querySelector('.alert-danger');
+        const currentUrl = window.location.href;
+        const pageContent = document.body.textContent?.toLowerCase() || '';
+        
+        // Success indicators in URL
+        const successUrlPatterns = [
+          '/success', 
+          '/confirmation', 
+          '/thank-you', 
+          '/faleminderit',
+          '/njoftimi'
+        ];
+        
+        const hasSuccessUrl = successUrlPatterns.some(pattern => currentUrl.includes(pattern));
+        
+        // Success indicators in page content
+        const successPhrases = [
+          'success', 
+          'successful', 
+          'thank you', 
+          'confirmed',
+          'njoftimi u publikua',
+          'faleminderit',
+          'postuar me sukses',
+          'publikuar me sukses'
+        ];
+        
+        const hasSuccessPhrase = successPhrases.some(phrase => pageContent.includes(phrase));
+        
+        // Error indicators
+        const hasErrorMessage = document.querySelector('.error-message, .alert-danger, .validation-errors') !== null;
+        
+        console.log('Has success URL pattern:', hasSuccessUrl);
+        console.log('Has success phrase in content:', hasSuccessPhrase);
+        console.log('Has error message:', hasErrorMessage);
+        
+        return (hasSuccessUrl || hasSuccessPhrase) && !hasErrorMessage;
       });
       
       if (isSuccess) {
-        // Try to extract the listing URL if available
-        const listingUrl = await page.evaluate(() => {
-          // This selector would need to be adjusted based on MerrJep's actual success page
-          const urlElement = document.querySelector('.ad-success-link a');
-          return urlElement ? urlElement.getAttribute('href') : null;
-        });
+        console.log('Submission appears to be successful based on page content/URL');
         
-        return {
-          success: true,
-          listingUrl: listingUrl || 'https://www.merrjep.al/listing/pending'
-        };
+        // Try to extract the listing URL if available
+        try {
+          const listingUrl = await page.evaluate(() => {
+            // Look for links that might be pointing to the new listing
+            const links = Array.from(document.querySelectorAll('a'));
+            for (const link of links) {
+              const href = link.getAttribute('href') || '';
+              const text = link.textContent?.toLowerCase() || '';
+              
+              if (href && 
+                  (href.includes('/item/') || 
+                   href.includes('/listing/') || 
+                   href.includes('/njoftimi/') ||
+                   text.includes('view') ||
+                   text.includes('shiko') ||
+                   text.includes('njoftimi'))) {
+                return href;
+              }
+            }
+            return null;
+          });
+          
+          return {
+            success: true,
+            listingUrl: listingUrl || `https://www.merrjep.al/listing/pending-${Date.now()}`
+          };
+        } catch (e) {
+          console.log('Error extracting listing URL:', e);
+          return {
+            success: true,
+            listingUrl: `https://www.merrjep.al/listing/pending-${Date.now()}`
+          };
+        }
       } else {
-        const errorMessage = await page.evaluate(() => {
-          // Extract error message if present
-          const errorElement = document.querySelector('.error-message') || 
-                               document.querySelector('.alert-danger');
-          return errorElement ? errorElement.textContent?.trim() : 'Unknown submission error';
-        });
+        console.log('Submission appears to have failed based on page content/URL');
+        
+        let errorMessage = 'Unknown submission error';
+        try {
+          errorMessage = await page.evaluate(() => {
+            // Extract error message if present
+            const errorElement = document.querySelector('.error-message, .alert-danger, .validation-errors');
+            const message = errorElement ? (errorElement.textContent?.trim() || 'Error with no message') : 'No error message displayed';
+            return message as string;
+          });
+        } catch (e) {
+          console.log('Error extracting error message:', e);
+        }
+        
+        console.log('Error message:', errorMessage);
         
         return {
           success: false,
