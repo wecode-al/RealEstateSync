@@ -25,7 +25,7 @@ interface MerrJepResponse {
  */
 export class MerrJepListingService {
   private baseUrl = 'https://www.merrjep.al';
-  private loginUrl = 'https://www.merrjep.al/identifikimi'; // Updated login URL based on Albanian "identification"
+  private loginUrl = 'https://www.merrjep.al/llogaria'; // Correct login URL provided by user
   private postAdUrl = 'https://www.merrjep.al/posto-njoftim-falas';
   private browser: Browser | null = null;
   

@@ -1,0 +1,519 @@
+
+
+<!DOCTYPE html>
+<html class="site-Albania" dir="ltr" lang="sq-AL" prefix="og:http://ogp.me/ns#">
+<head>
+    <meta charset="UTF-8">
+    <title>P&#235;rdorni t&#235; gjitha p&#235;rfitimet e ofruara nga reklamimi me llogarin&#235; duke u identifikuar | MerrJep.al</title>
+    
+<!-- Meta partial view start -->
+
+
+
+        <meta name="title" content="Ky&#231;u n&#235; llogarin&#235; tuaj | MerrJep.al" />
+        <meta name="description" content="P&#235;rdorni t&#235; gjitha avantazhet e ofruara nga reklamimi p&#235;rmes nj&#235; llogarie. Vendosni informacionin e nevojsh&#235;m p&#235;r t&#39;u identifikuar n&#235; llogarin&#235; tuaj ku mund t&#235; shihni t&#235; gjitha njoftimet tuaja, kontrolloni statistikat p&#235;r t&#235; gjitha njoftimet tuaja t&#235; publikuara, shikoni njoftimet tuaja t&#235; ruajtura, shtoni fonde n&#235; llogarin&#235; tuaj, shikoni detajet e gjurmimit p&#235;r porosit&#235; dhe menaxhoni njoftimet tuaja n&#235; nj&#235; m&#235;nyr&#235; t&#235; thjesht&#235; dhe t&#235; leht&#235;." />
+        <meta property="og:title" content="Ky&#231;u n&#235; llogarin&#235; tuaj | MerrJep.al" />
+        <meta property="og:description" content="P&#235;rdorni t&#235; gjitha avantazhet e ofruara nga reklamimi p&#235;rmes nj&#235; llogarie. Vendosni informacionin e nevojsh&#235;m p&#235;r t&#39;u identifikuar n&#235; llogarin&#235; tuaj ku mund t&#235; shihni t&#235; gjitha njoftimet tuaja, kontrolloni statistikat p&#235;r t&#235; gjitha njoftimet tuaja t&#235; publikuara, shikoni njoftimet tuaja t&#235; ruajtura, shtoni fonde n&#235; llogarin&#235; tuaj, shikoni detajet e gjurmimit p&#235;r porosit&#235; dhe menaxhoni njoftimet tuaja n&#235; nj&#235; m&#235;nyr&#235; t&#235; thjesht&#235; dhe t&#235; leht&#235;." />
+        <meta property="og:image" content="https://www.merrjep.al/Content/Images/OpenGraphics/MerrJep_al.png" />
+        <meta property="og:type" content="website" />
+
+<!-- /Meta partial view end -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="shortcut icon" type="image/png" href="/favicon.png?v=20250403-0">    
+    <link rel="preload" as="style" href="/Content/siteCssLite.min.css?v=20250403-0">
+    <link rel="preload" as="style" href="/Content/WSChat.min.css?v=20250403-0">
+        <link rel="preload" as="style" href="/Content/Bootstrap4/css/bootstrap.min.css?v=20250403-0">
+    <link rel="preload" as="style" href="/Content/ManageAccount/manageloginCss.min.css?v=20250403-0">
+    <link rel="preload" as="style" href="/Content/ci-main.min.css?v=20250403-0">
+    <link rel="preload" as="style" href="/Content/pazar_new.min.css?v=20250403-0">
+    <link rel="preload" as="style" href="/Content/jquery.pnotify.default.min.css?v=20250403-0">
+    <link rel="preload" as="style" href="/Content/Fancy/jquery.fancybox.min.css?v=20250403-0">
+    <link rel="preload" as="script" href="/Scripts/jquery-3.4.1/jquery.min.js?v=20250403-0">
+    <link rel="preload" as="script" href="/Scripts/jquery.cookie.min.js?v=20250403-0">
+        <link rel="preload" as="script" href="/Content/Bootstrap4/js/bootstrap.min.js?v=20250403-0">
+    <link rel="preload" as="script" href="/Content/Fancy/jquery.fancybox.min.js?v=20250403-0">
+    <link rel="preload" as="script" href="/Scripts/img-lazyloading/lazysizes.min.js?v=20250403-0">
+    <link rel="stylesheet" type="text/css" href="/Content/google-fonts/font.min.css?v=20250403-0">
+    <link rel="stylesheet" type="text/css" href="/Content/siteCssLite.min.css?v=20250403-0">
+    <link rel="stylesheet" type="text/css" href="/Content/WSChat.min.css?v=20250403-0">
+        <link rel="stylesheet" type="text/css" href="/Content/Bootstrap4/css/bootstrap.min.css?v=20250403-0"/>
+    <link rel="stylesheet" type="text/css" href="/Content/ManageAccount/manageloginCss.min.css?v=20250403-0">
+    <link rel="stylesheet" type="text/css" href="/Content/ci-main.min.css?v=20250403-0">
+    <link rel="stylesheet" type="text/css" href="/Content/pazar_new.min.css?v=20250403-0">
+    <link rel="stylesheet" type="text/css" href="/Content/jquery.pnotify.default.min.css?v=20250403-0">
+    <link rel="stylesheet" type="text/css" href="/Content/Fancy/jquery.fancybox.min.css?v=20250403-0">
+    <script type="text/javascript" src="/Scripts/jquery-3.4.1/jquery.min.js?v=20250403-0"></script>
+    <script type="text/javascript" src="/Scripts/jquery.cookie.min.js?v=20250403-0"></script>
+        <script type="text/javascript" src="/Content/Bootstrap4/js/bootstrap.min.js?v=20250403-0"></script>
+    <script type="text/javascript" src=/Content/Fancy/jquery.fancybox.min.js?v=20250403-0></script>
+    <script type="text/javascript" src=/Scripts/img-lazyloading/lazysizes.min.js?v=20250403-0></script>
+    <!-- leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="anonymous">
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin="anonymous"></script>
+    <!-- /leaflet -->
+    <!-- Google Tag Manager -->
+            <!-- Google Tag Manager -->
+        <script>
+            (function (w, d, s, l, i) {
+                w[l] = w[l] || []; w[l].push({
+                    'gtm.start':
+                        new Date().getTime(), event: 'gtm.js'
+                }); var f = d.getElementsByTagName(s)[0],
+                    j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                        'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+            })(window, document, 'script', 'dataLayer', 'GTM-KCVT5MP');
+        </script>
+        <!-- End Google Tag Manager -->
+
+    <!-- /Google Tag Manager -->
+        <meta name="apple-itunes-app" content="app-id=1484653154"/>
+            <meta name="google-play-app" content="app-id=al.merrjep"/>
+    <link rel="image_src" href="/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+    <meta name="mobile-web-app-capable" content="yes"/>
+    <meta property="fb:app_id" content="927217295802023"/>
+    <meta property="fb:pages" content="229379603803908"/>
+    <meta name="application-name" content="MerrJep.al"/>
+    <meta name="msapplication-TileColor" content="#000000"/>
+    <meta name="msapplication-square70x70logo" content="tiny.png"/>
+    <meta name="msapplication-square150x150logo" content="square.png"/>
+    <meta name="msapplication-wide310x150logo" content="wide.png"/>
+    <meta name="msapplication-square310x310logo" content="large.png"/>
+    
+
+
+
+
+
+
+            <script type="application/ld+json">
+                {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.merrjep.al/#organization","image":"https://www.merrjep.al/Content/Images/Albania/Albania.svg","url":"https://www.merrjep.al","sameAs":["https://play.google.com/store/apps/details?id=al.merrjep","https://apps.apple.com/app/merrjep-shqipëri/id1484653154","https://www.facebook.com/merrjep-al/","https://www.instagram.com/merrjepal/","https://www.linkedin.com/company/merrjep-al/","https://twitter.com/merrjepal/","https://www.crunchbase.com/organization/merrjep-al/","https://www.tiktok.com/@merrjepal_","https://www.pinterest.se/MerrJepal/","https://www.youtube.com/c/MerrJepAlbaniaOfficial"],"logo":"https://www.merrjep.al/Content/Images/Albania/Albania.svg","name":"MerrJep Njoftime Falas","alternateName":["MerrJep.al","MerrJep Shqipëri","Njoftime","Njoftime Falas","Njoftime.al","Shpallje","Blerje Shitje","Klasifikime","Oferta","Gazeta Njoftime","Marketplace Shqiptar"],"description":"MerrJep.al - Portal e preferuar për njoftime dhe oferta online! Gjej makina të disponueshme në shitje me dokumenta të rregullta, lexo gazeta online, eksploro dyqane dhe lokale me qera. Njoftime falas për oferta pune dhe vende të lira pune në Tiranë dhe nëpër Shqipëri. Përvoja një botë të re me oferta për shtëpi me qera në Tiranë, garsoniere, dhe apartamente në shitje. Kap shansin e okazionit për vende të lira pune në Durrës, zbulon lokale dhe bare me qera në Tiranë, lexo gazeta online për shtëpi me qera në Tiranë dhe zonat përreth, dhe gjej makina në shitje në kushte të veçanta. MerrJep.al - Ku oferta bëhet mundësi!","email":"support@merrjep.al","telephone":"+355-44-537-787","address":{"@type":"PostalAddress","streetAddress":"Rr. Kongresi Manastirit, Kompleksi ASL, Porcelan","addressLocality":"Tirana","postalCode":"1001","addressCountry":"AL"},"contactPoint":[{"@type":"ContactPoint","contactType":"Customer service","telephone":"+355-44-537-787","email":"support@merrjep.al","url":"https://www.merrjep.al/kujdesi-ndaj-klientit"},{"@type":"ContactPoint","contactType":"Sales and Marketing","telephone":"+355-69-382-3726","email":"sales@merrjep.al","url":"https://www.merrjep.al/kujdesi-ndaj-klientit/hapja-e-dyqanit"}],"numberOfEmployees":{"@type":"QuantitativeValue","minValue":10,"maxValue":20},"founder":"Necdet Arif","foundingDate":"2008-02-02T01:00:00+01:00","subOrganization":[{"@type":"Organization","@id":"https://www.merrjep.com/#organization","name":"MerrJep Kosovo","alternateName":"MerrJep.com","url":"https://www.merrjep.com"},{"@type":"Organization","@id":"https://www.makina.al/#organization","name":"Makina","alternateName":"makina.al","url":"https://www.makina.al"},{"@type":"Organization","@id":"https://www.pazar3.mk/#organization","name":"Pazar3","alternateName":"Pazar3.mk","url":"https://www.pazar3.mk"},{"@type":"Organization","@id":"https://www.mojtrg.rs/#organization","name":"Mojtrg Srbija","alternateName":"Mojtrg.rs","url":"https://www.mojtrg.rs"},{"@type":"Organization","@id":"https://www.mojtrg.me/#organization","name":"Mojtrg Crna Gora","alternateName":"Mojtrg.me","url":"https://www.mojtrg.me"},{"@type":"Organization","@id":"https://www.leelam.af/#organization","name":"Leelam","alternateName":"Leelam.af","url":"https://www.leelam.af"},{"@type":"Organization","@id":"https://www.bonbona.com/#organization","name":"Bonbona","alternateName":"bonbona.com","url":"https://www.bonbona.com"}]},{"@type":"WebSite","@id":"https://www.merrjep.al/#website","url":"https://www.merrjep.al","publisher":{"@id":"https://www.merrjep.al/#organization"},"potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://www.merrjep.al/njoftimet/q-{search_term_string}"},"query-input":"required name=search_term_string"}},{"@type":"WebPage","@id":"https://www.merrjep.al/llogaria/#webpage","url":"https://www.merrjep.al/llogaria","inLanguage":"sq","name":"Kyçu në llogarinë tuaj | MerrJep.al","isPartOf":{"@id":"https://www.merrjep.al/#website","@type":"Website"},"image":[{"@id":"https://www.merrjep.al/llogaria/#primaryimage","@type":"ImageObject","url":"https://www.merrjep.al/Content/Images/OpenGraphics/MerrJep_al.png","caption":"Përdorni të gjitha përfitimet e ofruara nga reklamimi me llogarinë duke u identifikuar | MerrJep.al"}],"primaryImageOfPage":{"@id":"https://www.merrjep.al/llogaria/#primaryimage"},"datePublished":"2025-04-06T19:28:49","dateModified":"2025-04-06T19:28:49","description":"Përdorni të gjitha avantazhet e ofruara nga reklamimi përmes një llogarie. Vendosni informacionin e nevojshëm për t\u0027u identifikuar në llogarinë tuaj ku mund të shihni të gjitha njoftimet tuaja, kontrolloni statistikat për të gjitha njoftimet tuaja të publikuara, shikoni njoftimet tuaja të ruajtura, shtoni fonde në llogarinë tuaj, shikoni detajet e gjurmimit për porositë dhe menaxhoni njoftimet tuaja në një mënyrë të thjeshtë dhe të lehtë.","breadcrumb":{"@id":"https://www.merrjep.al/llogaria/#breadcrumb","@name":"Kyçu në llogarinë tuaj | MerrJep.al"}},{"@type":"BreadcrumbList","@id":"https://www.merrjep.al/llogaria/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Kryefaqja","item":"https://www.merrjep.al/"},{"@type":"ListItem","position":2,"name":"Kyçu në llogari"}]}]}
+            </script>
+
+
+
+<!--Begin of the WebSite/Organization Google Knowledge Structured data-->
+
+
+<!--End of the WebSite/Organization Google Knowledge Structured data-->
+    <!-- WS Chat domain -->
+    <script type="text/javascript">
+        urlStart = 'https://www.merrjep.al';
+    </script>
+    <!-- /WS Chat domain -->
+    <!-- Banner Label -->
+    <style media="screen" type="text/css">
+        .b-caption:before {
+            content: 'Reklamë';
+        }
+    </style>
+    <!-- /Banner Label -->
+    
+
+</head>
+<body>
+    
+        <!-- Google Tag Manager (noscript) -->
+        <noscript>
+            <iframe loading="lazy" src="https://www.googletagmanager.com/ns.html?id=GTM-KCVT5MP"
+                    height="0" width="0" style="display:none;visibility:hidden"></iframe>
+        </noscript>
+        <!-- End Google Tag Manager (noscript) -->
+
+    
+        <!-- Start Alexa Certify Javascript -->
+        <!--<script type="text/javascript">
+            _atrk_opts = { atrk_acct: "lM+Zh1aUXR00y+", domain: "merrjep.al", dynamic: true };
+            (function () {
+                var as = document.createElement('script');
+                as.type = 'text/javascript';
+                as.async = true;
+                as.src = "https://d31qbv1cthcecs.cloudfront.net/atrk.js";
+                var s = document.getElementsByTagName('script')[0];
+                s.parentNode.insertBefore(as, s);
+            })();
+        </script>
+        <noscript><img src="https://d5nxst8fruw4z.cloudfront.net/atrk.gif?account=lM+Zh1aUXR00y+" style="display:none" height="1" width="1" alt="" /></noscript>-->
+        <!-- End Alexa Certify Javascript -->
+        <script>
+            window.fbAsyncInit = function () {
+                FB.init({
+                    appId: '1413333592228872',
+                    xfbml: true,
+                    version: 'v10.0'
+                });
+                FB.AppEvents.logPageView();
+            };
+
+            (function (d, s, id) {
+                var js, fjs = d.getElementsByTagName(s)[0];
+                if (d.getElementById(id)) { return; }
+                js = d.createElement(s); js.id = id;
+                js.src = "https://connect.facebook.net/en_US/sdk.js";
+                fjs.parentNode.insertBefore(js, fjs);
+            }(document, 'script', 'facebook-jssdk'));
+        </script>
+
+    <div class="website-wrapper">
+        <div id="34ADF5B6-0ADA-45A6-9883-31B3DB8F9D07" class="top-alert"></div>
+        
+        <header>
+            
+        </header>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12 conteiner-lang-top">
+
+                    
+                </div>
+                <header>
+                    <div class="nav-line">
+                        <div class="container ">
+                            <div class="row pb-lg-1 pb-md-1">
+                                <div class="col-sm-12 col-md-4 col-lg-5 col-xl-3 SiteLogo hide-text ">
+                                    <div class="row">
+                                        <div class="col-10 col-sm-10 col-md-11 col-lg-11 order-md-1 order-lg-1 m-0">
+                                            <a href="/" class="img-fluid hide-text">
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="clearfix"></div>
+                </header>
+                <div class="col-12 col-sm-12 col-md-12 col-lg-12 col-xl-12 pl-0 pr-0">
+                    <section class="container pl-0 pr-0">
+                        
+
+
+
+
+<input name="73b6a995-2cc1-46da-89f7-db65df53b8fb" type="hidden" value="" />
+<input name="431d7cc5-535c-4348-9cbf-8f15e59565c1" type="hidden" value="" />
+
+<style>
+    .privacy-policy-msg {
+        margin-bottom: 100px;
+    }
+
+        .privacy-policy-msg .message-container {
+            max-width: 400px;
+            margin: 0px auto;
+            font-size: 14px;
+        }
+
+            .privacy-policy-msg .message-container a {
+                color: #5DAA80;
+                font-weight: 700;
+                text-decoration: underline;
+            }
+</style>
+
+<div class="ui-main-content">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+
+                <!-- Login Form -->
+                <div class="ui-form">
+                    <h1 class="text-center">Ky&#231;uni n&#235; llogarin&#235; tuaj</h1>
+                        <div style="margin-top:26px;">
+                            <form action="/Registration/Login/ExternalLogin" method="post">    <input type="hidden" name="inc_csrf_token" />
+    <input type="hidden" name="provider" value="" id="providerSubmitParameter" />
+    <button type="submit" id="externalLoginSubmitForm" style="display:none"></button>
+    <div class="social-container">
+        <a class="social-btn" href="#" id="idFacebook" onclick="submitExternalLoginForm(this)" name="Facebook">
+            <div class="btn-wrapper">
+                <img src='/Content/Images/Social/icon-facebook.svg' name="Facebook" alt="Facebook" class="social-icons-mini" />
+                <span>Ky&#231;uni me an&#235; t&#235; Facebook</span>
+            </div>           
+        </a>
+    </div>
+    <div class="social-container">
+        <a class="social-btn" href="#" id="idGoogle" onclick="submitExternalLoginForm(this)" name="Google">
+            <div class="btn-wrapper">
+                <img src='/Content/Images/Social/icon-google.svg' name="Google" alt="Google" class="social-icons-mini" />
+                <span>Ky&#231;uni me an&#235; t&#235; Google</span>
+            </div>           
+        </a>
+    </div>
+</form>
+<script type="text/javascript">
+    function submitExternalLoginForm(sender) {
+        var prov = $(sender).attr("name");
+
+        $('#providerSubmitParameter').attr("value", prov);
+        $('#externalLoginSubmitForm').trigger("click");
+    }
+</script>
+
+                        </div>
+                        <span class="login-form_or">
+                            <span>Ose</span>
+                        </span>
+
+                    <form method="post" action="/account/login">
+                        <input id="ReturnUrl" name="ReturnUrl" type="hidden" value="" />
+                        <div class="form-group">
+<input class="form-control" data-val="true" data-val-length="Duhet të shënoni më së paku 5 karaktere." data-val-length-min="5" data-val-regex="Ju lutem shkruani një numër telefoni apo e-mail adresë të vlefshme." data-val-regex-pattern="(^([\d \.\\\,\-\+\/]{1,60}))|(^[a-zA-Z0-9.!#$%&amp;&#39;*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$)" data-val-required="Ju lutem shkruani një numër telefoni apo e-mail adresë të vlefshme." id="EmailOrPhone" name="EmailOrPhone" placeholder="Telefon ose Email" tabindex="1" type="text" value="" /><span class="field-validation-valid" data-valmsg-for="EmailOrPhone" data-valmsg-replace="true"></span>                        </div>
+
+                        <!-- Button -->
+                        <button type="submit" class="btn btn-block">Ky&#231;uni</button>
+                    </form>
+                        <div class="mt-4 link-to-reg-form">
+                            <label class="mb-0">Nuk keni nj&#235; llogari?</label>
+                            <a area="" class="form-link" href="https://www.merrjep.al/llogaria/krijo">Regjistrohuni këtu</a>
+                        </div>
+                </div>
+                <div class="privacy-policy-msg">
+                    <div class="message-container">
+                        <span class="ci-text-muted">Lexoni m&#235; shum&#235; detaje n&#235; lidhje me T&#235; Drejtat e P&#235;rpunimit t&#235; t&#235; Dh&#235;nave Personale te seksioni</span>
+                        <a href="https://www.merrjep.al/kujdesi-ndaj-klientit/politika-e-privatesise">Politikat e privatësisë</a>
+                        <span class="ci-text-muted">n&#235; faqen e MerrJep.al.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        var elementTextCheck = document.getElementsByClassName('field-validation-error')[0].innerText;
+
+        if (elementTextCheck === 'Llogaria nuk është e aktivizuar.')
+        {
+            var elementToAppend = document.getElementsByClassName('field-validation-error')[0];
+            $('<br />').appendTo(elementToAppend);
+            $('<a class="confirm-link" onclick="RedirectToConfirm()" href="#" >' + 'Kliko k&#235;tu p&#235;r t&#235; fituar kod t&#235; ri p&#235;r aktivizim.' + '</a>').appendTo(elementToAppend);
+        }
+    });
+
+    function RedirectToConfirm() {
+        document.location.href = '/ManageAccount/SendMsgToReConfirmAccount';
+    }
+</script>
+
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+
+<footer class="new-footer">
+    <div class="m-footer-menu-item">
+        <div class="m-footer-menu-header">
+            Ndihm&#235;
+        </div>
+        <div class="m-footer-menu-list">
+            <a href="https://www.merrjep.al/kujdesi-ndaj-klientit">Na kontaktoni</a>
+<a href="https://www.merrjep.al/blog">MerrJep Blog</a>            <a href="https://www.merrjep.al/kujdesi-ndaj-klientit/hapja-e-dyqanit">Dyqani</a>
+                <a id="sitemap-categories-id" href="https://www.merrjep.al/kategorite">Sitemap</a>
+<a href="https://www.merrjep.al/qytetet">Lokacione</a>                <a id="sitemap-keywords-id" href="https://www.merrjep.al/fjalet-kyce">K&#235;rkimet m&#235; t&#235; shpeshta</a>
+            <a href="https://www.merrjep.al/kujdesi-ndaj-klientit/pyetjet-per-shtyp">Shtypi</a>
+        </div>
+    </div>
+    <div class="m-footer-menu-item">
+        <div class="m-footer-menu-header">
+            Informata
+        </div>
+        <div class="m-footer-menu-list">
+            <a href="https://www.merrjep.al/aplikacionet-mobile">Aplikacione Mobile</a>
+            <a href="https://www.merrjep.al/rreth-nesh">Rreth MerrJep</a>
+            <a href="https://www.merrjep.al/kujdesi-ndaj-klientit/termat-dhe-kushtet-e-reklamimit">Rregullat</a>
+            <a href="https://www.merrjep.al/kujdesi-ndaj-klientit/tregto-sigurt">Tregtoni sigurtë</a>
+            <a href="https://www.merrjep.al/kujdesi-ndaj-klientit/reklamoni-me-banera">Hapësirat reklamuese të MerrJep</a>
+            <a href="https://www.merrjep.al/kujdesi-ndaj-klientit/politika-e-privatesise">Politika e privatësisë</a>
+            <a href="https://www.merrjep.al/kujdesi-ndaj-klientit/politika-e-cookies">Politika e cookies</a>
+<a href="https://www.merrjep.al/kujdesi-ndaj-klientit/sherbimi-i-transportit-termat-dhe-kushtet">Dorëzimi i ngarkesave MerrJep</a><a href="https://www.merrjep.al/kujdesi-ndaj-klientit/sherbimi-i-transportit-perfitimet">Përfitimet e Shërbimit të Transportit</a>            <a href="/CustomerService/Subscription">Planet e Abonimit VIP</a>        </div>
+    </div>
+    <div class="m-footer-menu-item">
+        <div class="m-footer-menu-header">
+            Vende t&#235; tjera
+        </div>
+        <div class="m-footer-menu-list">
+            <a href="https://www.merrjep.com" target="_blank" rel="noopener noreferrer">Kosov&#235;</a>
+<a href="https://www.pazar3.mk/al" target="_blank" rel="noopener noreferrer">Maqedoni</a>
+<a href="https://www.mojtrg.me" target="_blank" rel="noopener noreferrer">Mali i Zi</a>
+<a href="https://www.mojtrg.rs" target="_blank" rel="noopener noreferrer">Serbia</a>
+<a href="https://www.leelam.af" target="_blank" rel="noopener noreferrer">Afganistan</a>
+<a href="https://makina.al" target="_blank" rel="noopener noreferrer">Makina n&#235; shitje</a>
+<a href="https://bonbona.al" target="_blank" rel="noopener noreferrer">Bonbona.al</a>
+        </div>
+    </div>
+    <div class="bootstrap4 container">
+        <div class="left-side">
+            <div>
+                <h6>Ndihm&#235;</h6>
+                <a href="https://www.merrjep.al/kujdesi-ndaj-klientit">Na kontaktoni</a>
+
+<a href="https://www.merrjep.al/blog">MerrJep Blog</a>                <a href="https://www.merrjep.al/kujdesi-ndaj-klientit/hapja-e-dyqanit">Hap një dyqan</a>
+                    <a id="sitemap-categories-id" href="https://www.merrjep.al/kategorite">Sitemap</a>
+<a href="https://www.merrjep.al/qytetet">Lokacione</a>                    <a id="sitemap-keywords-id" href="https://www.merrjep.al/fjalet-kyce">K&#235;rkimet m&#235; t&#235; shpeshta</a>
+                <a href="https://www.merrjep.al/kujdesi-ndaj-klientit/pyetjet-per-shtyp">Shtypi</a>
+            </div>
+            <div>
+                <h6>Informata</h6>
+                <a href="https://www.merrjep.al/aplikacionet-mobile">Aplikacione Mobile</a>
+                <a href="https://www.merrjep.al/rreth-nesh">Rreth MerrJep</a>
+                <a href="https://www.merrjep.al/kujdesi-ndaj-klientit/termat-dhe-kushtet-e-reklamimit">Rregullat</a>
+                <a href="https://www.merrjep.al/kujdesi-ndaj-klientit/tregto-sigurt">Tregtoni sigurtë</a>
+                <a href="https://www.merrjep.al/kujdesi-ndaj-klientit/reklamoni-me-banera">Hapësirat reklamuese të MerrJep</a>
+                <a href="https://www.merrjep.al/kujdesi-ndaj-klientit/politika-e-privatesise">Politika e privatësisë</a>
+                <a href="https://www.merrjep.al/kujdesi-ndaj-klientit/politika-e-cookies">Politika e cookies</a>
+<a href="https://www.merrjep.al/kujdesi-ndaj-klientit/sherbimi-i-transportit-termat-dhe-kushtet">Dorëzimi i ngarkesave MerrJep</a><a href="https://www.merrjep.al/kujdesi-ndaj-klientit/sherbimi-i-transportit-perfitimet">Përfitimet e Shërbimit të Transportit</a>                <a href="/CustomerService/Subscription">Planet e Abonimit VIP</a>            </div>
+            <div>
+                <h6>Vende t&#235; tjera</h6>
+                <a href="https://www.merrjep.com" target="_blank" rel="noopener noreferrer">Kosov&#235;</a>
+<a href="https://www.pazar3.mk/al" target="_blank" rel="noopener noreferrer">Maqedoni</a>
+<a href="https://www.mojtrg.me" target="_blank" rel="noopener noreferrer">Mali i Zi</a>
+<a href="https://www.mojtrg.rs" target="_blank" rel="noopener noreferrer">Serbia</a>
+<a href="https://www.leelam.af" target="_blank" rel="noopener noreferrer">Afganistan</a>
+<a href="https://makina.al" target="_blank" rel="noopener noreferrer">Makina n&#235; shitje</a>
+<a href="https://bonbona.al" target="_blank" rel="noopener noreferrer">Bonbona.al</a>
+            </div>
+        </div>
+        <div class="right-side">
+            <div class="app-download-block">
+                <p>Aplikacione falas p&#235;r telefonin tuaj:</p>
+                <a href="https://apps.apple.com/us/app/merrjep-albania/id1484653154" class="app-icon app-store" target="_blank" rel="noopener noreferrer nofollow"></a>
+                <a href="https://play.google.com/store/apps/details?id=al.merrjep" class="app-icon google-play" target="_blank" rel="noopener noreferrer nofollow"></a>
+            </div>
+            <p>Mbani kontakt:</p>
+            <a href="https://www.facebook.com/pages/MerrJep.al/229379603803908" target="_blank" class="social-icon" rel="noopener noreferrer nofollow">
+                <i class="ci-pazar-social ci-color-black ci-facebook"></i>
+            </a>
+            <a href="https://twitter.com/merrjepal" target="_blank" class="social-icon" rel="noopener noreferrer nofollow">
+                <i class="ci-pazar-social ci-color-black ci-twitter"></i>
+            </a>
+            <a href="https://www.instagram.com/merrjepal/" target="_blank" class="social-icon" rel="noopener noreferrer nofollow">
+                <i class="ci-pazar-social ci-color-black ci-instagram"></i>
+            </a>
+                <a href="viber://chat?number=%2B355693823726" class="social-icon" target="_blank" rel="noopener noreferrer nofollow">
+                    <i class="ci-pazar-social ci-color-black ci-viber"></i>
+                </a>
+                            <a href="https://api.whatsapp.com/send?phone=355693823726" class="social-icon" target="_blank" rel="noopener noreferrer nofollow">
+                    <i class="ci-pazar-social ci-color-black ci-whatsapp"></i>
+                </a>
+            <div class="payment-methods">
+                <p>M&#235;nyrat e pages&#235;s</p>
+                <a href="https://mhawala.af/" rel="noopener noreferrer nofollow" target="_blank" class="payment-item mhawala"><i></i></a>
+                <a href="https://cis.visa.com/" rel="noopener noreferrer nofollow" target="_blank" class="payment-item visa"><i></i></a>
+                <a href="https://www.mastercard.com" rel="noopener noreferrer nofollow" target="_blank" class="payment-item mastercard"><i></i></a>
+                <a href="https://www.paypal.com" rel="noopener noreferrer nofollow" target="_blank" class="payment-item paypal"><i></i></a>
+                <a href="https://www.pazar3.mk/customer-service/payment-help" rel="noopener noreferrer nofollow" target="_blank" class="payment-item bank-transfer"><i class="ci-pazar ci-bank ci-color-muted"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="footer-parnters">
+        <div class="content">
+            <div class="our-partners">
+                <h6>Partner&#235;t</h6>
+                <a href="https://etisalat.af" rel="noopener noreferrer nofollow" target="_blank" class="etisalat"></a>
+            </div>
+            <div class="our-rewards">
+                <h6>Shp&#235;rblimet</h6>
+                <a href="https://www.ecommerce4all.mk/badge" rel="noopener noreferrer nofollow" target="_blank" class="verified-seller"></a>
+            </div>
+        </div>
+    </div>
+    <div class="footer-secondary">
+        <div class="bootstrap4 container">
+            <a href="/" class="logo site-logo"></a>
+            <div class="address-block">
+                <i class="ci-pazar ci-color-muted ci-map-marker"></i>
+                <span class="ci-text-uppercase">MERRJEP</span>
+                <span>Rr. &quot;Kongresi Manastirit&quot;, Kompleksi ASL, Porcelan, 1001 Tiran&#235;</span>
+            </div>
+                <div class="phone-block">
+                    <i class="ci-pazar ci-smartphone ci-color-muted"></i>
+                    <bdi class="ci-text-muted"><a href="tel:+355 (0) 44 537 787" rel="nofollow">+355 (0) 44 537 787</a></bdi>
+                    <bdi class="ci-text-muted"><a href="tel:+355 (0) 69 382 3 726" rel="nofollow">+355 (0) 69 382 3 726</a></bdi>
+                </div>
+        </div>
+    </div>
+</footer>
+<!-- Footer Script -->
+<script>
+    $(document).ready(function () {
+        $('.m-footer-menu-header').on('click', function () {
+            $(this).closest('.m-footer-menu-item').toggleClass('active');
+        });
+
+    });
+</script>
+<!-- /Footer Script -->
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <script>
+            $(window).load(function () {
+                try {
+                    google.accounts.id.initialize({
+                        client_id: '190241308877-576bhr3dhvugc4epptpt68mep7ldj12c.apps.googleusercontent.com',
+                        callback: handleCredentialResponse
+                    });
+                    // google.accounts.id.prompt();
+                    google.accounts.id.prompt((notification) => {
+                        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                            // continue with another identity provider
+                        }
+                    });
+                    function handleCredentialResponse(e) {
+                        var result = parseJwt(e.credential);
+                        $.post("/Registration/Login/ExternalLoginWithGoogleOneTap", { tapAttributes: result }).done(function (e) {
+                            window.location.href = "/Registration/Login/RedirectToAdvertiser";
+                        });
+                        setTimeout(window.location.href = "/Registration/Login/RedirectToAdvertiser", 3000);
+                    }
+                    function parseJwt(token) {
+                        var base64Url = token.split('.')[1];
+                        var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                        var jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+                            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                        }).join(''));
+                        return JSON.parse(jsonPayload);
+                    };
+                }
+                catch (e) { }
+            });
+        </script>
+    <!--Scripts Zone Begin-->
+    <script type="text/javascript" src="/bundles/jquery-js-bundle?v=20250403-0"></script>
+    <script type="text/javascript" src="/bundles/popper-js-bundle?v=20250403-0"></script>
+        <script type="text/javascript" src="/bundles/bootstrap-js-bundle?v=20250403-0"></script>
+    <script type="text/javascript" src="/bundles/site-lite?v=20250403-0"></script>
+    <div id="defaultDialog" incoding="[{&quot;type&quot;:&quot;ExecutableDirectAction&quot;,&quot;data&quot;:{&quot;result&quot;:&quot;&quot;,&quot;onBind&quot;:&quot;dialogopen incoding&quot;,&quot;onStatus&quot;:0,&quot;target&quot;:null,&quot;onEventStatus&quot;:1}},{&quot;type&quot;:&quot;ExecutableTrigger&quot;,&quot;data&quot;:{&quot;trigger&quot;:&quot;mapresize&quot;,&quot;onBind&quot;:&quot;dialogopen incoding&quot;,&quot;onStatus&quot;:2,&quot;target&quot;:&quot;||jquery*.mapRelative||&quot;,&quot;onEventStatus&quot;:1}}]"></div>
+    <div class="hide" id="overlayDialog"></div>
+    <div incoding="[{&quot;type&quot;:&quot;ExecutableDirectAction&quot;,&quot;data&quot;:{&quot;result&quot;:&quot;&quot;,&quot;onBind&quot;:&quot;initincoding incinsert incoding&quot;,&quot;onStatus&quot;:0,&quot;target&quot;:null,&quot;onEventStatus&quot;:1}},{&quot;type&quot;:&quot;ExecutableEval&quot;,&quot;data&quot;:{&quot;code&quot;:&quot;initBinds();&quot;,&quot;onBind&quot;:&quot;initincoding incinsert incoding&quot;,&quot;onStatus&quot;:2,&quot;target&quot;:&quot;$(this.self)&quot;,&quot;onEventStatus&quot;:1}}]"></div>
+    
+<script type="text/javascript">
+        TemplateFactory.Version = '20250403-0sq-AL';
+        TemplateFactory.BaseVersion = '20250403-0';
+        AjaxAdapter.Token = '98baea37-fb64-4722-8a63-e96eaef62695';
+        sound_url = '/Content/Sounds/chat-message.wav';
+</script>
+    <script type="text/javascript">
+        $(window).resize(function () { if (jQuery().dialog) $('#defaultDialog').dialog("option", "position", "center"); });
+    </script>
+    
+    <!-- Mobile footer script -->
+    <script>
+        $(document).ready(function () {
+            $('.m-footer-menu-header').on('click', function () {
+                $(this).closest('.m-footer-menu-item').toggleClass('active');
+            });
+        });
+    </script>
+    <!-- /Mobile footer script -->
+</body>
+</html>
