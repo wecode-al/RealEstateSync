@@ -168,152 +168,193 @@ export class MerrJepListingService {
     try {
       console.log('Logging in to MerrJep...');
       
-      // Navigate to login page with timeout handling
+      // Create screenshots directory if it doesn't exist
+      try {
+        await page.evaluate(() => true);
+      } catch (e) {
+        console.error('Page not initialized properly:', e);
+      }
+      
+      // Navigate to login page with less strict waiting conditions
       try {
         console.log(`Navigating to login URL: ${this.loginUrl}`);
         await page.goto(this.loginUrl, { 
-          waitUntil: 'networkidle0',
-          timeout: 60000 // Increase timeout to 60 seconds
+          waitUntil: 'domcontentloaded', // Less strict waiting condition
+          timeout: 90000 // Increase timeout to 90 seconds
         });
       } catch (navigationError) {
         console.error('Navigation to login page failed:', navigationError);
         throw new Error(`Could not navigate to login page: ${navigationError instanceof Error ? navigationError.message : 'Unknown error'}`);
       }
       
+      // Wait for the page to become interactive
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
       // Check if page is accessible
       const pageTitle = await page.title();
       console.log(`Page title: ${pageTitle}`);
       
-      // Take screenshot for debugging (in production, store these in logs)
-      await page.screenshot({ path: './screenshots/login-page.png' });
-      console.log('Screenshot taken of login page');
-      
-      // Get the page content to help with debugging
-      const pageContent = await page.content();
-      console.log('Page URL:', page.url());
-      
-      // Log page HTML structure to help identify form elements
-      console.log('Page content snippet:', pageContent.substring(0, 500) + '...');
-      
-      // Check if we need to navigate to a different login page (site might have redirected us)
-      if (!pageContent.includes('login') && !pageContent.includes('identifikimi')) {
-        console.log('Not on login page, attempting to find login link...');
-        
-        // Look for login links
-        const loginLink = await page.evaluate(() => {
-          const links = Array.from(document.querySelectorAll('a'));
-          for (const link of links) {
-            const href = link.getAttribute('href');
-            const text = link.textContent?.toLowerCase() || '';
-            if (
-              href?.includes('login') || 
-              href?.includes('identifikimi') || 
-              text.includes('login') ||
-              text.includes('hyr') ||  // Albanian for "enter/login"
-              text.includes('identifikohu') // Albanian for "identify yourself"
-            ) {
-              return href;
-            }
-          }
-          return null;
-        });
-        
-        if (loginLink) {
-          console.log('Found login link:', loginLink);
-          const fullLoginUrl = loginLink.startsWith('http') ? loginLink : `${this.baseUrl}${loginLink.startsWith('/') ? '' : '/'}${loginLink}`;
-          console.log('Navigating to login link:', fullLoginUrl);
-          await page.goto(fullLoginUrl, { waitUntil: 'networkidle0' });
-          
-          // Take screenshot after navigation
-          await page.screenshot({ path: './screenshots/login-page-after-link.png' });
-        } else {
-          console.log('No login link found, attempting direct navigation to /login');
-          await page.goto(`${this.baseUrl}/login`, { waitUntil: 'networkidle0' });
-        }
+      try {
+        await page.screenshot({ path: './screenshots/login-page.png' });
+        console.log('Screenshot taken of login page');
+      } catch (e) {
+        console.error('Could not take screenshot:', e);
       }
       
-      // Analyze the form elements that are present
-      const formElements = await page.evaluate(() => {
-        const inputElements = Array.from(document.querySelectorAll('input'));
-        return inputElements.map(input => ({
-          type: input.type,
-          name: input.name,
-          id: input.id,
-          placeholder: input.placeholder
-        }));
-      });
+      // Try multiple approaches to login
+      console.log('Trying a more robust login approach...');
       
-      console.log('Form elements found:', JSON.stringify(formElements, null, 2));
-      
-      // Handle a two-step login process
+      // Method 1: Direct URL navigation to a known login form path
       try {
-        console.log('Waiting for email/phone input field...');
-        await page.waitForSelector('#EmailOrPhone', { timeout: 30000 });
+        // Try an alternative login URL if the main one fails
+        const alternativeLoginUrl = 'https://www.merrjep.al/login';
+        console.log(`Navigating to alternative login URL: ${alternativeLoginUrl}`);
+        await page.goto(alternativeLoginUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      } catch (e) {
+        console.log('Alternative login URL navigation failed, continuing with current page...');
+      }
+      
+      // Examine the page content to determine our next steps
+      const pageUrl = page.url();
+      console.log('Current URL:', pageUrl);
+      
+      // Method 2: Try clicking login link if we're on the home page
+      try {
+        // Look for login links by text content that might be in Albanian
+        const loginLinkSelector = 'a[href*="login"], a[href*="llogaria"], a:contains("Hyr"), a:contains("Identifikohu")';
+        const loginLinkExists = await page.$(loginLinkSelector) !== null;
         
-        // Take screenshot before entering email
-        await page.screenshot({ path: './screenshots/login-form-step1.png' });
+        if (loginLinkExists) {
+          console.log('Found login link on page, clicking it...');
+          await page.click(loginLinkSelector);
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+      } catch (e) {
+        console.log('Error clicking login link:', e);
+      }
+      
+      // Method 3: Try to directly input credentials on whatever form is present
+      try {
+        // Get all input fields on the page
+        const inputFields = await page.$$('input');
+        console.log(`Found ${inputFields.length} input fields on the page`);
         
-        // Fill in email/phone first
-        console.log('Filling email/phone field...');
-        await page.type('#EmailOrPhone', credentials.username);
-        
-        // Click continue button to proceed to password step
-        console.log('Clicking continue button...');
-        await page.screenshot({ path: './screenshots/before-continue-click.png' });
-        
-        // Click the continue button and wait for either navigation or network response
-        try {
-          await Promise.any([
-            // Wait for response
-            page.waitForResponse(
-              response => response.url().includes('Account') || 
-                          response.url().includes('llogaria') || 
-                          response.url().includes('login'), 
-              { timeout: 30000 }
-            ),
-            // Wait for navigation
-            page.waitForNavigation({ timeout: 30000 }),
-            // Wait for the password field to appear (this might happen without navigation)
-            page.waitForSelector('#Password', { timeout: 30000 })
-          ]);
+        // Find potential email/username field
+        let emailField = null;
+        for (const field of inputFields) {
+          const type = await page.evaluate(el => el.type, field);
+          const id = await page.evaluate(el => el.id, field);
+          const name = await page.evaluate(el => el.name, field);
+          const placeholder = await page.evaluate(el => el.placeholder, field);
           
-          // Click the button (we don't wait for a specific event since we handle them above)
-          await page.click('button[type="submit"].btn.btn-block');
-        } catch (continueError) {
-          console.log('Continue button click had an issue:', continueError);
-          // Even if the promises fail, still try clicking the button
-          await page.click('button[type="submit"].btn.btn-block');
+          console.log(`Input field - type: ${type}, id: ${id}, name: ${name}, placeholder: ${placeholder}`);
+          
+          if (
+            (type === 'email' || type === 'text') &&
+            (id.toLowerCase().includes('email') || 
+             id.toLowerCase().includes('username') || 
+             name.toLowerCase().includes('email') || 
+             name.toLowerCase().includes('username') ||
+             placeholder?.toLowerCase().includes('email') ||
+             placeholder?.toLowerCase().includes('username') ||
+             id === 'EmailOrPhone')
+          ) {
+            emailField = field;
+            console.log('Found email/username field:', id || name);
+            break;
+          }
         }
         
-        // Short wait after clicking to let the page update
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Wait for the password field to appear in the second step
-        console.log('Waiting for password field to appear...');
-        await page.waitForSelector('#Password', { timeout: 30000 });
-        
-        // Take screenshot of the second step
-        await page.screenshot({ path: './screenshots/login-form-step2.png' });
-        
-        // Fill in password
-        console.log('Filling password field...');
-        await page.type('#Password', credentials.password);
-        
-        console.log('Credentials entered successfully');
-        
-        // Click the login button for final submission
-        console.log('Clicking final login button...');
-        await page.screenshot({ path: './screenshots/before-final-login-click.png' });
-        
-        // Click the login button
-        await Promise.all([
-          page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 60000 }),
-          page.click('button[type="submit"].btn.btn-block')
-        ]);
-      } catch (loginError) {
-        console.error('Login process failed:', loginError);
-        await page.screenshot({ path: './screenshots/login-error.png' });
-        throw new Error(`Login process failed: ${loginError instanceof Error ? loginError.message : 'Unknown error'}`);
+        if (emailField) {
+          console.log('Typing username/email...');
+          await emailField.click({ clickCount: 3 }); // Select all existing text
+          await emailField.type(credentials.username);
+          console.log('Username/email entered');
+          
+          // Look for submit/continue button
+          const buttons = await page.$$('button, input[type="submit"]');
+          let submitButton = null;
+          
+          for (const button of buttons) {
+            const type = await page.evaluate(el => el.type, button);
+            const tagName = await page.evaluate(el => el.tagName, button);
+            const text = await page.evaluate(el => el.textContent, button);
+            const className = await page.evaluate(el => el.className, button);
+            
+            console.log(`Button - type: ${type}, tag: ${tagName}, text: ${text}, class: ${className}`);
+            
+            if (
+              (type === 'submit' || tagName.toLowerCase() === 'button') &&
+              (text?.toLowerCase().includes('login') ||
+               text?.toLowerCase().includes('continue') ||
+               text?.toLowerCase().includes('hyr') ||
+               text?.toLowerCase().includes('vazhdoni') ||
+               className.includes('btn-block') ||
+               className.includes('btn-primary'))
+            ) {
+              submitButton = button;
+              console.log('Found submit button with text:', text);
+              break;
+            }
+          }
+          
+          if (submitButton) {
+            console.log('Clicking submit/continue button...');
+            await submitButton.click();
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            
+            try {
+              await page.screenshot({ path: './screenshots/after-email-submit.png' });
+            } catch (e) {
+              console.error('Could not take screenshot after email submit:', e);
+            }
+            
+            // Now check if we need to enter a password
+            const passwordFields = await page.$$('input[type="password"]');
+            if (passwordFields.length > 0) {
+              console.log('Password field found, entering password...');
+              await passwordFields[0].type(credentials.password);
+              
+              // Look for login button again
+              const loginButtons = await page.$$('button[type="submit"], input[type="submit"]');
+              if (loginButtons.length > 0) {
+                console.log('Clicking final login button...');
+                await loginButtons[0].click();
+                await new Promise(resolve => setTimeout(resolve, 8000));
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.log('Error in direct form interaction method:', e);
+      }
+      
+      // Method 4: Try using specific known selectors for MerrJep
+      try {
+        if (await page.$('#EmailOrPhone') !== null) {
+          console.log('Found EmailOrPhone field by ID, filling it...');
+          await page.type('#EmailOrPhone', credentials.username);
+          
+          if (await page.$('button[type="submit"]') !== null) {
+            console.log('Clicking submit button for email...');
+            await page.click('button[type="submit"]');
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            
+            if (await page.$('#Password') !== null) {
+              console.log('Password field appeared, filling it...');
+              await page.type('#Password', credentials.password);
+              
+              if (await page.$('button[type="submit"]') !== null) {
+                console.log('Clicking final login button...');
+                await page.click('button[type="submit"]');
+                await new Promise(resolve => setTimeout(resolve, 8000));
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.log('Error in specific selectors method:', e);
       }
       
       // Take another screenshot after login attempt
@@ -326,9 +367,9 @@ export class MerrJepListingService {
       // Take a screenshot for debugging
       await page.screenshot({ path: './screenshots/login-status-check.png' });
       
-      // Get the current URL
-      const currentUrl = page.url();
-      console.log('Current URL after login:', currentUrl);
+      // Get the final URL after login
+      const finalUrl = page.url();
+      console.log('Current URL after login:', finalUrl);
       
       // Check if we're redirected to the dashboard or still on the login page
       const isLoggedIn = await page.evaluate(() => {
