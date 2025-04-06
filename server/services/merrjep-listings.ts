@@ -245,13 +245,13 @@ export class MerrJepListingService {
       
       console.log('Form elements found:', JSON.stringify(formElements, null, 2));
       
-      // Wait for login form with better error handling - use more generic selectors
+      // Wait for login form with specific selectors from the actual page
       try {
-        console.log('Waiting for username input field...');
-        await page.waitForSelector('input[type="email"], input[type="text"], input[name="email"], input[name="username"], input[name="perdoruesi"], input.username, input.email', { timeout: 30000 });
+        console.log('Waiting for email/phone input field...');
+        await page.waitForSelector('#EmailOrPhone', { timeout: 30000 });
         
         console.log('Waiting for password input field...');
-        await page.waitForSelector('input[type="password"], input[name="password"], input[name="fjalekalimi"], input.password', { timeout: 30000 });
+        await page.waitForSelector('#Password', { timeout: 30000 });
       } catch (selectorError) {
         console.error('Login form elements not found:', selectorError);
         await page.screenshot({ path: './screenshots/login-form-not-found.png' });
@@ -261,35 +261,13 @@ export class MerrJepListingService {
       // Take another screenshot of the login form
       await page.screenshot({ path: './screenshots/login-form.png' });
       
-      // Evaluate to get the actual selectors
-      const formSelectors = await page.evaluate(() => {
-        const emailInput = document.querySelector('#username, input[name="username"], input[type="email"], .login-form input[type="text"]') as HTMLInputElement | null;
-        const passwordInput = document.querySelector('#password, input[name="password"], input[type="password"], .login-form input[type="password"]') as HTMLInputElement | null;
-        
-        return {
-          emailSelector: emailInput ? emailInput.id || emailInput.name : null,
-          passwordSelector: passwordInput ? passwordInput.id || passwordInput.name : null
-        };
-      });
+      console.log('Form inputs found, filling credentials...');
       
-      console.log('Form selectors found:', formSelectors);
+      // Fill in login credentials directly with page.type for better stability
+      await page.type('#EmailOrPhone', credentials.username);
+      await page.type('#Password', credentials.password);
       
-      // Fill in login credentials
-      console.log('Entering username and password...');
-      // Try multiple selector strategies to find the right input fields
-      await page.evaluate((credentials) => {
-        // Try different possible selectors for the email/username field
-        const emailField = document.querySelector('#username, input[name="username"], input[type="email"], .login-form input[type="text"]');
-        const passwordField = document.querySelector('#password, input[name="password"], input[type="password"], .login-form input[type="password"]');
-        
-        if (emailField) {
-          emailField.value = credentials.username;
-        }
-        
-        if (passwordField) {
-          passwordField.value = credentials.password;
-        }
-      }, credentials);
+      console.log('Credentials entered successfully');
       
       // Click login button
       console.log('Clicking login button...');
