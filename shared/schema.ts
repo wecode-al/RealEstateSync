@@ -91,13 +91,17 @@ export type Property = typeof properties.$inferSelect;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
 
 export const propertyTypes = [
-  "Single Family Home",
-  "Condo",
-  "Townhouse",
-  "Multi-Family",
-  "Apartment",
-  "Vacant Land",
-  "Other"
+  "Shtëpi private",   // Private houses
+  "Garazhe",          // Garages
+  "Poste parkimi",    // Parking spaces
+  "Barake",           // Sheds
+  "Apartamente",      // Apartments
+  "Garsoniere",       // Studios
+  "Ndarje qeraje",    // Shared rentals
+  "Vila",             // Villas
+  "Tokë | Truall",    // Land | Plots
+  "Prona jashtë vendit", // Properties abroad
+  "Tjetër"            // Other
 ] as const;
 
 export const distributionSites = [

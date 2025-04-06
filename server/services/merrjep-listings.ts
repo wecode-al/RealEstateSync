@@ -495,31 +495,41 @@ export class MerrJepListingService {
   
   /**
    * Maps our property type to MerrJep category values
+   * 
+   * Value 5 represents the "Real Estate" category on MerrJep.al
    */
   private mapPropertyTypeToCategory(propertyType: string): string {
-    const categoryMap: Record<string, string> = {
-      'Apartment': '5', // Real Estate
-      'House': '5',
-      'Villa': '5',
-      'Land': '5',
-      'Commercial': '5',
-      'Other': '5'
-    };
-    
-    return categoryMap[propertyType] || '5'; // Default to Real Estate
+    // All property types are in the Real Estate category (5)
+    return '5'; 
   }
   
   /**
    * Maps our property type to MerrJep subcategory values
+   * 
+   * These values match the actual subcategories on MerrJep.al:
+   * - 101: Apartments
+   * - 102: Commercial Properties 
+   * - 103: Houses/Villas
+   * - 104: Land/Plots
+   * - 105: Garages/Parking
+   * - 106: Studios
+   * - 107: Shared Rentals
+   * - 108: Properties Abroad
+   * - 109: Other Real Estate
    */
   private mapPropertyTypeToSubcategory(propertyType: string): string {
     const subcategoryMap: Record<string, string> = {
-      'Apartment': '101', // Apartments
-      'House': '103', // Houses
-      'Villa': '103', // Houses
-      'Land': '104', // Land
-      'Commercial': '102', // Commercial Properties
-      'Other': '109' // Other Real Estate
+      'Shtëpi private': '103',    // Private houses -> Houses
+      'Garazhe': '105',           // Garages -> Garages/Parking
+      'Poste parkimi': '105',     // Parking spaces -> Garages/Parking
+      'Barake': '109',            // Sheds -> Other
+      'Apartamente': '101',       // Apartments -> Apartments
+      'Garsoniere': '106',        // Studios -> Studios
+      'Ndarje qeraje': '107',     // Shared rentals -> Shared Rentals
+      'Vila': '103',              // Villas -> Houses/Villas
+      'Tokë | Truall': '104',     // Land | Plots -> Land/Plots
+      'Prona jashtë vendit': '108', // Properties abroad -> Properties Abroad
+      'Tjetër': '109'             // Other -> Other Real Estate
     };
     
     return subcategoryMap[propertyType] || '109'; // Default to Other Real Estate
