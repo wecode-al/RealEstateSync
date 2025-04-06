@@ -269,35 +269,17 @@ export class MerrJepListingService {
       
       console.log('Credentials entered successfully');
       
-      // Click login button
+      // Click login button - using the exact selector provided: <button type="submit" class="btn btn-block">Kyçuni</button>
       console.log('Clicking login button...');
       try {
-        // First find the login button
-        const loginButtonSelector = await page.evaluate(() => {
-          const submitButton = document.querySelector('button[type="submit"], input[type="submit"], .login-button, .btn-login, button.login');
-          if (submitButton) {
-            const tagName = submitButton.tagName.toLowerCase();
-            const type = submitButton.getAttribute('type');
-            const className = submitButton.className;
-            
-            // Return information about the button for logging
-            return { found: true, tagName, type, className };
-          }
-          return { found: false };
-        });
-        
-        console.log('Login button details:', loginButtonSelector);
-        
         // Take a screenshot before clicking
         await page.screenshot({ path: './screenshots/before-login-click.png' });
         
-        // Use multiple potential selectors for the login button
+        // Use the exact button selector 
+        console.log('Clicking on button with selector: button[type="submit"].btn.btn-block');
         await Promise.all([
           page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 60000 }),
-          page.evaluate(() => {
-            const button = document.querySelector('button[type="submit"], input[type="submit"], .login-button, .btn-login, button.login');
-            if (button) button.click();
-          })
+          page.click('button[type="submit"].btn.btn-block')
         ]);
       } catch (loginError) {
         console.error('Login click or navigation failed:', loginError);
@@ -308,18 +290,36 @@ export class MerrJepListingService {
       await page.screenshot({ path: './screenshots/after-login.png' });
       console.log('Screenshot taken after login attempt');
       
-      // Check if login was successful (e.g., by checking for user profile element)
+      // Check if login was successful by looking at the URL and page content
       console.log('Checking login status...');
+      
+      // Take a screenshot for debugging
+      await page.screenshot({ path: './screenshots/login-status-check.png' });
+      
+      // Get the current URL
+      const currentUrl = page.url();
+      console.log('Current URL after login:', currentUrl);
+      
+      // Check if we're redirected to the dashboard or still on the login page
       const isLoggedIn = await page.evaluate(() => {
-        // This selector needs to be adjusted based on MerrJep's actual UI
-        const profileMenu = document.querySelector('.user-profile-menu');
-        const accountLink = document.querySelector('.user-account-link');
+        // Check for various indicators of successful login
+        const isLoginPage = document.querySelector('#EmailOrPhone') !== null;
+        const hasErrorMessage = document.querySelector('.validation-summary-errors, .error-message') !== null;
+        const hasUserMenu = document.querySelector('.user-menu, .user-profile, .logout-link, .account-menu') !== null;
         
-        // Log what we find for debugging
-        console.log('Profile menu found:', !!profileMenu);
-        console.log('Account link found:', !!accountLink);
+        // Check page content for phrases that indicate we're logged in
+        const pageContent = document.body.textContent || '';
+        const loggedInPhrases = ['miqtë tuaj', 'llogaria ime', 'profili im', 'dilni', 'çkyçu'];
+        const containsLoggedInPhrase = loggedInPhrases.some(phrase => pageContent.toLowerCase().includes(phrase));
         
-        return !!profileMenu || !!accountLink;
+        // Log findings for debugging
+        console.log('Is on login page:', isLoginPage);
+        console.log('Has error message:', hasErrorMessage);
+        console.log('Has user menu:', hasUserMenu);
+        console.log('Contains logged in phrase:', containsLoggedInPhrase);
+        
+        // Success if we're not on login page AND either have a user menu or logged in phrase
+        return !isLoginPage && !hasErrorMessage && (hasUserMenu || containsLoggedInPhrase);
       });
       
       console.log('Login status:', isLoggedIn ? 'Success' : 'Failed');
@@ -327,8 +327,7 @@ export class MerrJepListingService {
       // If login failed, try to get more information about why
       if (!isLoggedIn) {
         const errorMessage = await page.evaluate(() => {
-          const errorElement = document.querySelector('.validation-summary-errors') || 
-                              document.querySelector('.error-message');
+          const errorElement = document.querySelector('.validation-summary-errors, .error-message, .field-validation-error');
           return errorElement ? errorElement.textContent?.trim() : 'No error message displayed';
         });
         console.log('Login error message:', errorMessage);
