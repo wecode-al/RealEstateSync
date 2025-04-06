@@ -519,20 +519,17 @@ export class MerrJepListingService {
    */
   private mapPropertyTypeToSubcategory(propertyType: string): string {
     const subcategoryMap: Record<string, string> = {
-      'Shtëpi private': '103',    // Private houses -> Houses
-      'Garazhe': '105',           // Garages -> Garages/Parking
-      'Poste parkimi': '105',     // Parking spaces -> Garages/Parking
-      'Barake': '109',            // Sheds -> Other
-      'Apartamente': '101',       // Apartments -> Apartments
-      'Garsoniere': '106',        // Studios -> Studios
-      'Ndarje qeraje': '107',     // Shared rentals -> Shared Rentals
-      'Vila': '103',              // Villas -> Houses/Villas
-      'Tokë | Truall': '104',     // Land | Plots -> Land/Plots
-      'Prona jashtë vendit': '108', // Properties abroad -> Properties Abroad
-      'Tjetër': '109'             // Other -> Other Real Estate
+      'Shtepi private': '103',                     // Private houses -> Houses/Villas
+      'Garazhe | Poste parkimi | Barake': '105',   // Combined -> Garages/Parking
+      'Apartamente': '101',                        // Apartments -> Apartments
+      'Garsoniere': '106',                         // Studios -> Studios
+      'Ndarje qeraje | Cimer/e': '107',            // Shared rentals -> Shared Rentals
+      'Vila': '103',                               // Villas -> Houses/Villas
+      'Tokё | Truall': '104',                      // Land/Plots -> Land/Plots
+      'Prona jashte vendit': '108'                 // Properties abroad -> Properties Abroad
     };
     
-    return subcategoryMap[propertyType] || '109'; // Default to Other Real Estate
+    return subcategoryMap[propertyType] || '109'; // Default to Other Real Estate if not found
   }
   
   /**
